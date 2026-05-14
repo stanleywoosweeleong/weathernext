@@ -637,8 +637,15 @@
         import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        const firebaseConfig = JSON.parse(__firebase_config);
-        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wnext-ag-v41';
+        const firebaseConfig = {
+            apiKey: "AIzaSyB6QYEWICXO5n1V8FvRBZxsoBcfNtarJ9M",
+            authDomain: "weathernext-e8803.firebaseapp.com",
+            projectId: "weathernext-e8803",
+            storageBucket: "weathernext-e8803.firebasestorage.app",
+            messagingSenderId: "90552560075",
+            appId: "1:90552560075:web:e23a642cfe55778123ee4e"
+        };
+        const appId = 'wnext-ag-v41';
         let apiKey = localStorage.getItem('wnext_v41_api_key') || ""; 
 
         const WEATHER_CACHE_KEY = `wnext_v41_weather_store`;
@@ -904,14 +911,9 @@
                 renderList(); updateLunarDate(); updateModelUI(); syncUI();
                 
                 try {
-                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
-                        await signInWithCustomToken(auth, __initial_auth_token);
-                    } else {
-                        await signInAnonymously(auth);
-                    }
+                    await signInAnonymously(auth);
                 } catch(err) {
-                    console.warn("Auth Fallback:", err);
-                    try { await signInAnonymously(auth); } catch(e) {}
+                    console.warn("Auth failed:", err);
                 }
                 
             } catch (err) { console.error("Init Error:", err); }
