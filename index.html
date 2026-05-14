@@ -1529,7 +1529,7 @@
         window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); if(!en && !zh) { window.showToast("Name Required / 请输入名字", true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast("Invalid Coordinates / 坐标无效", true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast("Location Exists / 地点已存在", true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast("Saved! Add another? / 已保存"); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast("Storage Error / 存储错误", true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm("Warning: These coordinates appear to be outside Malaysia.\n警告：此坐标似乎不在马来西亚境内。\n\nContinue adding?", performSave); } else { performSave(); } };
         window.handlePhotoScan = async (e) => { const file = e.target.files[0]; if(!file) return; const res = document.getElementById('scan-result'); res.innerText = "Scanning... / 正在扫描..."; const reader = new FileReader(); reader.onload = async function(event) { const base64Data = event.target.result.split(',')[1]; const prompt = "Analyze this image. It might be a photo of a compass app, a GPS device, or a location screenshot. Extract the Latitude and Longitude. Return strictly JSON format: { \"lat\": 3.1234, \"lng\": 101.5678 }. If not found, return { \"error\": \"No coordinates found\" }."; try { 
             const payload = { contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64Data } } ] }], generationConfig: { responseMimeType: "application/json" } };
-            const response = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+            const response = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
             const data = await response.json(); const json = JSON.parse(data.candidates[0].content.parts[0].text); if(json.lat && json.lng) { document.getElementById('add-lat').value = json.lat; document.getElementById('add-lng').value = json.lng; res.innerText = "Coordinates found! / 找到坐标!"; window.switchAddTab('manual'); } else { res.innerText = "No coordinates detected / 未检测到坐标"; } } catch(err) { res.innerText = "Scan failed / 扫描失败"; } }; reader.readAsDataURL(file); };
 
         const renderList = () => {
@@ -1611,7 +1611,7 @@
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 // Use fetchGemini to handle Auth errors gracefully
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json(); 
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis unavailable.";
@@ -1779,7 +1779,7 @@
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 // Use fetchGemini to handle Auth errors gracefully
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json(); 
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unavailable.";
@@ -1845,7 +1845,7 @@
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: { responseMimeType: "application/json" }
                     };
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json();
                 const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -1900,7 +1900,7 @@
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json();
                 box.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Insight unavailable.";
@@ -1942,7 +1942,7 @@
                         contents: [{ parts: [{ text: prompt }] }],
                         generationConfig: { responseMimeType: "application/json" }
                     };
-                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                  if(!res.ok) throw new Error("API Error");
                  const data = await res.json();
                  const items = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text);
@@ -1993,7 +1993,7 @@
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json();
                 result.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2039,7 +2039,7 @@
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json();
                 result.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
@@ -2080,7 +2080,7 @@
             
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
-                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json();
                 result.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Estimation failed.";
