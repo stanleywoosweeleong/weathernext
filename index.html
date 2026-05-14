@@ -1,0 +1,2767 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>农友天气WeatherNext</title>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="WeatherNext">
+    <meta name="mobile-web-app-capable" content="yes">
+        <meta name="theme-color" content="#1d4ed8">
+    
+    <!-- ============================================================ -->
+    <!-- PWA: Manifest, icons, install metadata                       -->
+    <!-- ============================================================ -->
+    <link rel="manifest" href="manifest.json">
+    <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
+    <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png">
+    <meta name="application-name" content="WeatherNext">
+    <meta name="msapplication-TileColor" content="#1d4ed8">
+    <meta name="msapplication-tap-highlight" content="no">
+    <meta name="format-detection" content="telephone=no">
+
+    <style>
+        /* PWA install banner */
+        #pwa-install-banner {
+            position: fixed;
+            bottom: calc(env(safe-area-inset-bottom) + 16px);
+            left: 50%;
+            transform: translateX(-50%) translateY(150%);
+            background: linear-gradient(135deg, #1d4ed8 0%, #1e40af 100%);
+            color: white;
+            padding: 14px 18px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 14px;
+            box-shadow: 0 12px 32px rgba(29, 78, 216, 0.4);
+            z-index: 9000;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            max-width: 92%;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+        }
+        #pwa-install-banner.show { transform: translateX(-50%) translateY(0); }
+        #pwa-install-banner .pwa-icon {
+            width: 36px; height: 36px;
+            background: white; border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.15);
+        }
+        #pwa-install-banner .pwa-text { flex: 1; min-width: 0; }
+        #pwa-install-banner .pwa-title {
+            font-size: 13px; font-weight: 900;
+            line-height: 1.2; letter-spacing: -0.01em;
+        }
+        #pwa-install-banner .pwa-sub {
+            font-size: 10px; font-weight: 600;
+            opacity: 0.85; margin-top: 2px;
+            letter-spacing: 0.02em;
+        }
+        #pwa-install-banner button {
+            background: white; color: #1d4ed8;
+            font-size: 11px; font-weight: 900;
+            padding: 8px 14px; border-radius: 99px;
+            border: none; text-transform: uppercase;
+            letter-spacing: 0.05em; cursor: pointer;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+            flex-shrink: 0;
+        }
+        #pwa-install-banner .pwa-close {
+            background: transparent; color: rgba(255,255,255,0.7);
+            padding: 6px; box-shadow: none; font-size: 18px;
+            line-height: 1; width: 28px; height: 28px;
+            display: flex; align-items: center; justify-content: center;
+            border-radius: 99px;
+        }
+        #pwa-update-banner {
+            position: fixed;
+            top: calc(env(safe-area-inset-top) + 12px);
+            left: 50%;
+            transform: translateX(-50%) translateY(-150%);
+            background: #059669;
+            color: white;
+            padding: 10px 16px;
+            border-radius: 99px;
+            display: flex; align-items: center; gap: 12px;
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+            z-index: 9001;
+            font-size: 12px; font-weight: 800;
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        #pwa-update-banner.show { transform: translateX(-50%) translateY(0); }
+        #pwa-update-banner button {
+            background: white; color: #059669;
+            font-weight: 900; font-size: 10px;
+            padding: 4px 10px; border-radius: 99px;
+            border: none; text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+    </style>
+    
+    <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%231d4ed8%22/><path d=%22M30 70 L45 35 L55 55 L75 15%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2275%22 cy=%2215%22 r=%226%22 fill=%22%23fbbf24%22/><path d=%22M20 80 H80%22 stroke=%22%2360a5fa%22 stroke-width=%224%22 stroke-linecap=%22round%22/></svg>">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+
+    <style>
+        :root {
+            --safe-top: env(safe-area-inset-top);
+            --safe-bottom: env(safe-area-inset-bottom);
+        }
+        body { 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background-color: #ffffff;
+            margin: 0; padding: 0; height: 100vh; overflow: hidden; color: #000;
+            -webkit-font-smoothing: antialiased;
+            -webkit-tap-highlight-color: transparent;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        header { padding-top: var(--safe-top); height: calc(105px + var(--safe-top)); }
+        footer { padding-bottom: var(--safe-bottom); height: calc(110px + var(--safe-bottom)); }
+
+        .name-label-en { font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
+        .name-label-zh { font-size: 20px; font-weight: 900; color: #1d4ed8; line-height: 1.1; margin-top: 4px; }
+
+        /* Swipeable List Item Styles */
+        .list-item-wrapper {
+            position: relative;
+            width: 100%;
+            border-bottom: 1px solid #f1f5f9;
+            background: #cbd5e1; /* Background for actions */
+            overflow: hidden;
+        }
+
+        .swipe-actions {
+            position: absolute;
+            top: 0; bottom: 0; right: 0;
+            display: flex;
+            width: 160px; /* Width of actions area */
+            z-index: 1;
+            visibility: hidden; /* HIDDEN BY DEFAULT to prevent flashing during scroll */
+        }
+
+        .action-btn {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            font-size: 10px;
+            font-weight: 800;
+            color: white;
+            border: none;
+            text-transform: uppercase;
+        }
+        .btn-edit { background-color: #3b82f6; }
+        .btn-delete { background-color: #ef4444; }
+
+        .list-item-content {
+            position: relative;
+            z-index: 10;
+            background: white;
+            width: 100%;
+            padding: 24px 16px; 
+            padding-right: 48px;
+            transition: transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+            will-change: transform;
+        }
+        
+        .list-item-content.is-favorite { background-color: #f0f7ff; }
+        .list-item-content:active { background-color: #f8fafc; }
+
+        .pin-btn {
+            position: absolute; right: 4px; top: 14px; width: 44px; height: 44px;
+            display: flex; align-items: center; justify-content: center;
+            background: transparent; border: none; cursor: pointer; z-index: 20;
+            outline: none; -webkit-tap-highlight-color: transparent;
+        }
+        .pin-icon { color: #cbd5e1; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .is-favorite .pin-icon { color: #ef4444; fill: currentColor; transform: scale(1.1); filter: drop-shadow(0 2px 3px rgba(239, 68, 68, 0.25)); }
+        .pin-btn:active .pin-icon { transform: scale(0.9); }
+
+        input[type=range] { -webkit-appearance: none; background: transparent; }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none; height: 22px; width: 22px;
+            border-radius: 50%; background: #1d4ed8; cursor: pointer;
+            border: 3px solid #ffffff; box-shadow: 0 2px 6px rgba(0,0,0,0.2); margin-top: -7px;
+        }
+        input[type=range]::-webkit-slider-runnable-track { width: 100%; height: 8px; cursor: pointer; background: #e2e8f0; border-radius: 4px; }
+
+        #infographic-report {
+            display: flex; flex-direction: column; background: white; 
+            width: 390px; /* FIXED WIDTH to prevent text wrapping */
+            min-width: 390px; /* Ensure it doesn't shrink in layout */
+            height: auto;
+            position: relative; transform-origin: 0 0; touch-action: pan-y; padding-bottom: 60px; min-height: 100%; will-change: transform;
+        }
+
+        .report-card { background: white; padding: 20px; padding-bottom: 40px; margin-bottom: 20px; border-bottom: 4px solid #f1f5f9; }
+        .report-card:last-child { border-bottom: none; margin-bottom: 0; }
+        /* Reduced padding-bottom from 16px to 10px, margin-bottom from 10px to 2px for tighter layout */
+        .report-header { padding: 6px 0 10px; border-bottom: 2px solid #e2e8f0; margin-bottom: 2px; }
+
+        .info-row { display: flex; width: 100%; border-bottom: 1px solid #f1f5f9; position: relative; }
+        .info-data-cell {
+            flex: 1; padding: 4px 1px; text-align: center; font-weight: 900; font-size: 11px; 
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            border-right: 1px solid rgba(226, 232, 240, 0.6); min-height: 40px; tabular-nums; color: #0f172a;
+        }
+
+        .row-label-overlay {
+            position: absolute; left: 6px; top: 4px; font-size: 8px; font-weight: 900; 
+            text-transform: uppercase; color: #475569; letter-spacing: 0.08em; pointer-events: none;
+            z-index: 40; background: rgba(255,255,255,0.95); padding: 2px 6px; border-radius: 4px;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+        }
+        
+        .pictogram-stack { display: flex; flex-direction: column; gap: 1.5px; width: 12px; margin-top: 2px; }
+        .pictogram-block { height: 1.8px; border-radius: 1px; background: #f1f5f9; }
+        .pictogram-block.active { background: #1e3a8a; }
+        
+        .cb-indicator-container { display: flex; align-items: center; gap: 2px; margin-top: 2px; }
+        .cb-indicator { width: 6px; height: 6px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px rgba(239, 68, 68, 0.8); animation: cb-pulse 1.5s infinite; }
+        .cb-label { font-size: 6.5px; color: #ef4444; font-weight: 950; }
+        @keyframes cb-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
+
+        .fog-badge { background: #cbd5e1; color: #475569; font-size: 7px; font-weight: 900; padding: 1px 3px; border-radius: 3px; margin-top: 1px; border: 1px solid #94a3b8; display: inline-block; }
+
+        .trend-layer { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 20; width: 100%; }
+
+        .model-pill {
+            display: inline-flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 900; height: 24px; padding: 0 6px; border-radius: 8px;
+            background: #f1f5f9; color: #64748b; text-transform: uppercase; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s; line-height: 1; white-space: nowrap;
+        }
+        .model-pill.active { background: #1d4ed8; color: white; border-color: #1d4ed8; }
+        
+        .crop-pill {
+            display: inline-block; font-size: 10px; font-weight: 950; color: #b45309; text-transform: uppercase;
+            cursor: pointer; transition: opacity 0.2s; white-space: nowrap; margin-left: 14px; background: transparent; border: none; padding: 0;
+            text-align: center; letter-spacing: 0.02em; line-height: 1; margin-bottom: 2px;
+        }
+        .crop-pill:active { opacity: 0.5; transform: scale(0.95); }
+
+        .model-toggle-btn {
+            display: inline-block; font-size: 10px; font-weight: 950; color: #1d4ed8; text-transform: uppercase;
+            cursor: pointer; transition: opacity 0.2s; white-space: nowrap; margin-left: 14px; background: transparent; border: none; padding: 0;
+            text-align: center; letter-spacing: 0.02em; line-height: 1; margin-bottom: 2px;
+        }
+        .model-toggle-btn:active { opacity: 0.5; transform: scale(0.95); }
+
+        .lang-text {
+            font-size: 12px; font-weight: 800; color: #94a3b8; 
+            cursor: pointer; transition: color 0.2s; padding: 0 2px;
+            line-height: 1;
+        }
+        .lang-text.active { color: #1d4ed8; }
+
+        .back-btn {
+            display: flex; align-items: center; justify-content: center; width: 48px; height: 48px;
+            background: #ffffff; border-radius: 50%; color: #1d4ed8; transition: all 0.2s;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); border: 1px solid #f1f5f9;
+        }
+        .back-btn:active { transform: scale(0.9); background: #f8fafc; }
+
+        #m-grid-viewport { overflow-y: auto; overflow-x: hidden; position: relative; background: #f8fafc; width: 100%; height: 100%; touch-action: pan-y; cursor: grab; }
+        #m-grid-viewport:active { cursor: grabbing; }
+
+        .date-cell-special { font-size: 10px; min-height: 32px; background: #f8fafc; color: #1e293b; white-space: nowrap; flex-direction: row !important; }
+        
+        .wvet-traffic-light {
+            width: 10px; height: 10px; border-radius: 50%; margin-top: 4px; margin-bottom: 2px;
+            box-shadow: 0 0 0 1.5px rgba(255,255,255,1), 0 1px 3px rgba(0,0,0,0.15);
+        }
+        .wvet-low { background: #059669; }
+        .wvet-mod { background: #ca8a04; }
+        .wvet-high { background: #ea580c; }
+        .wvet-sev { background: #dc2626; }
+
+        .ai-btn {
+            background: linear-gradient(135deg, #4f46e5 0%, #9333ea 100%);
+            color: white; border: none; padding: 12px 16px; border-radius: 14px; 
+            font-size: 13px; font-weight: 700; cursor: pointer; display: flex; 
+            align-items: center; justify-content: center; gap: 8px;
+            box-shadow: 0 4px 14px rgba(124, 58, 237, 0.35); width: 100%;
+            transition: transform 0.2s, opacity 0.2s;
+            margin-bottom: 8px; position: relative; overflow: hidden;
+        }
+        
+        /* NEW: Semi Bleed for 10px margin on each side */
+        .ai-btn.semi-bleed {
+            width: calc(100% + 20px);
+            margin-left: -10px;
+            margin-right: -10px;
+            border-radius: 14px;
+        }
+
+        .ai-btn:active { transform: scale(0.97); opacity: 0.9; }
+        .ai-btn.pest-btn { background: linear-gradient(135deg, #059669 0%, #0d9488 100%); box-shadow: 0 4px 14px rgba(13, 148, 136, 0.35); }
+        .ai-btn.doctor-btn { background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); box-shadow: 0 4px 14px rgba(217, 119, 6, 0.35); }
+        /* Reverted to standard Blue based on user request (same as Chinese name color #1d4ed8) */
+        .ai-btn.tools-btn { background: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%); box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); }
+        .ai-btn.radio-btn { background: linear-gradient(135deg, #f43f5e 0%, #be123c 100%); box-shadow: 0 4px 14px rgba(244, 63, 94, 0.35); }
+
+        .ai-btn-progress { position: absolute; bottom: 0; left: 0; height: 4px; background: rgba(255,255,255,0.4); width: 0; transition: width 0.75s linear; pointer-events: none; }
+        .ai-loading-spinner { width: 14px; height: 14px; border: 2.5px solid rgba(255,255,255,0.3); border-top-color: #fff; border-radius: 50%; display: none; animation: spin 0.8s linear infinite; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        .ai-result-box {
+            background: #fff1f2; 
+            border: 2px solid #e11d48; 
+            border-radius: 16px; padding: 16px 20px; margin: 12px 0 24px;
+            font-size: 20px; 
+            color: #0f172a; 
+            line-height: 1.4; white-space: pre-wrap; display: none;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08); 
+            font-weight: 600; 
+            text-align: left; user-select: text; -webkit-user-select: text; position: relative;
+            /* Explicitly added to prevent font rendering artifacts in html2canvas */
+            letter-spacing: normal; 
+        }
+        .ai-result-box.pest-result { 
+            background: #ecfdf5; 
+            border: 2px solid #059669; 
+            color: #0f172a; 
+        }
+        .ai-result-box.doctor-result { 
+            background: #fffbeb; 
+            border: 2px solid #d97706; 
+            color: #0f172a; 
+        }
+        
+        .action-full-btn {
+            width: 100%; padding: 10px; border-radius: 12px; font-size: 12px; font-weight: 800;
+            display: none; align-items: center; justify-content: center; gap: 8px;
+            cursor: pointer; transition: all 0.2s; text-transform: uppercase;
+            box-shadow: 0 1px 2px rgba(0,0,0,0.05); margin-top: 8px; margin-bottom: 16px;
+        }
+        .action-full-btn:active { transform: scale(0.98); }
+        .action-full-btn.playing { animation: pulse-bg 1.5s infinite; }
+        
+        @keyframes pulse-bg { 0% { opacity: 1; } 50% { opacity: 0.7; } 100% { opacity: 1; } }
+
+        .doctor-preview-img { width: 100%; height: 180px; object-fit: cover; border-radius: 8px; margin-bottom: 12px; display: block; border: 2px solid #fcd34d; }
+        
+        /* AI Planner & Chat Styles */
+        .ai-tools-panel { display: none; background: #f8fafc; padding: 16px; border-radius: 16px; margin-bottom: 20px; border: 1px solid #e2e8f0; box-shadow: inset 0 2px 6px rgba(0,0,0,0.02); }
+        .plan-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; margin-top: 12px; }
+        .plan-day { background: white; padding: 10px 6px; border-radius: 10px; text-align: center; border: 1px solid #e2e8f0; box-shadow: 0 2px 4px rgba(0,0,0,0.03); display: flex; flex-direction: column; gap: 4px; }
+        .plan-date { font-size: 11px; font-weight: 900; color: #64748b; margin-bottom: 4px; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; }
+        .plan-badge { padding: 4px 2px; border-radius: 6px; font-size: 9px; font-weight: 800; text-transform: uppercase; line-height: 1.1; }
+        .badge-safe { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0; }
+        .badge-risk { background: #fef9c3; color: #a16207; border: 1px solid #fde047; }
+        .badge-unsafe { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca; }
+        .chat-ui-group { display: flex; gap: 8px; margin-top: 16px; }
+        .chat-input { flex: 1; padding: 10px 12px; border: 1px solid #cbd5e1; border-radius: 10px; font-size: 14px; outline: none; transition: border-color 0.2s; }
+        .chat-input:focus { border-color: #2563eb; }
+        .chat-send-btn { width: 44px; background: #2563eb; color: white; border-radius: 10px; border: none; display: flex; align-items: center; justify-content: center; cursor: pointer; }
+        .chat-send-btn:active { background: #1d4ed8; }
+        .chat-response { margin-top: 12px; font-size: 13px; color: #334155; background: #ffffff; padding: 12px; border-radius: 10px; border: 1px solid #e2e8f0; line-height: 1.5; display: none; }
+        .section-divider { height: 1px; background: #e2e8f0; margin: 16px 0; }
+        
+        /* Agri-FM Styles */
+        .radio-player {
+            display: none; margin-top: 12px; margin-bottom: 12px;
+            background: #1e293b; border-radius: 16px; padding: 16px;
+            color: white; border: 1px solid #334155;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2);
+        }
+        .visualizer { display: flex; align-items: flex-end; gap: 3px; height: 16px; }
+        .v-bar { width: 4px; background: #4ade80; border-radius: 2px; animation: sound-wave 0.5s infinite; }
+        @keyframes sound-wave { 0% { height: 20%; opacity: 0.5; } 100% { height: 100%; opacity: 1; } }
+        .radio-status { font-size: 12px; font-weight: 600; color: #94a3b8; margin-top: 8px; display: flex; align-items: center; justify-content: space-between; }
+        
+        /* SOP Styles */
+        .sop-card {
+            background: #fdf4ff; border: 1px solid #f0abfc; border-radius: 12px; padding: 16px; margin-top: 12px; display: none;
+        }
+        /* Updated font-size to 20px to match .ai-result-box, increased gap and margin */
+        .sop-item { display: flex; align-items: flex-start; gap: 10px; margin-bottom: 12px; font-size: 20px; color: #86198f; font-weight: 600; line-height: 1.4; }
+        /* Increased checkbox size for better touch target and visual balance */
+        .sop-check { margin-top: 5px; width: 20px; height: 20px; accent-color: #c026d3; flex-shrink: 0; }
+
+        /* Modal Styles */
+        .w-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        .w-modal-card { background: white; width: 85%; max-width: 320px; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: modal-in 0.2s ease-out; }
+        @keyframes modal-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        .w-input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; font-size: 16px; outline: none; }
+        .w-input:focus { border-color: #2563eb; }
+        .w-btn-primary { width: 100%; padding: 12px; background: #2563eb; color: white; border-radius: 10px; font-weight: 700; margin-top: 8px; border: none; }
+        .w-btn-secondary { width: 100%; padding: 12px; background: transparent; color: #64748b; font-weight: 600; margin-top: 4px; border: none; }
+        
+        .recycle-bin-btn {
+            display: flex; align-items: center; justify-content: center; gap: 8px;
+            width: 100%; padding: 16px;
+            background: #f1f5f9; color: #475569;
+            font-size: 12px; font-weight: 800; text-transform: uppercase;
+            border: none; border-top: 1px solid #e2e8f0;
+        }
+
+        .tab-group { display: flex; gap: 4px; margin-bottom: 12px; background: #f1f5f9; padding: 4px; border-radius: 12px; }
+        .tab-btn { flex: 1; padding: 8px; border-radius: 8px; font-size: 11px; font-weight: 800; text-transform: uppercase; color: #64748b; text-align: center; transition: all 0.2s; }
+        .tab-btn.active { background: white; color: #1d4ed8; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+
+        @keyframes tap-hint {
+            0%, 100% { transform: translate(6px, 6px); }
+            50% { transform: translate(0, 0); }
+        }
+        .tap-animation { animation: tap-hint 1.5s ease-in-out infinite; }
+
+        /* Toast Notification */
+        .toast-notification {
+            position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(40px);
+            background: #000000; color: white; padding: 14px 28px; border-radius: 99px;
+            font-size: 14px; font-weight: 800; opacity: 0; pointer-events: none; 
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 3000; display: flex; align-items: center; gap: 12px; 
+            box-shadow: 0 12px 30px rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.15);
+            white-space: nowrap;
+        }
+        .toast-notification.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+    </style>
+</head>
+<body class="flex flex-col">
+
+    <!-- Toast UI -->
+    <div id="toast" class="toast-notification">
+        <div id="toast-icon" class="w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0">
+            <!-- Icon injected by JS -->
+        </div>
+        <span id="toast-msg">Notification</span>
+    </div>
+
+    <header class="bg-white border-b-2 border-slate-100 flex items-center justify-between px-6 shrink-0 z-50">
+        <div class="flex items-center gap-4">
+            <div onclick="window.openAddModal()" class="w-12 h-12 bg-blue-700 rounded-2xl flex items-center justify-center shadow-lg active:scale-95 transition-transform cursor-pointer relative group shrink-0">
+                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="3.5"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+                <div class="absolute -bottom-1 -right-1 w-5 h-5 bg-yellow-400 rounded-full flex items-center justify-center border-2 border-white shadow-sm">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="#ca8a04" stroke-width="4"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+                </div>
+            </div>
+            <div class="min-w-0">
+                <h1 onclick="window.openSearch()" class="text-xl font-black tracking-tighter leading-none text-slate-900 truncate cursor-pointer active:opacity-60 transition-opacity select-none">农友天气 <span class="text-blue-700">WeatherNext</span> <span class="text-[10px] text-slate-300 align-top ml-0.5">🔍</span></h1>
+                <!-- Added flex-wrap to prevent items being cut off -->
+                <div class="flex flex-wrap items-center gap-1 mt-2">
+                    <span id="pill-seamless" onclick="window.setModel('best_match')" class="model-pill">AI Model</span>
+                    <span id="pill-ecmwf" onclick="window.setModel('ecmwf_ifs025')" class="model-pill active">ECMWF</span>
+                    
+                    <div class="flex items-center ml-0.5">
+                        <div id="ui-term-countdown" class="text-xs font-black text-slate-400 uppercase tracking-tighter">--</div>
+                        <div id="data-status" class="w-1.5 h-1.5 rounded-full bg-transparent ml-1 opacity-0 transition-opacity duration-300"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex flex-col justify-center items-end h-full pb-1 shrink-0 ml-2">
+            <div id="ui-greg-date" class="text-xl font-black text-slate-900 leading-none whitespace-nowrap text-right tracking-tighter mb-3">--/--</div>
+            <div id="ui-time" class="text-base font-black text-blue-700 leading-none whitespace-nowrap text-right tracking-tighter">--</div>
+        </div>
+    </header>
+
+    <main style="height: calc(100vh - 215px - var(--safe-top) - var(--safe-bottom)); display: flex;" class="bg-slate-100">
+        <div class="w-1/2 bg-white border-r-2 border-slate-200 flex flex-col overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">西马 West</div>
+            <div id="list-west" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
+        </div>
+        <div class="w-1/2 bg-white flex flex-col overflow-hidden">
+            <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">东马 East</div>
+            <div id="list-east" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
+        </div>
+    </main>
+
+    <footer class="bg-white border-t-2 border-slate-100 px-10 flex flex-col justify-center shrink-0 z-50 shadow-inner">
+        <div class="flex justify-center mb-2">
+            <span id="ui-proj-time" class="text-blue-700 font-black text-xs tabular-nums uppercase tracking-widest">--:-- --</span>
+        </div>
+        <input type="range" id="timeline" min="0" max="24" value="0" step="1" class="w-full">
+        <div class="flex justify-between mt-3 text-[10px] font-black uppercase tracking-widest items-center">
+            <span class="text-slate-400 font-black">NOW</span>
+            <span id="ui-date-display" class="text-[10px] font-black text-slate-400 tabular-nums tracking-widest uppercase">--/-- ---</span>
+            <span class="font-black text-slate-400">+24H</span>
+        </div>
+    </footer>
+
+    <!-- Forecast Modal -->
+    <div id="modal" class="fixed inset-0 bg-white z-[1000] hidden flex flex-col overflow-hidden">
+        <div class="flex-1 bg-white relative" id="m-grid-viewport">
+            <div id="infographic-report">
+                <!-- Content generated dynamically -->
+            </div>
+        </div>
+        <div class="p-5 bg-slate-50 border-t flex items-center justify-between px-8 shrink-0 z-[1001] shadow-xl">
+            <button onclick="window.closeModal()" class="back-btn shadow-md border border-slate-200">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M6 12h12"/></svg>
+            </button>
+            <button id="dl-btn" onclick="window.downloadInfographic(event)" class="back-btn shadow-md border border-slate-200 !bg-transparent active:scale-95 transition-transform">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <div style="height: var(--safe-bottom);"></div>
+        </div>
+    </div>
+
+    <!-- Edit Name Modal -->
+    <div id="edit-modal" class="w-modal-overlay hidden">
+        <div class="w-modal-card relative">
+            <button onclick="document.getElementById('edit-modal').classList.add('hidden')" class="absolute top-3 right-3 p-2 text-slate-300 active:text-slate-500 transition-colors">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h3 class="text-lg font-black text-slate-900 mb-6">Edit 改名</h3>
+            <input type="text" id="edit-name-en" class="w-input" placeholder="English Name">
+            <input type="text" id="edit-name-zh" class="w-input" placeholder="中文名字">
+            <button onclick="window.saveNameEdit()" class="w-btn-primary mt-2 flex items-center justify-center">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Search Modal (Restored) -->
+    <div id="search-modal" class="w-modal-overlay hidden" style="z-index: 7000;">
+        <div class="w-modal-card !p-0 overflow-hidden flex flex-col max-h-[70vh] !w-[90%] !max-w-[360px]">
+            <div class="p-4 border-b border-slate-100 flex items-center gap-3 bg-slate-50/50">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#94a3b8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+                <input type="text" id="search-input" class="flex-1 text-base font-bold text-slate-700 outline-none placeholder:font-normal bg-transparent" placeholder="Search location..." oninput="window.handleSearchInput()">
+                <button onclick="document.getElementById('search-modal').classList.add('hidden')" class="p-2 text-slate-300 active:text-slate-500">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div id="search-results" class="flex-1 overflow-y-auto no-scrollbar p-2 bg-white">
+                <!-- Results injected here -->
+            </div>
+        </div>
+    </div>
+
+    <!-- API Key Modal (New) -->
+    <div id="api-key-modal" class="w-modal-overlay hidden" style="z-index: 6000;">
+        <div class="w-modal-card relative">
+             <button onclick="window.cancelApiKey()" class="absolute top-3 right-3 p-2 text-slate-300 active:text-slate-500 transition-colors">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h3 class="text-lg font-black text-slate-900 mb-2">API Key</h3>
+            <p class="text-xs text-slate-500 mb-4">Paste your Gemini API Key here to enable AI features.</p>
+            <input type="text" id="api-key-input" class="w-input" placeholder="AIzaSy..." onkeydown="if(event.key==='Enter') window.submitApiKey()">
+            <button onclick="window.submitApiKey()" class="w-btn-primary mt-2 flex items-center justify-center">
+                <span class="mr-2">Save Key</span>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+            </button>
+        </div>
+    </div>
+    
+    <!-- Add Location Modal -->
+    <div id="add-loc-modal" class="w-modal-overlay hidden">
+        <div class="w-modal-card relative !p-5 !max-h-[85vh] !flex !flex-col !overflow-hidden">
+            <button onclick="document.getElementById('add-loc-modal').classList.add('hidden')" class="absolute top-3 right-3 p-2 text-slate-300 active:text-slate-500 transition-colors z-10">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+            </button>
+            <h3 class="text-lg font-black text-slate-900 mb-1 shrink-0">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round" class="text-blue-700"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+            </h3>
+            <p class="text-xs text-slate-400 mb-3 shrink-0">Add your own farm spot / 添加您的地点</p>
+            
+            <div class="tab-group shrink-0">
+                <div id="tab-manual" class="tab-btn active flex items-center justify-center !py-3" onclick="window.switchAddTab('manual')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M12 20h9"></path><path d="M16.5 3.5a2.121 2.121 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"></path>
+                    </svg>
+                </div>
+                <div id="tab-scan" class="tab-btn flex items-center justify-center !py-3" onclick="window.switchAddTab('scan')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"></path><circle cx="12" cy="13" r="4"></circle></svg>
+                </div>
+                <div id="tab-recycle" class="tab-btn flex items-center justify-center !py-3 relative" onclick="window.switchAddTab('recycle')">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path><line x1="10" y1="11" x2="10" y2="17"></line><line x1="14" y1="11" x2="14" y2="17"></line></svg>
+                    <span id="tab-bin-count" class="hidden absolute top-1 right-3 min-w-[14px] h-[14px] bg-red-500 text-white text-[8px] flex items-center justify-center rounded-full px-0.5">0</span>
+                </div>
+            </div>
+
+            <!-- Content Container -->
+            <div class="relative overflow-hidden h-[220px]">
+                
+                <div id="view-manual" class="block h-full overflow-y-auto no-scrollbar pt-1">
+                    <input type="text" id="add-en" class="w-input text-sm" placeholder="Location Name (English)">
+                    <input type="text" id="add-zh" class="w-input text-sm" placeholder="地点名称 (中文)">
+                    <div class="flex gap-2">
+                        <input type="number" id="add-lat" class="w-input text-sm" placeholder="Lat 纬度" step="0.0001">
+                        <input type="number" id="add-lng" class="w-input text-sm" placeholder="Lng 经度" step="0.0001">
+                    </div>
+                </div>
+
+                <div id="view-scan" class="hidden h-full overflow-y-auto no-scrollbar py-2">
+                    <input type="file" id="scan-input" accept="image/*" class="hidden" onchange="window.handlePhotoScan(event)">
+                    <div onclick="document.getElementById('scan-input').click()" class="border-2 border-dashed border-slate-300 rounded-xl p-6 cursor-pointer active:bg-slate-50 mb-2 h-[140px] flex flex-col items-center justify-center">
+                        <svg class="mx-auto text-slate-300 mb-2" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></svg>
+                        <div class="text-xs font-bold text-slate-500 text-center">Upload Photo of Compass/Map<br>上传指南针或地图照片</div>
+                    </div>
+                    <div id="scan-result" class="text-xs text-slate-600 font-medium h-6 text-center"></div>
+                </div>
+
+                <div id="view-recycle" class="hidden h-full flex flex-col overflow-hidden">
+                    <div class="text-[10px] text-slate-400 font-bold uppercase tracking-widest text-center mb-2 mt-1 shrink-0">Deleted Items</div>
+                    <div id="recycle-list-integrated" class="flex-1 overflow-y-auto no-scrollbar border border-slate-100 rounded-lg">
+                        <!-- List populated by JS -->
+                    </div>
+                </div>
+
+            </div>
+
+            <button onclick="window.saveCustomLocation()" type="button" class="w-btn-primary mt-3 flex items-center justify-center !py-3 !h-auto shrink-0 shadow-md shadow-blue-200" id="btn-save-loc">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            </button>
+        </div>
+    </div>
+
+    <!-- Generic Confirm Modal -->
+    <div id="confirm-modal" class="w-modal-overlay hidden" style="z-index: 5000;">
+        <div class="w-modal-card">
+            <h3 class="text-lg font-black text-slate-900 mb-2">Confirm</h3>
+            <p id="confirm-msg" class="text-sm text-slate-600 mb-6 whitespace-pre-line font-medium"></p>
+            <div class="flex gap-4 mt-4">
+                <button onclick="window.closeConfirm(false)" class="flex-1 h-12 flex items-center justify-center rounded-2xl bg-slate-100 text-slate-400 hover:bg-slate-200 transition-colors">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+                <button onclick="window.closeConfirm(true)" class="flex-1 h-12 flex items-center justify-center rounded-2xl bg-black text-white shadow-lg shadow-slate-300 active:scale-95 transition-transform">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, signInWithCustomToken, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, doc, setDoc, onSnapshot } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+
+        const firebaseConfig = JSON.parse(__firebase_config);
+        const appId = typeof __app_id !== 'undefined' ? __app_id : 'wnext-ag-v41';
+        let apiKey = localStorage.getItem('wnext_v41_api_key') || ""; 
+
+        const WEATHER_CACHE_KEY = `wnext_v41_weather_store`;
+        const FAV_CACHE_KEY = `wnext_v41_favs_store`;
+        const HIDDEN_CACHE_KEY = `wnext_v41_hidden_store`;
+        const RENAME_CACHE_KEY = `wnext_v41_rename_store`;
+        const CUSTOM_CACHE_KEY = `wnext_v41_custom_store`;
+        const PURGED_CACHE_KEY = `wnext_v41_purged_store`; // NEW
+        const PREF_MODEL_KEY = `wnext_v41_pref_model_store`;
+        const PREF_CROPS_KEY = `wnext_v41_pref_crops_store`;
+        const PREF_AI_KEY = `wnext_v41_ai_pref_map_v2`;
+
+        const AI_LABELS = ["", "English Briefing", "中文 农事简报", "Bahasa Ringkasan", "தமிழ் சுருக்கம்", "မြန်မာ အကျဉ်းချုပ်"];
+        let locationAiLangs = {}; 
+        let aiLongPressTimer = null;
+        let aiIsLongPress = false;
+
+        const STABLE_LOCATIONS = [
+            { id: 'kk', en: "Kuala Krai", zh: "瓜拉吉赖", lat: 5.5321, lng: 102.2014, t: 26.5, p: 88, em: false },
+            { id: 'cp', en: "Kampung Chapu", zh: "甘榜查布", lat: 5.0747, lng: 102.9197, t: 26.2, p: 82, em: false },
+            { id: 'lo', en: "Lojing", zh: "罗京高原", lat: 4.6366, lng: 101.4010, t: 18.4, p: 15, em: false },
+            { id: 'cd', en: "Chenderiang", zh: "积莪营", lat: 4.2667, lng: 101.2333, t: 29.1, p: 42, em: false },
+            { id: 'tm', en: "Tanjung Malim", zh: "丹绒马林", lat: 3.6842, lng: 101.5211, t: 30.2, p: 55, em: false },
+            { id: 'sl', en: "Sungai Lembing", zh: "林明", lat: 3.9167, lng: 103.0333, t: 26.8, p: 88, em: false }, 
+            { id: 'bj', en: "Benta Jerkoh", zh: "日利谷", lat: 3.9833, lng: 102.0167, t: 27.8, p: 65, em: false },
+            { id: 'kt', en: "Kampung Temau", zh: "甘榜德茂", lat: 3.9500, lng: 101.9000, t: 27.5, p: 60, em: false },
+            { id: 'cr', en: "Cheroh", zh: "积罗", lat: 3.8833, lng: 101.8167, t: 27.2, p: 75, em: false },
+            { id: 'kg', en: "Kg. Gali", zh: "甘榜嘉力", lat: 3.8500, lng: 101.8667, t: 27.9, p: 68, em: false },
+            { id: 'ug', en: "Ulu Gali", zh: "乌鲁嘉力", lat: 3.8667, lng: 101.8500, t: 27.7, p: 66, em: false },
+            { id: 'sr_kg', en: "Kg. Sg. Ruan", zh: "甘榜双溪兰", lat: 3.8217, lng: 102.0300, t: 27.4, p: 72, em: false },
+            { id: 'sr_town', en: "Sg. Ruan", zh: "双溪兰", lat: 3.8217, lng: 102.0467, t: 27.4, p: 71, em: false },
+            { id: 'sk_kg', en: "Kg. Sg. Klau", zh: "甘榜双溪吉流", lat: 3.7547, lng: 102.0100, t: 27.3, p: 70, em: false },
+            { id: 'sk_town', en: "Sg. Klau", zh: "双溪吉流", lat: 3.7547, lng: 102.0197, t: 27.3, p: 70, em: false },
+            { id: 'tras', en: "Tras", zh: "都赖", lat: 3.7333, lng: 101.8333, t: 27.1, p: 74, em: false },
+            { id: 'bsp', en: "Borneo Spring", zh: "婆罗清泉", lat: 3.6500, lng: 101.8833, t: 27.8, p: 32, em: false },
+            { id: 'kl', en: "Kampung Lebu", zh: "甘榜勒布", lat: 3.6000, lng: 101.8667, t: 26.8, p: 62, em: false },
+            { id: 'b_agro', en: "Bentong Valley Agro Park", zh: "文冬山寨谷", lat: 3.5500, lng: 101.8500, t: 26.5, p: 58, em: false },
+            { id: 'wv', en: "Waterway Villa", zh: "水道别墅", lat: 3.5333, lng: 101.8333, t: 26.1, p: 62, em: false },
+            { id: 'bu', en: "Bentong Utara", zh: "文冬北区", lat: 3.5222, lng: 101.9083, t: 27.2, p: 50, em: false },
+            { id: 'bbdo', en: "Bentong Bukit D.O", zh: "文冬D.O山", lat: 3.5167, lng: 101.9167, t: 27.1, p: 52, em: false },
+            { id: 'bs', en: "Bentong Selatan", zh: "文冬南区", lat: 3.5111, lng: 101.9167, t: 27.3, p: 48, em: false },
+            { id: 'bkr', en: "Bentong Kuala Repas", zh: "文冬兵营", lat: 3.5000, lng: 101.9333, t: 26.6, p: 64, em: false },
+            { id: 'kben', en: "Kg. Benus", zh: "甘榜贝努斯", lat: 3.4833, lng: 101.9500, t: 26.7, p: 60, em: false },
+            { id: 'bhf', en: "Bentong Happy Farm", zh: "文冬农家乐", lat: 3.4667, lng: 101.9667, t: 26.4, p: 66, em: false },
+            { id: 'tval', en: "The Valley", zh: "加叻幽谷", lat: 3.4250, lng: 101.9833, t: 27.1, p: 55, em: false },
+            { id: 'ksd', en: "Kg. Sungai Dua", zh: "双溪都亚", lat: 3.4167, lng: 102.0167, t: 27.6, p: 35, em: false },
+            { id: 'ksd_jm', en: "Karak Sungai Dua", zh: "建名的芭", lat: 3.45389, lng: 102.03083, t: 27.6, p: 35, em: false },
+            { id: 'rin', en: "100% Organic Duri Rin", zh: "山本綾有机農场", lat: 3.45257, lng: 101.99602, t: 27.5, p: 40, em: false },
+            { id: 'sr_jp', en: "SG. RUAN Jerry Poon", zh: "", lat: 3.79194, lng: 101.94278, t: 27.5, p: 40, em: false },
+            { id: 'jamb', en: "Jambu Rias", zh: "Jambu Rias", lat: 3.4500, lng: 102.0833, t: 28.1, p: 39, em: false },
+            { id: 'ket', en: "Kampung Ketam", zh: "甘榜吉胆", lat: 3.4667, lng: 102.1333, t: 28.5, p: 40, em: false },
+            { id: 'lan', en: "Lanchang", zh: "联增", lat: 3.4333, lng: 102.2167, t: 28.8, p: 38, em: false },
+            { id: 'lan2', en: "Lanchang 2", zh: "联增 2", lat: 3.4333, lng: 102.2168, t: 28.8, p: 38, em: false },
+            { id: 'ment', en: "Mentakab", zh: "文德甲", lat: 3.4833, lng: 102.3500, t: 29.2, p: 35, em: false },
+            { id: 'kbel', en: "Kampung Belengu", zh: "甘榜柏伦古", lat: 3.4500, lng: 102.4000, t: 28.4, p: 41, em: false },
+            { id: 'kgan', en: "Kampung Gantok", zh: "甘榜甘督", lat: 3.4333, lng: 102.4333, t: 28.2, p: 44, em: false },
+            { id: 'ktro', en: "Kg. Troh", zh: "甘榜特罗", lat: 3.4167, lng: 102.4500, t: 28.2, p: 42, em: false },
+            { id: 'dra', en: "Draha", zh: "Draha", lat: 3.4000, lng: 102.4833, t: 28.3, p: 43, em: false },
+            { id: 'emp', en: "Empresa", zh: "Empresa", lat: 3.3833, lng: 102.5000, t: 28.4, p: 40, em: false },
+            { id: 'twin', en: "Twins", zh: "双子园", lat: 3.3667, lng: 102.5167, t: 28.5, p: 39, em: false },
+            { id: 'kema', en: "Kemasul", zh: "甘马梳", lat: 3.3333, lng: 102.4667, t: 28.2, p: 40, em: false },
+            { id: 'mengk', en: "Mengkarak", zh: "明加叻", lat: 3.3167, lng: 102.3833, t: 29.1, p: 34, em: false },
+            { id: 'tria', en: "Triang", zh: "直凉", lat: 3.3167, lng: 102.4167, t: 29.4, p: 33, em: false },
+            { id: 'plan', en: "Paya Lang", zh: "巴也浪", lat: 3.2833, lng: 102.4333, t: 29.1, p: 35, em: false },
+            { id: 'mengku', en: "Mengkuang", zh: "明光", lat: 3.2500, lng: 102.4500, t: 28.7, p: 37, em: false },
+            { id: 'kema2', en: "Kemayan", zh: "金马扬", lat: 3.2167, lng: 102.4333, t: 29.3, p: 32, em: false },
+            { id: 'srui', en: "Sungai Rui", zh: "双溪镭", lat: 3.1833, lng: 102.4000, t: 28.5, p: 39, em: false },
+            { id: 'bmendi', en: "Bukit Mendi", zh: "武吉文迪", lat: 3.1667, lng: 102.3833, t: 28.8, p: 36, em: false },
+            { id: 'chem', en: "Chemomoi", zh: "芝摩美", lat: 3.1333, lng: 102.3667, t: 28.6, p: 37, em: false },
+            { id: 'manc', en: "Manchis", zh: "文积", lat: 3.1000, lng: 102.3500, t: 28.3, p: 41, em: false },
+            { id: 'dur', en: "Durian Tipus", zh: "榴莲知贝", lat: 3.0667, lng: 102.3167, t: 28.4, p: 38, em: false },
+            { id: 'jerantut', en: "Jerantut", zh: "而连突", lat: 3.87472, lng: 102.34472, t: 28.5, p: 40, em: false },
+            { id: 'mantin', en: "Mantin", zh: "文丁", lat: 2.8250, lng: 101.8917, t: 29.8, p: 38, em: false },
+            { id: 'manchap', en: "Machap Baru", zh: "曼恰巴鲁", lat: 2.3833, lng: 102.3333, t: 29.5, p: 20, em: false },
+            { id: 'labis', en: "Labis", zh: "拉美士", lat: 2.3833, lng: 103.0167, t: 29.1, p: 18, em: false },
+            { id: 'keni', en: "Keningau", zh: "根地咬", lat: 5.3333, lng: 116.1667, t: 27.8, p: 32, em: true },
+            { id: 'sibi', en: "Sibintek", zh: "西宾德", lat: 2.1667, lng: 111.8333, t: 27.2, p: 88, em: true },
+            { id: 'lubo', en: "Lubok Palaei", zh: "鲁柏巴莱", lat: 1.0500, lng: 111.8333, t: 27.1, p: 85, em: true },
+            { id: 'kion', en: "Kionsom", zh: "建山", lat: 5.99417, lng: 116.18222, t: 27.5, p: 45, em: true }
+        ];
+
+        const CROP_TYPES = [
+            { id: 'durian', label: '🌳 DURIAN', zh: '榴莲/果树', ms: '🌳 DURIAN', ta: '🌳 துரியன்', my: '🌳 ဒူးရင်း' },
+            { id: 'rice', label: '🌾 RICE/VEG', zh: '稻田/蔬菜', ms: '🌾 PADI/SAYUR', ta: '🌾 நெல்/காய்', my: '🌾 စပါး/ဟင်းသီးဟင်းရွက်' },
+            { id: 'palm', label: '🌴 OIL PALM', zh: '油棕', ms: '🌴 SAWIT', ta: '🌴 எண்ணெய் பனை', my: '🌴 ဆီအုန်း' }
+        ];
+
+        // NEW: Translations Dictionary
+        // Added keys: spray, fert, safe, risk, unsafe for Work Plan localization
+        const TRANS = {
+            en: { brief: "✨ Smart Briefing", pest: "🦠 Pest & Disease Risk Analysis", tools: "✨ Ask AI & Plan", irrig: "💧 Smart Irrigation Calc", harvest: "✨ Harvest Estimator", soil: "✨ Soil & Fert Advisor", plan: "✨ Generate 3-Day Work Plan", sop: "✨ Tomorrow's SOP Checklist", yield: "✨ Yield & Market Insight", chat: "Ask Weather AI", placeholder: "e.g. Can I prune today?", calc: "Calculate", est: "Estimate", rec: "Get Recommendation", send: "Send", consult: "Consulting AI...", spray: "SPRAY", fert: "FERT", safe: "Safe", risk: "Risky", unsafe: "Avoid", action: "Action Plan" },
+            ms: { brief: "✨ Ringkasan Pintar", pest: "🦠 Analisis Risiko Perosak & Penyakit", tools: "✨ Tanya AI & Rancang", irrig: "💧 Kalkulator Irigasi", harvest: "✨ Anggaran Tuai", soil: "✨ Penasihat Tanah & Baja", plan: "✨ Jana Pelan Kerja 3-Hari", sop: "✨ Senarai Semak SOP Esok", yield: "✨ Wawasan Hasil & Pasaran", chat: "Tanya AI Cuaca", placeholder: "Cth: Bolehkah mencantas hari ini?", calc: "Kira", est: "Anggar", rec: "Dapatkan Syor", send: "Hantar", consult: "Merujuk AI...", spray: "SEMBUR", fert: "BAJA", safe: "Sesuai", risk: "Risiko", unsafe: "Elak", action: "Pelan Tindakan" },
+            zh: { brief: "✨ 智能农事简报", pest: "🦠 病虫害风险分析", tools: "✨ AI 策划与咨询", irrig: "💧 智能灌溉计算", harvest: "✨ 收成预估", soil: "✨ 土壤与施肥顾问", plan: "✨ 生成三天工作计划", sop: "✨ 明日 SOP 检查表", yield: "✨ 产量与市场分析", chat: "询问天气 AI", placeholder: "例如：今天适合修剪吗？", calc: "计算", est: "预估", rec: "获取建议", send: "发送", consult: "正在咨询 AI...", spray: "喷药", fert: "施肥", safe: "适宜", risk: "风险", unsafe: "不宜", action: "行动计划" },
+            ta: { brief: "✨ விவேக விளக்கம்", pest: "🦠 பூச்சி அபாய ஆய்வு", tools: "✨ AI திட்டம் & கேள்வி", irrig: "💧 நீர்ப்பாசனக் கணக்கீடு", harvest: "✨ அறுவடை மதிப்பீடு", soil: "✨ மண் & உரம் ஆலோசகர்", plan: "✨ 3-நாள் வேலைத் திட்டம்", sop: "✨ நாளைய SOP பட்டியல்", yield: "✨ விளைச்சல் & சந்தை", chat: "வானிலை AI-யிடம் கேளுங்கள்", placeholder: "எ.கா: இன்று கத்தரிக்கலாமா?", calc: "கணக்கிடு", est: "மதிப்பிடு", rec: "பரிந்துரை பெறு", send: "அனுப்பு", consult: "AI-யை அணுகுகிறது...", spray: "தெளி", fert: "உரம்", safe: "ஏற்றது", risk: "கவனம்", unsafe: "தவிர்", action: "செயல் திட்டம்" },
+            my: { brief: "✨ စမတ် အကျဉ်းချုပ်", pest: "🦠 ပိုးမွှားအန္တရာယ်", tools: "✨ AI မေးရန် & စီစဉ်ရန်", irrig: "💧 ရေသွင်း တွက်ချက်မှု", harvest: "✨ ရိတ်သိမ်းချိန် ခန့်မှန်း", soil: "✨ မြေဆီလွှာ အကြံပေး", plan: "✨ ၃-ရက် လုပ်ငန်းစဉ်", sop: "✨ မနက်ဖြန် SOP စာရင်း", yield: "✨ အထွက်နှုန်း & ဈေးကွက်", chat: "မိုးလေဝသ AI မေးရန်", placeholder: "ဥပမာ - ဒီနေ့ ကိုင်းဖြတ်လို့ရမလား?", calc: "တွက်ချက်ပါ", est: "ခန့်မှန်းပါ", rec: "အကြံပြုချက်ရယူပါ", send: "ပို့ပါ", consult: "AI ကို မေးမြန်းနေသည်...", spray: "ဆေးဖြန်း", fert: "မြေသြဇာ", safe: "ကောင်း", risk: "သတိ", unsafe: "ရှောင်", action: "လုပ်ဆောင်ရန်" }
+        };
+
+        const LANG_CODES = ['en', 'ms', 'zh', 'ta', 'my'];
+        // Updated to use Native scripts for Tamil (தமிழ்) and Burmese (မြန်မာ)
+        const LANG_LABELS = { en: "EN", ms: "BM", zh: "中文", ta: "தமிழ்", my: "မြန်မာ" };
+        
+        // NEW: Full language names for AI Prompts to prevent ambiguity (e.g. 'my' interpreted as 'Malay' or 'My')
+        const LANG_NAMES = { 
+            en: "English", 
+            ms: "Malay", 
+            zh: "Chinese (Simplified)", 
+            ta: "Tamil", 
+            my: "Burmese" 
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        let user = null, weatherData = {}, detailData = {}, favoriteIds = [], hiddenIds = [], renamedLocations = {}, customLocations = [], purgedIds = [];
+        let activeModel = 'ecmwf_ifs025', currentDisplayedIds = [];
+        let locationCrops = {}; 
+        let landingAbortController = null;
+        
+        const DAYS_OF_WEEK = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+        let scale = 1, posX = 0, posY = 0, lastTouchX = 0, lastTouchY = 0, initialPinchDist = 0, lastTapTime = 0;
+        let editingId = null;
+        
+        // --- NEW API Key Modal Logic ---
+        let apiKeyResolve = null;
+
+        window.requestApiKey = () => {
+            document.getElementById('api-key-modal').classList.remove('hidden');
+            const input = document.getElementById('api-key-input');
+            input.value = apiKey; // Pre-fill existing if any
+            input.focus();
+            return new Promise((resolve) => {
+                apiKeyResolve = resolve;
+            });
+        };
+
+        window.submitApiKey = () => {
+            const input = document.getElementById('api-key-input');
+            const newKey = input.value.trim();
+            if (newKey) {
+                apiKey = newKey;
+                localStorage.setItem('wnext_v41_api_key', newKey);
+                document.getElementById('api-key-modal').classList.add('hidden');
+                if (apiKeyResolve) { apiKeyResolve(newKey); apiKeyResolve = null; }
+            } else {
+                window.showToast("Key cannot be empty / 密钥不能为空", true);
+            }
+        };
+
+        window.cancelApiKey = () => {
+             document.getElementById('api-key-modal').classList.add('hidden');
+             if (apiKeyResolve) { apiKeyResolve(null); apiKeyResolve = null; }
+        };
+
+        // --- UPDATED HELPER FOR API CALLS WITH MODAL SUPPORT ---
+        async function fetchGemini(urlNoKey, payload) {
+            let key = apiKey || localStorage.getItem('wnext_v41_api_key') || "";
+            // Ensure URL doesn't end with & or ?
+            const sep = urlNoKey.includes('?') ? '&' : '?';
+            
+            try {
+                let res = await fetch(`${urlNoKey}${sep}key=${key}`, {
+                    method: 'POST', headers: {'Content-Type': 'application/json'},
+                    body: JSON.stringify(payload)
+                });
+
+                // If auth failed (400, 401, 403), request key via modal
+                if (!res.ok && (res.status === 400 || res.status === 401 || res.status === 403)) {
+                     const newKey = await window.requestApiKey();
+                     if(newKey) {
+                         // Retry once with new key
+                         res = await fetch(`${urlNoKey}${sep}key=${newKey}`, {
+                            method: 'POST', headers: {'Content-Type': 'application/json'},
+                            body: JSON.stringify(payload)
+                        });
+                     }
+                }
+                return res;
+            } catch(e) {
+                console.error("Fetch Gemini Error:", e);
+                throw e;
+            }
+        }
+
+        function setStatus(text, statusType = 'normal') {
+            const el = document.getElementById('data-status');
+            if (el) { 
+                if (statusType === true) statusType = 'ready';
+                if (statusType === false) statusType = 'normal';
+
+                if (statusType === 'error') {
+                    el.className = "w-1.5 h-1.5 rounded-full bg-red-600 ml-1 shadow-sm shadow-red-200 transition-opacity duration-300";
+                    el.style.opacity = '1';
+                } else {
+                    el.className = "w-1.5 h-1.5 rounded-full bg-transparent ml-1 transition-opacity duration-300";
+                    el.style.opacity = '0';
+                }
+                el.innerText = '';
+            }
+        }
+
+        // Helper to get ALL valid locations (Static + Custom)
+        function getAllLocations() {
+            const stable = STABLE_LOCATIONS.filter(l => !purgedIds.includes(l.id));
+            // Ensure customLocations is always an array
+            const custom = Array.isArray(customLocations) ? customLocations : [];
+            
+            // MERGE & ENFORCE GEOGRAPHY:
+            // Instead of relying on the stored 'em' flag, we recalculate it based on Longitude.
+            // Longitude > 108.0 puts it in East Malaysia (Borneo), otherwise West (Peninsular).
+            return [...stable, ...custom].map(l => ({
+                ...l,
+                em: l.lng > 108.0
+            }));
+        }
+
+        async function initApp() {
+            try {
+                const cachedWeather = localStorage.getItem(WEATHER_CACHE_KEY);
+                const cachedFavs = localStorage.getItem(FAV_CACHE_KEY);
+                const cachedHidden = localStorage.getItem(HIDDEN_CACHE_KEY);
+                const cachedRenamed = localStorage.getItem(RENAME_CACHE_KEY);
+                const cachedCustom = localStorage.getItem(CUSTOM_CACHE_KEY);
+                const cachedPurged = localStorage.getItem(PURGED_CACHE_KEY);
+                const cachedModel = localStorage.getItem(PREF_MODEL_KEY);
+                const cachedCrops = localStorage.getItem(PREF_CROPS_KEY);
+                const cachedAiLangs = localStorage.getItem(PREF_AI_KEY);
+                
+                if (cachedWeather) try { weatherData = JSON.parse(cachedWeather); } catch(e) { weatherData = {}; }
+                if (cachedFavs) try { favoriteIds = Array.from(new Set(JSON.parse(cachedFavs))); } catch(e) { favoriteIds = []; }
+                if (cachedHidden) try { hiddenIds = Array.from(new Set(JSON.parse(cachedHidden))); } catch(e) { hiddenIds = []; }
+                if (cachedRenamed) try { renamedLocations = JSON.parse(cachedRenamed) || {}; } catch(e) { renamedLocations = {}; }
+                
+                if (cachedCustom) {
+                    try { customLocations = JSON.parse(cachedCustom) || []; } catch(e) { customLocations = []; }
+                } else {
+                    customLocations = [];
+                }
+
+                if (cachedPurged) try { purgedIds = JSON.parse(cachedPurged) || []; } catch(e) { purgedIds = []; }
+                if (cachedModel) activeModel = cachedModel;
+                if (cachedCrops) try { locationCrops = JSON.parse(cachedCrops); } catch(e) { locationCrops = {}; }
+                
+                // Load and normalize Lang prefs
+                if (cachedAiLangs) {
+                     try { 
+                         const parsed = JSON.parse(cachedAiLangs) || {};
+                         // Normalize old integer keys if any
+                         for(let k in parsed) {
+                             if(typeof parsed[k] === 'number') {
+                                 parsed[k] = LANG_CODES[(parsed[k] - 1) % 5] || 'zh';
+                             }
+                         }
+                         locationAiLangs = parsed;
+                     } catch(e) { locationAiLangs = {}; }
+                }
+                
+                const lw = document.getElementById('list-west');
+                const le = document.getElementById('list-east');
+                if(lw) lw.scrollTop = 0;
+                if(le) le.scrollTop = 0;
+
+                renderList(); updateLunarDate(); updateModelUI(); syncUI();
+                
+                try {
+                    if (typeof __initial_auth_token !== 'undefined' && __initial_auth_token) {
+                        await signInWithCustomToken(auth, __initial_auth_token);
+                    } else {
+                        await signInAnonymously(auth);
+                    }
+                } catch(err) {
+                    console.warn("Auth Fallback:", err);
+                    try { await signInAnonymously(auth); } catch(e) {}
+                }
+                
+            } catch (err) { console.error("Init Error:", err); }
+            initGestures();
+        }
+
+        // ... [Sync Functions] ...
+        function startSilentSync() {
+            if (!user) return;
+            const favDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'favorites', 'data');
+            onSnapshot(favDoc, (snap) => {
+                if (snap.exists()) {
+                    const d = snap.data();
+                    const cloudPurged = d.purged || [];
+                    const mergedPurged = new Set([...purgedIds, ...cloudPurged]);
+                    purgedIds = Array.from(mergedPurged);
+
+                    const cloudHidden = d.hidden || [];
+                    const mergedHidden = new Set([...hiddenIds, ...cloudHidden]);
+                    hiddenIds = Array.from(mergedHidden); 
+
+                    if(d.custom && Array.isArray(d.custom)) {
+                        const localMap = new Map(customLocations.map(c => [c.id, c]));
+                        d.custom.forEach(c => {
+                            if (!purgedIds.includes(c.id)) {
+                                localMap.set(c.id, c);
+                            }
+                        });
+                        customLocations = Array.from(localMap.values());
+                    }
+
+                    hiddenIds = hiddenIds.filter(id => getAllLocations().some(l => l.id === id));
+                    renamedLocations = d.renamed || {};
+
+                    const cloudFavs = d.ids || [];
+                    const mergedFavs = new Set([...favoriteIds, ...cloudFavs]);
+                    favoriteIds = Array.from(mergedFavs);
+                    
+                    if (d.model && (d.model === 'best_match' || d.model === 'ecmwf_ifs025')) {
+                         if (activeModel !== d.model) {
+                             activeModel = d.model;
+                             localStorage.setItem(PREF_MODEL_KEY, activeModel);
+                             updateModelUI();
+                             if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); 
+                             else fetchLandingWeather();
+                         }
+                    }
+
+                    if (d.aiLangs) {
+                        const parsed = d.aiLangs || {};
+                        // Normalize cloud data just in case
+                        for(let k in parsed) {
+                             if(typeof parsed[k] === 'number') {
+                                 parsed[k] = LANG_CODES[(parsed[k] - 1) % 5] || 'zh';
+                             }
+                        }
+                        locationAiLangs = parsed;
+                        localStorage.setItem(PREF_AI_KEY, JSON.stringify(locationAiLangs));
+                    }
+
+                    localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+                    localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
+                    localStorage.setItem(RENAME_CACHE_KEY, JSON.stringify(renamedLocations));
+                    localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
+                    localStorage.setItem(PURGED_CACHE_KEY, JSON.stringify(purgedIds));
+                    localStorage.setItem(PREF_MODEL_KEY, activeModel);
+                    
+                    renderList(); setStatus("Cloud Synced", true);
+                    
+                    if (
+                        customLocations.length > (d.custom?.length || 0) || 
+                        favoriteIds.length > (d.ids?.length || 0) ||
+                        purgedIds.length > (d.purged?.length || 0)
+                    ) {
+                        saveUserData();
+                    }
+
+                } else {
+                     saveUserData();
+                }
+            }, (err) => {
+                console.warn("Sync error:", err);
+                setStatus("Offline", 'error');
+            });
+            fetchLandingWeather();
+        }
+        
+        async function saveUserData() {
+            if(!user) return;
+            try {
+                const favDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'favorites', 'data');
+                await setDoc(favDoc, { 
+                    ids: favoriteIds, 
+                    hidden: hiddenIds, 
+                    renamed: renamedLocations, 
+                    custom: customLocations, 
+                    purged: purgedIds,
+                    model: activeModel,
+                    aiLangs: locationAiLangs
+                });
+            } catch(e) {
+                setStatus("Save Failed", 'error');
+            }
+        }
+
+        // ... [Term/Date Functions Retained] ...
+        function getSolarTerm(date) {
+            const termNames = ["小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"];
+            const termInfo = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758];
+            const y = date.getFullYear(), m = date.getMonth(), d = date.getDate(), idx = m * 2;
+            function termDate(year, n) { return new Date((31556925974.7 * (year - 1900) + termInfo[n] * 60000) + Date.UTC(1900, 0, 6, 2, 5)).getUTCDate(); }
+            const d1 = termDate(y, idx), d2 = termDate(y, idx + 1);
+            if (d < d1) return termNames[(idx - 1 + 24) % 24]; else if (d < d2) return termNames[idx]; else return termNames[idx + 1];
+        }
+
+        function updateSolarTermCountdown() {
+            const termNames = ["小寒", "大寒", "立春", "雨水", "惊蛰", "春分", "清明", "谷雨", "立夏", "小满", "芒种", "夏至", "小暑", "大暑", "立秋", "处暑", "白露", "秋分", "寒露", "霜降", "立冬", "小雪", "大雪", "冬至"];
+            const termInfo = [0, 21208, 42467, 63836, 85337, 107014, 128867, 150921, 173149, 195551, 218072, 240693, 263343, 285989, 308563, 331033, 353350, 375494, 397447, 419210, 440795, 462224, 483532, 504758];
+            const toMyMidnight = (date) => {
+                const myTime = new Date(date.getTime() + (8 * 60 * 60 * 1000));
+                myTime.setUTCHours(0,0,0,0);
+                return myTime;
+            };
+            const now = new Date();
+            const nowMy = toMyMidnight(now);
+            const y = now.getFullYear();
+            const getTermDateObj = (year, n) => new Date((31556925974.7 * (year - 1900) + termInfo[n] * 60000) + Date.UTC(1900, 0, 6, 2, 5));
+            let nextTermName = "", daysLeft = 0, found = false;
+            for (let i = 0; i < 24; i++) {
+                const d = getTermDateObj(y, i); const dMy = toMyMidnight(d);
+                if (dMy >= nowMy) { nextTermName = termNames[i]; daysLeft = Math.round((dMy - nowMy) / (1000 * 60 * 60 * 24)); found = true; break; }
+            }
+            if (!found) { const d = getTermDateObj(y + 1, 0); const dMy = toMyMidnight(d); nextTermName = termNames[0]; daysLeft = Math.round((dMy - nowMy) / (1000 * 60 * 60 * 24)); }
+            const el = document.getElementById('ui-term-countdown'); if (el) { if(daysLeft === 0) el.innerText = `今日 ${nextTermName}`; else el.innerText = `离 ${nextTermName} ${daysLeft}天`; }
+        }
+
+        function updateLunarDate() {
+            try {
+                updateSolarTermCountdown(); const d = new Date();
+                const gregEl = document.getElementById('ui-greg-date'); if (gregEl) gregEl.innerText = `${d.getDate()}/${d.getMonth() + 1}/${d.getFullYear()}`;
+                const formatter = new Intl.DateTimeFormat('zh-CN-u-ca-chinese', { day: 'numeric', month: 'numeric' });
+                const parts = formatter.formatToParts(d), mVal = parts.find(p => p.type === 'month').value, dVal = parts.find(p => p.type === 'day').value;
+                const m = parseInt(mVal), dy = parseInt(dVal);
+                const cnM = ["", "正月", "二月", "三月", "四月", "五月", "六月", "七月", "八月", "九月", "十月", "冬月", "腊月"];
+                const cnD = ["", "初一", "初二", "初三", "初四", "初五", "初六", "初七", "初八", "初九", "初十", "十一", "十二", "十三", "十四", "十五", "十六", "十七", "十八", "十九", "二十", "廿一", "廿二", "廿三", "廿四", "廿五", "廿六", "廿七", "廿八", "廿九", "三十"];
+                const str = `${cnM[m]||m+'月'}${cnD[dy]||dy+'日'} ${getSolarTerm(d)}`;
+                const el = document.getElementById('ui-time'); if (el) el.innerText = str;
+            } catch(e) { console.log("Lunar Date Error", e); }
+        }
+
+        // ... [Model & UI Functions Retained] ...
+        window.setModel = (model) => {
+            activeModel = model; localStorage.setItem(PREF_MODEL_KEY, activeModel); updateModelUI();
+            saveUserData();
+            if (landingAbortController) { landingAbortController.abort(); landingAbortController = null; }
+            if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); else fetchLandingWeather();
+        };
+
+        window.toggleModel = () => {
+            activeModel = activeModel === 'best_match' ? 'ecmwf_ifs025' : 'best_match';
+            localStorage.setItem(PREF_MODEL_KEY, activeModel); updateModelUI();
+            saveUserData();
+            if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); else fetchLandingWeather();
+        };
+
+        // Helper to get localized crop name
+        const getLocalizedCropName = (cropId, langCode) => {
+            const c = CROP_TYPES.find(x => x.id === cropId);
+            if (!c) return 'DURIAN';
+            // Fallback to label (English) if specific lang translation missing
+            return c[langCode] || c.label;
+        };
+
+        window.toggleCrop = (id) => {
+            const currentCropId = locationCrops[id] || 'durian', idx = CROP_TYPES.findIndex(c => c.id === currentCropId);
+            const nextCrop = CROP_TYPES[(idx + 1) % CROP_TYPES.length];
+            locationCrops[id] = nextCrop.id; localStorage.setItem(PREF_CROPS_KEY, JSON.stringify(locationCrops));
+            
+            // Updated: Use localized name based on current location language
+            const lang = getLang(id);
+            const btn = document.getElementById(`m-crop-toggle-${id}`); 
+            if (btn) btn.innerText = getLocalizedCropName(nextCrop.id, lang);
+            
+            if(detailData[id]) populateReportData(id);
+        };
+
+        function updateModelUI() {
+            const isAI = activeModel === 'best_match';
+            document.querySelectorAll('.model-pill').forEach(p => p.classList.remove('active'));
+            const pLanding = document.getElementById(isAI ? 'pill-seamless' : 'pill-ecmwf');
+            if(pLanding) pLanding.classList.add('active');
+            document.querySelectorAll('.model-toggle-btn').forEach(btn => { btn.innerText = isAI ? 'AI Model' : 'ECMWF'; });
+        }
+
+        function updateCropUI() {
+            currentDisplayedIds.forEach(id => {
+                 const cropId = locationCrops[id] || 'durian';
+                 const lang = getLang(id);
+                 const btn = document.getElementById(`m-crop-toggle-${id}`); 
+                 if(btn) btn.innerText = getLocalizedCropName(cropId, lang);
+            });
+        }
+
+        // --- NEW Language Handling ---
+        window.setLocLanguage = (id, lang) => {
+            
+            locationAiLangs[id] = lang;
+            localStorage.setItem(PREF_AI_KEY, JSON.stringify(locationAiLangs));
+            saveUserData();
+            
+            // Update UI immediately
+            const labels = TRANS[lang];
+            
+            // Update Buttons in this ID context
+            const el = (sel) => document.getElementById(sel);
+
+            // Update Crop Pill to match new language
+            const cropId = locationCrops[id] || 'durian';
+            if(el(`m-crop-toggle-${id}`)) el(`m-crop-toggle-${id}`).innerText = getLocalizedCropName(cropId, lang);
+
+            // Close all AI panels/results
+            if(el(`ai-brief-result-${id}`)) el(`ai-brief-result-${id}`).style.display = 'none';
+            
+            if(el(`ai-pest-result-${id}`)) el(`ai-pest-result-${id}`).style.display = 'none';
+            
+            if(el(`ai-tools-panel-${id}`)) el(`ai-tools-panel-${id}`).style.display = 'none';
+
+            // Also hide inner results inside the tools panel to ensure fresh start
+            // Updated to include chat-ui-{id}
+            const innerPanels = [`irrig-ui-${id}`, `harvest-ui-${id}`, `soil-ui-${id}`, `plan-grid-${id}`, `sop-container-${id}`, `yield-result-${id}`, `chat-ui-${id}`];
+            innerPanels.forEach(pid => { if(el(pid)) el(pid).style.display = 'none'; });
+            
+            if(el(`ai-btn-text-${id}`)) el(`ai-btn-text-${id}`).innerText = labels.brief;
+            if(el(`pest-btn-${id}`)) el(`pest-btn-${id}`).innerHTML = labels.pest;
+            if(el(`tools-btn-${id}`)) el(`tools-btn-${id}`).innerText = labels.tools;
+            
+            if(el(`irrig-btn-main-${id}`)) el(`irrig-btn-main-${id}`).innerText = labels.irrig;
+            if(el(`irrig-btn-${id}`)) el(`irrig-btn-${id}`).innerText = "✨ " + labels.calc;
+            
+            if(el(`harvest-btn-main-${id}`)) el(`harvest-btn-main-${id}`).innerText = labels.harvest;
+            if(el(`harvest-btn-${id}`)) el(`harvest-btn-${id}`).innerText = "✨ " + labels.est;
+            
+            if(el(`soil-btn-main-${id}`)) el(`soil-btn-main-${id}`).innerText = labels.soil;
+            if(el(`soil-btn-${id}`)) el(`soil-btn-${id}`).innerText = "✨ " + labels.rec;
+            
+            if(el(`plan-btn-${id}`)) el(`plan-btn-${id}`).innerText = labels.plan;
+            if(el(`sop-btn-${id}`)) el(`sop-btn-${id}`).innerText = labels.sop;
+            if(el(`yield-btn-${id}`)) el(`yield-btn-${id}`).innerText = labels.yield;
+            
+            // Updated SOP Header translation
+            if(el(`sop-header-${id}`)) el(`sop-header-${id}`).innerText = labels.action;
+
+            // Updated selector for new Chat Button
+            if(el(`chat-btn-main-${id}`)) el(`chat-btn-main-${id}`).innerText = labels.chat;
+            if(el(`chat-input-${id}`)) el(`chat-input-${id}`).placeholder = labels.placeholder;
+            
+            // Update active state of lang buttons
+            LANG_CODES.forEach(c => {
+                 const btn = el(`lang-btn-${id}-${c}`);
+                 if(btn) btn.classList.toggle('active', c === lang);
+            });
+        };
+        
+        const getLang = (id) => locationAiLangs[id] || 'zh';
+        const getTrans = (id) => TRANS[getLang(id)];
+
+        // Helper to get full language name for AI (Added missing definition)
+        const getLangName = (id) => LANG_NAMES[getLang(id)] || "English";
+
+        // ... [Fetch Functions Retained] ...
+        async function fetchLandingWeather() {
+            if (currentDisplayedIds.length > 0) return; 
+            if (landingAbortController) landingAbortController.abort();
+            landingAbortController = new AbortController();
+            const { signal } = landingAbortController; setStatus("Updating...");
+            
+            const visibleLocations = getAllLocations().filter(l => !hiddenIds.includes(l.id));
+            if(visibleLocations.length === 0) { setStatus("Ready", true); return; }
+
+            const batchSize = 45; const batches = [];
+            for (let i = 0; i < visibleLocations.length; i += batchSize) { batches.push(visibleLocations.slice(i, i + batchSize)); }
+            
+            const fetchBatch = async (locations) => {
+                const lats = locations.map(l => l.lat).join(','), lngs = locations.map(l => l.lng).join(',');
+                const url = `https://api.open-meteo.com/v1/forecast?latitude=${lats}&longitude=${lngs}&hourly=temperature_2m,precipitation_probability&models=${activeModel}&timezone=auto&forecast_days=2`;
+                const res = await fetch(url, { signal }); return await res.json();
+            };
+            try {
+                const results = await Promise.all(batches.map(fetchBatch));
+                const flatResults = results.flatMap(r => Array.isArray(r) ? r : [r]);
+                
+                flatResults.forEach((r, idx) => { 
+                    if(r?.hourly && visibleLocations[idx]) {
+                        weatherData[visibleLocations[idx].id] = r.hourly; 
+                    }
+                });
+                
+                localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(weatherData));
+                syncUI(); setStatus("Ready", true); landingAbortController = null;
+            } catch (e) { if (e.name !== 'AbortError') setStatus("Network Error", 'error'); }
+        }
+
+        async function fetchMultiDetailWeather(locIds) {
+             if(!locIds || locIds.length === 0) return;
+             setStatus(`Syncing ${locIds.length} Locations...`);
+             locIds.forEach(id => {
+                const rangeEl = document.getElementById(`m-range-${id}`);
+                if (rangeEl) rangeEl.innerHTML = '<span class="text-[9px] text-slate-300 animate-pulse uppercase tracking-widest">Processing...</span>';
+             });
+             const fetchOne = async (id) => {
+                 const s = getAllLocations().find(l => l.id === id); if(!s) return;
+                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lng}&hourly=temperature_2m,dew_point_2m,relative_humidity_2m,precipitation_probability,precipitation,cloudcover_low,cloudcover_mid,cloudcover_high,et0_fao_evapotranspiration,windspeed_10m,windspeed_2m,winddirection_10m,windgusts_10m,vapour_pressure_deficit,cape,convective_inhibition,visibility&models=${activeModel}&timezone=auto&forecast_days=14`;
+                 const res = await fetch(url); const data = await res.json();
+                 if(data?.hourly) detailData[id] = data.hourly;
+             };
+             try { await Promise.all(locIds.map(fetchOne)); renderReports(locIds); setStatus("Ready", true); } catch (e) { setStatus("Sync Error", 'error'); }
+        }
+
+        const getHourlyData = (locId, variable, isDetail = false) => {
+            const data = isDetail ? detailData[locId] : weatherData[locId]; if (!data) return null;
+            return data[`${variable}_${activeModel}`] || data[variable] || null;
+        };
+
+        window.syncUI = () => {
+            const timeline = document.getElementById('timeline'); if (!timeline) return;
+            const now = new Date(), val = parseInt(timeline.value) || 0, proj = new Date(now.getTime() + val * 60 * 60 * 1000);
+            const dateEl = document.getElementById('ui-date-display'), projTimeEl = document.getElementById('ui-proj-time');
+            if (projTimeEl) { const hours = proj.getHours(), mins = String(now.getMinutes()).padStart(2, '0'), ampm = hours >= 12 ? 'PM' : 'AM'; projTimeEl.innerText = `${hours % 12 || 12}:${mins} ${ampm}`; }
+            if (dateEl) dateEl.innerText = `${String(proj.getDate()).padStart(2,'0')}/${proj.getMonth()+1} ${DAYS_OF_WEEK[proj.getDay()]}`;
+            const dataIdx = now.getHours() + val;
+            
+            // Sync all potentially visible items
+            getAllLocations().forEach(s => {
+                if(hiddenIds.includes(s.id)) return;
+                const tEle = document.getElementById(`t-${s.id}`), pEle = document.getElementById(`p-${s.id}`); if (!tEle || !pEle) return;
+                const tempArr = getHourlyData(s.id, 'temperature_2m'), probArr = getHourlyData(s.id, 'precipitation_probability');
+                let t = s.t, p = s.p; if (tempArr?.[dataIdx] !== undefined) t = tempArr[dataIdx]; if (probArr?.[dataIdx] !== undefined) p = probArr[dataIdx];
+                tEle.innerText = t.toFixed(1) + '°C'; pEle.innerText = Math.round(p) + '%';
+                tEle.className = `text-[17px] font-black tabular-nums transition-colors ${t >= 30 ? 'text-red-600' : (t < 24 ? 'text-blue-600' : 'text-slate-900')}`;
+            });
+        };
+
+        // ... [Touch/Swipe Logic Retained] ...
+        let swipeStartX = 0;
+        let swipeStartY = 0;
+        let swipeCurrentId = null;
+        let isSwiping = false;
+        let swipeDirection = null;
+
+        window.handleTouchStart = (e, id) => {
+            if (e.target.closest('.pin-btn')) return;
+            const el = document.getElementById(`content-${id}`);
+            if(!el) return;
+            if(swipeCurrentId && swipeCurrentId !== id) {
+                 const other = document.getElementById(`content-${swipeCurrentId}`);
+                 const otherActions = other?.parentElement.querySelector('.swipe-actions');
+                 if(other) { other.style.transform = `translateX(0)`; if(otherActions) setTimeout(() => otherActions.style.visibility = 'hidden', 200); }
+                 swipeCurrentId = null;
+            }
+            swipeStartX = e.touches[0].clientX; swipeStartY = e.touches[0].clientY; isSwiping = false; swipeDirection = null; 
+        };
+
+        window.handleTouchMove = (e, id) => {
+            const el = document.getElementById(`content-${id}`); if(!el) return;
+            const currentX = e.touches[0].clientX; const currentY = e.touches[0].clientY;
+            const diffX = currentX - swipeStartX; const diffY = currentY - swipeStartY;
+            if (!swipeDirection) {
+                if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 10) {
+                    swipeDirection = 'horizontal';
+                    const actions = el.parentElement.querySelector('.swipe-actions'); if(actions) actions.style.visibility = 'visible';
+                    el.style.transition = 'none'; 
+                } else if (Math.abs(diffY) > 10) { swipeDirection = 'vertical'; }
+            }
+            if (swipeDirection === 'horizontal') {
+                if (diffX < 0) { isSwiping = true; const translateX = Math.max(diffX, -160); el.style.transform = `translateX(${translateX}px)`; if (e.cancelable) e.preventDefault(); }
+            }
+        };
+
+        window.handleTouchEnd = (e, id) => {
+             const el = document.getElementById(`content-${id}`); const actions = el?.parentElement.querySelector('.swipe-actions'); if(!el) return;
+             if (swipeDirection === 'vertical') { if (swipeCurrentId !== id) { el.style.transform = `translateX(0)`; if(actions) actions.style.visibility = 'hidden'; } return; }
+             el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+             const currentX = e.changedTouches[0].clientX; const diff = currentX - swipeStartX;
+             if (diff < -60 && swipeDirection === 'horizontal') { el.style.transform = `translateX(-160px)`; swipeCurrentId = id; if(actions) actions.style.visibility = 'visible'; setTimeout(() => isSwiping = false, 50); } else { el.style.transform = `translateX(0)`; swipeCurrentId = null; if(actions) setTimeout(() => actions.style.visibility = 'hidden', 200); }
+        };
+
+        // NEW: Handle Right Click (Context Menu) to Toggle Edit/Delete options
+        window.handleContextMenu = (e, id) => {
+            e.preventDefault(); 
+            const el = document.getElementById(`content-${id}`);
+            const actions = el?.parentElement.querySelector('.swipe-actions');
+            if(!el) return;
+
+            // If another item is open, close it first
+            if(swipeCurrentId && swipeCurrentId !== id) {
+                 const other = document.getElementById(`content-${swipeCurrentId}`);
+                 const otherActions = other?.parentElement.querySelector('.swipe-actions');
+                 if(other) { 
+                     other.style.transform = `translateX(0)`; 
+                     if(otherActions) setTimeout(() => otherActions.style.visibility = 'hidden', 200); 
+                 }
+                 swipeCurrentId = null;
+            }
+
+            // Toggle current item
+            if (swipeCurrentId === id) {
+                // Close
+                el.style.transform = `translateX(0)`;
+                swipeCurrentId = null;
+                if(actions) setTimeout(() => actions.style.visibility = 'hidden', 200);
+            } else {
+                // Open
+                el.style.transition = 'transform 0.2s cubic-bezier(0.2, 0.8, 0.2, 1)';
+                el.style.transform = `translateX(-160px)`;
+                swipeCurrentId = id;
+                if(actions) actions.style.visibility = 'visible';
+            }
+        };
+
+        window.handleItemClick = (id) => {
+            if(isSwiping) { isSwiping = false; return; }
+            if(swipeCurrentId === id) { const el = document.getElementById(`content-${id}`); const actions = el?.parentElement.querySelector('.swipe-actions'); if(el) { el.style.transform = `translateX(0)`; if(actions) setTimeout(() => actions.style.visibility = 'hidden', 200); } swipeCurrentId = null; return; }
+            window.openDetail(id);
+        };
+
+        // Reusable Sort Function (Matches renderList logic)
+        const sortLocationsCompat = (a, b) => {
+            // 1. Region: West (false) first, then East (true)
+            if (a.em !== b.em) return a.em ? 1 : -1;
+            
+            // 2. Inside East: Sabah (>115) first
+            if (a.em) {
+                const isSabahA = a.lng > 115.0; 
+                const isSabahB = b.lng > 115.0; 
+                if (isSabahA && !isSabahB) return -1; 
+                if (!isSabahA && isSabahB) return 1; 
+            }
+
+            // 3. Latitude Descending
+            if (Math.abs(b.lat - a.lat) > 0.0001) return b.lat - a.lat;
+
+            // 4. Longitude Descending
+            if (Math.abs(b.lng - a.lng) > 0.0001) return b.lng - a.lng;
+
+            // 5. Name Ascending
+            const nameA = (renamedLocations[a.id]?.en || a.en || '').toLowerCase(); 
+            const nameB = (renamedLocations[b.id]?.en || b.en || '').toLowerCase(); 
+            return nameA.localeCompare(nameB);
+        };
+
+        window.openDetail = (id) => {
+            // Remove resetZoom() here, we will call it after rendering
+            if (landingAbortController) { landingAbortController.abort(); landingAbortController = null; }
+            const isFav = favoriteIds.includes(id);
+            let targets = [];
+            
+            const visibleLocations = getAllLocations().filter(l => !hiddenIds.includes(l.id));
+
+            if (isFav && favoriteIds.length > 1) {
+                const favObjs = favoriteIds.map(fid => visibleLocations.find(l => l.id === fid)).filter(l => l);
+                // Apply the robust sorting logic
+                favObjs.sort(sortLocationsCompat);
+                targets = favObjs.map(l => l.id);
+            } else { targets = [id]; }
+            currentDisplayedIds = targets; 
+            targets.forEach(tid => { if (!locationCrops[tid]) locationCrops[tid] = 'durian'; if (!locationAiLangs[tid]) locationAiLangs[tid] = 'zh'; });
+            document.getElementById('modal').classList.remove('hidden'); 
+            
+            renderReports(targets);
+            updateModelUI(); updateCropUI();
+            
+            // NEW: Apply auto-scaling immediately after opening
+            setTimeout(resetZoom, 50);
+
+            // Auto-scroll to the specific clicked item if it's in a list
+            if(isFav && targets.length > 1) {
+                setTimeout(() => {
+                    const card = document.getElementById(`report-card-${id}`);
+                    // Use 'auto' behavior for instant jump, 'center' block to align it
+                    if(card) card.scrollIntoView({ behavior: 'auto', block: 'start' });
+                }, 50);
+            }
+
+            fetchMultiDetailWeather(targets);
+        };
+
+        function renderReports(locIds) {
+             const c = document.getElementById('infographic-report');
+             
+             // Smart Render: Check if we actually need to rebuild the HTML (avoids closing menus on data refresh)
+             const currentCards = Array.from(c.children);
+             const currentIds = currentCards.map(el => el.id.replace('report-card-', ''));
+             const isSameLayout = currentIds.length === locIds.length && currentIds.every((id, i) => id === locIds[i]);
+
+             if (!isSameLayout) {
+                 c.innerHTML = '';
+                 locIds.forEach(id => { 
+                     const s = getAllLocations().find(l => l.id === id); 
+                     if(s) c.innerHTML += createReportHTML(id, s); 
+                 });
+             }
+
+             // Always update the data visualization parts
+             locIds.forEach(id => { 
+                 if(detailData[id]) populateReportData(id); 
+             });
+             
+             updateCropUI(); 
+             updateModelUI(); // Ensure model text is correct
+        }
+
+        // ... [Confirm/Edit/Delete/Restore Logic Retained] ...
+        let pendingConfirmAction = null;
+        window.showConfirm = (msg, action) => { const el = document.getElementById('confirm-modal'); const msgEl = document.getElementById('confirm-msg'); if(el && msgEl) { msgEl.innerText = msg; pendingConfirmAction = action; el.classList.remove('hidden'); } };
+        window.closeConfirm = (isConfirmed) => { document.getElementById('confirm-modal').classList.add('hidden'); if (isConfirmed && pendingConfirmAction) { pendingConfirmAction(); } pendingConfirmAction = null; };
+        window.openEditModal = (id) => { editingId = id; const loc = getAllLocations().find(l => l.id === id); const custom = renamedLocations[id]; document.getElementById('edit-name-en').value = custom ? custom.en : (loc.en || ''); document.getElementById('edit-name-zh').value = custom ? custom.zh : (loc.zh || ''); document.getElementById('edit-modal').classList.remove('hidden'); const el = document.getElementById(`content-${id}`); const actions = el?.parentElement.querySelector('.swipe-actions'); if(el) { el.style.transform = `translateX(0)`; if(actions) setTimeout(() => actions.style.visibility = 'hidden', 200); } swipeCurrentId = null; };
+        window.saveNameEdit = () => { if(!editingId) return; const en = document.getElementById('edit-name-en').value.trim(); const zh = document.getElementById('edit-name-zh').value.trim(); if(en) { renamedLocations[editingId] = { en, zh }; localStorage.setItem(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); saveUserData(); renderList(); } document.getElementById('edit-modal').classList.add('hidden'); editingId = null; };
+        window.deleteLocation = (id) => { if(!hiddenIds.includes(id)) { hiddenIds.push(id); localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); saveUserData(); renderList(); } swipeCurrentId = null; };
+        window.restoreLocation = (id) => { const idx = hiddenIds.indexOf(id); if(idx > -1) { hiddenIds.splice(idx, 1); localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); saveUserData(); if(!document.getElementById('view-recycle').classList.contains('hidden')) { window.renderRecycleView(); } renderList(); fetchLandingWeather(); } };
+
+        // --- Search Logic ---
+        window.openSearch = () => {
+            document.getElementById('search-modal').classList.remove('hidden');
+            const input = document.getElementById('search-input');
+            input.value = '';
+            input.focus();
+            window.handleSearchInput();
+        };
+
+        window.handleSearchInput = () => {
+            const query = document.getElementById('search-input').value.toLowerCase().trim();
+            const container = document.getElementById('search-results');
+            const allLocs = getAllLocations();
+            
+            // Filter: Match EN or ZH name
+            let results = allLocs.filter(l => {
+                const custom = renamedLocations[l.id];
+                const en = (custom?.en || l.en || '').toLowerCase();
+                const zh = (custom?.zh || l.zh || '').toLowerCase();
+                return en.includes(query) || zh.includes(query);
+            });
+
+            if (results.length === 0) {
+                container.innerHTML = `<div class="p-6 text-center text-xs text-slate-300 font-bold uppercase tracking-widest">No match found</div>`;
+                return;
+            }
+
+            container.innerHTML = results.map(l => {
+                const custom = renamedLocations[l.id];
+                const en = custom?.en || l.en;
+                const zh = custom?.zh || l.zh;
+                const isFav = favoriteIds.includes(l.id);
+                
+                return `
+                <div onclick="window.toggleSearchFav('${l.id}')" class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 active:bg-slate-50 transition-colors cursor-pointer rounded-lg mb-1">
+                    <div class="flex-1 min-w-0 pr-2">
+                        <div class="font-bold text-slate-800 text-sm truncate">${en}</div>
+                        ${zh ? `<div class="text-xs text-slate-400 truncate mt-0.5">${zh}</div>` : ''}
+                    </div>
+                    <div id="search-icon-${l.id}">
+                    ${isFav ? 
+                        `<svg width="20" height="20" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>` : 
+                        `<div class="w-5 h-5 rounded-full border-2 border-slate-200"></div>`
+                    }
+                    </div>
+                </div>`;
+            }).join('');
+        };
+
+        window.toggleSearchFav = (id) => {
+             // 1. If hidden/deleted, restore it first
+            if(hiddenIds.includes(id)) {
+                const idx = hiddenIds.indexOf(id);
+                if(idx > -1) {
+                    hiddenIds.splice(idx, 1);
+                    localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
+                }
+            }
+
+            const idx = favoriteIds.indexOf(id);
+            const isFav = idx > -1;
+
+            if (isFav) {
+                favoriteIds.splice(idx, 1);
+            } else {
+                favoriteIds.push(id);
+            }
+            
+            localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+            saveUserData();
+            renderList();
+
+            // Update Icon in Search List
+            const rowIcon = document.getElementById(`search-icon-${id}`);
+            if(rowIcon) {
+                 rowIcon.innerHTML = !isFav ? 
+                    `<svg width="20" height="20" viewBox="0 0 24 24" fill="#ef4444" stroke="#ef4444" stroke-width="2"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg>` : 
+                    `<div class="w-5 h-5 rounded-full border-2 border-slate-200"></div>`;
+            }
+
+            // Visual feedback
+            if(!isFav) {
+                 window.showToast("Added to Favorites");
+            }
+        };
+
+        // ... [Add Location Logic Retained] ...
+        window.showToast = (msg, isError = false) => { const t = document.getElementById('toast'); const m = document.getElementById('toast-msg'); const i = document.getElementById('toast-icon'); if(t && m && i) { m.innerText = msg; if(isError) { i.className = "w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0"; i.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'; } else { i.className = "w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0"; i.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'; } t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); } };
+        window.openAddModal = () => { document.getElementById('add-loc-modal').classList.remove('hidden'); window.switchAddTab('manual'); };
+        window.switchAddTab = (tab) => { ['manual', 'scan', 'recycle'].forEach(t => { const tabEl = document.getElementById(`tab-${t}`); const viewEl = document.getElementById(`view-${t}`); if(tabEl) tabEl.classList.toggle('active', t === tab); if(viewEl) { viewEl.classList.toggle('hidden', t !== tab); if (t === 'recycle') { viewEl.classList.toggle('flex', t === tab); } else { viewEl.classList.toggle('block', t === tab); } } }); const btn = document.getElementById('btn-save-loc'); if (btn) { if (tab === 'recycle') { btn.style.visibility = 'hidden'; window.renderRecycleView(); } else { btn.style.visibility = 'visible'; } } };
+        window.renderRecycleView = () => { const list = document.getElementById('recycle-list-integrated'); if(!list) return; list.innerHTML = ''; const deleted = getAllLocations().filter(l => hiddenIds.includes(l.id)); if(deleted.length === 0) { list.innerHTML = '<div class="p-8 text-center text-xs text-slate-300 font-bold uppercase tracking-widest">Bin is empty</div>'; } else { deleted.forEach(l => { const custom = renamedLocations[l.id]; const en = custom?.en || l.en; const zh = custom?.zh || l.zh; list.innerHTML += `<div class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 bg-slate-50/50"><div class="flex-1 min-w-0 pr-2"><div class="font-bold text-slate-700 text-xs truncate">${en}</div>${zh ? `<div class="text-[10px] text-slate-400 truncate">${zh}</div>` : ''}</div><div class="flex items-center gap-2"><button onclick="window.purgeLocation('${l.id}')" class="text-[9px] font-black text-red-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Purge</button><button onclick="window.restoreLocation('${l.id}')" class="text-[9px] font-black text-blue-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Restore</button></div></div>`; }); } };
+        window.purgeLocation = (id) => { window.showConfirm("Permanently delete this location? This cannot be undone.\n永久删除此地点？无法撤销。", () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); localStorage.setItem(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); localStorage.setItem(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
+        window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); if(!en && !zh) { window.showToast("Name Required / 请输入名字", true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast("Invalid Coordinates / 坐标无效", true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast("Location Exists / 地点已存在", true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast("Saved! Add another? / 已保存"); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast("Storage Error / 存储错误", true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm("Warning: These coordinates appear to be outside Malaysia.\n警告：此坐标似乎不在马来西亚境内。\n\nContinue adding?", performSave); } else { performSave(); } };
+        window.handlePhotoScan = async (e) => { const file = e.target.files[0]; if(!file) return; const res = document.getElementById('scan-result'); res.innerText = "Scanning... / 正在扫描..."; const reader = new FileReader(); reader.onload = async function(event) { const base64Data = event.target.result.split(',')[1]; const prompt = "Analyze this image. It might be a photo of a compass app, a GPS device, or a location screenshot. Extract the Latitude and Longitude. Return strictly JSON format: { \"lat\": 3.1234, \"lng\": 101.5678 }. If not found, return { \"error\": \"No coordinates found\" }."; try { 
+            const payload = { contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64Data } } ] }], generationConfig: { responseMimeType: "application/json" } };
+            const response = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+            const data = await response.json(); const json = JSON.parse(data.candidates[0].content.parts[0].text); if(json.lat && json.lng) { document.getElementById('add-lat').value = json.lat; document.getElementById('add-lng').value = json.lng; res.innerText = "Coordinates found! / 找到坐标!"; window.switchAddTab('manual'); } else { res.innerText = "No coordinates detected / 未检测到坐标"; } } catch(err) { res.innerText = "Scan failed / 扫描失败"; } }; reader.readAsDataURL(file); };
+
+        const renderList = () => {
+            const lw = document.getElementById('list-west'); const le = document.getElementById('list-east'); const sW = lw ? lw.scrollTop : 0; const sE = le ? le.scrollTop : 0;
+            const build = (em) => {
+                let pool = getAllLocations().filter(l => l.em === em && !hiddenIds.includes(l.id));
+                pool.sort((a,b) => { 
+                    const isFavA = favoriteIds.includes(a.id); const isFavB = favoriteIds.includes(b.id);
+                    if (isFavA && !isFavB) return -1; if (!isFavA && isFavB) return 1;
+                    if (em) { const isSabahA = a.lng > 115.0; const isSabahB = b.lng > 115.0; if (isSabahA && !isSabahB) return -1; if (!isSabahA && isSabahB) return 1; }
+                    if (Math.abs(b.lat - a.lat) > 0.0001) { return b.lat - a.lat; }
+                    if (Math.abs(b.lng - a.lng) > 0.0001) { return b.lng - a.lng; }
+                    const nameA = (renamedLocations[a.id]?.en || a.en || '').toLowerCase(); const nameB = (renamedLocations[b.id]?.en || b.en || '').toLowerCase(); return nameA.localeCompare(nameB);
+                });
+                return pool.map(s => {
+                    const isFav = favoriteIds.includes(s.id); const custom = renamedLocations[s.id]; const nameEn = custom ? custom.en : s.en; const nameZh = custom ? custom.zh : s.zh;
+                    return `<div class="list-item-wrapper"><div class="swipe-actions"><button class="action-btn btn-edit" onclick="window.openEditModal('${s.id}')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg></button><button class="action-btn btn-delete" onclick="window.deleteLocation('${s.id}')"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></svg></button></div><div class="list-item-content ${isFav?'is-favorite':''}" id="content-${s.id}" ontouchstart="window.handleTouchStart(event, '${s.id}')" ontouchmove="window.handleTouchMove(event, '${s.id}')" ontouchend="window.handleTouchEnd(event, '${s.id}')" oncontextmenu="window.handleContextMenu(event, '${s.id}')" onclick="window.handleItemClick('${s.id}')"><button class="pin-btn" onclick="event.stopPropagation(); window.toggleFavorite('${s.id}')"><svg class="pin-icon" width="22" height="22" viewBox="0 0 24 24" fill="${isFav ? 'currentColor' : 'none'}" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path></svg></button><div class="name-label-en">${nameEn}</div>${nameZh ? `<div class="name-label-zh">${nameZh}</div>` : ''}<div class="flex gap-10 mt-6"><div class="flex flex-col"><span class="text-[9px] font-black text-slate-400 uppercase mb-2">温度</span><span id="t-${s.id}" class="text-[17px] font-black tabular-nums transition-colors">--</span></div><div class="flex flex-col"><span class="text-[9px] font-black text-slate-400 uppercase mb-2">降雨</span><span id="p-${s.id}" class="text-[17px] font-black text-blue-900 tabular-nums">--</span></div></div></div></div>`;
+                }).join('');
+            };
+            const lwEl = document.getElementById('list-west'); const leEl = document.getElementById('list-east'); const binCountEl = document.getElementById('tab-bin-count');
+            if (binCountEl) { if (hiddenIds.length > 0) { binCountEl.innerText = hiddenIds.length; binCountEl.classList.remove('hidden'); } else { binCountEl.classList.add('hidden'); } }
+            if(lwEl) { lwEl.innerHTML = build(false); lwEl.scrollTop = sW; } 
+            if(leEl) { leEl.innerHTML = build(true); leEl.scrollTop = sE; } 
+        };
+
+        // --- Simplified AI Button Logic (no long press toggle anymore) ---
+        window.handleSmartBriefClick = (id) => {
+            const rb = document.getElementById(`ai-brief-result-${id}`);
+            if (rb && rb.style.display === 'block') {
+                rb.style.display = 'none';
+                return;
+            }
+            window.executeSmartBrief(id);
+        };
+        window.handleSmartBriefPressStart = (id) => {}; // Deprecated
+        window.handleSmartBriefPressEnd = (id) => {}; // Deprecated
+
+        window.updateAiButtonsUI = (targetId) => {
+            // Now handled via setLocLanguage for specific ID or renderReports
+        };
+
+        window.closeSmartBrief = (id) => { const rb = document.getElementById(`ai-brief-result-${id}`); if(rb) rb.style.display = 'none'; };
+
+        window.fetchPestRisk = async (id) => {
+            const btn = document.getElementById(`pest-btn-${id}`), rb = document.getElementById(`ai-pest-result-${id}`), content = document.getElementById(`ai-content-pest-${id}`);
+            if (!btn || !rb || !content) return;
+            
+            // Toggle Logic
+            if (rb.style.display === "block") {
+                rb.style.display = "none";
+                return;
+            }
+
+            const labels = getTrans(id);
+            // Updated: Spinner on RIGHT side (ml-2)
+            btn.disabled = true; 
+            btn.innerHTML = `${labels.pest}<div class="w-3 h-3 border-2 border-green-800/40 border-t-green-900 rounded-full animate-spin ml-2 inline-block"></div>`;
+            
+            rb.style.display = "block"; 
+            // class is already set in HTML
+            content.innerText = labels.consult; 
+
+            const hourly = detailData[id], s = getAllLocations().find(l => l.id === id);
+            // Updated: Localized Crop Name
+            const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+            
+            let summary = "";
+            if (hourly) {
+                for (let d = 0; d < 10; d++) {
+                    const start = d * 24, rh = hourly.relative_humidity_2m ? hourly.relative_humidity_2m.slice(start, start+24) : [];
+                    const avgRH = rh.length ? Math.round(rh.reduce((a,b)=>a+b,0)/rh.length) : "--";
+                    const rain = hourly.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(start, start+24)) : 0;
+                    summary += `Day ${d+1}: RH ${avgRH}%, Rain ${rain}%. `;
+                }
+            }
+            // Use full language name
+            const prompt = `Act as an expert agronomist strictly for ${crop}. Weather: ${summary}. Identify ONE major pest/disease risk. 
+            MANDATORY: Reply in ${getLangName(id)} language only. Be concise (max 40 words).`;
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                // Use fetchGemini to handle Auth errors gracefully
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json(); 
+                const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis unavailable.";
+                // Added .trim() to remove leading newlines that cause "middle" alignment
+                content.innerText = text.trim(); 
+            } catch (e) { content.innerText = "Connection failed."; console.error(e); } finally { btn.disabled = false; btn.innerText = labels.pest; }
+        };
+
+        window.executeSmartBrief = async (id) => {
+            const btn = document.getElementById(`ai-btn-${id}`), spin = document.getElementById(`ai-spin-${id}`), rb = document.getElementById(`ai-brief-result-${id}`), content = document.getElementById(`ai-content-brief-${id}`); 
+            if(!rb) return;
+            
+            const labels = getTrans(id);
+            btn.disabled = true; spin.style.display = "block"; rb.style.display = "block"; 
+            content.innerText = labels.consult;
+            
+            const s = getAllLocations().find(l => l.id === id);
+            
+            // NEW: Contextualize Crop Name based on language
+            const langCode = getLang(id);
+            const cropName = getLocalizedCropName(locationCrops[id] || 'durian', langCode);
+            const targetLangName = getLangName(id);
+            
+            // DEFINE GREETING EXAMPLES BASED ON LANGUAGE
+            // This prevents English prompts from seeing "Selamat Pagi" and copying it
+            let greetingEx = '(e.g. "Good Morning" or "Good Afternoon")';
+            if (langCode === 'ms') greetingEx = '(e.g. "Selamat Pagi" or "Selamat Petang")';
+            else if (langCode === 'zh') greetingEx = '(e.g. "早上好" or "下午好")';
+            else if (langCode === 'ta') greetingEx = '(e.g. "Vanakkam")';
+            else if (langCode === 'my') greetingEx = '(e.g. "Mingalaba")';
+
+            const h = detailData[id];
+            
+            // 1. Construct Hourly Context (Next 24h) for precise rain timing with AM/PM
+            let hourlyStr = "HOURLY FORECAST (Next 24h):\n";
+            const now = new Date();
+            const currentHourIndex = now.getHours(); // 0-23
+            const timeStrDisplay = now.toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit' });
+            
+            if (h && h.time) {
+                // Open-Meteo hourly data typically starts at 00:00 of the requested start date (today)
+                // We access the array starting from the current hour.
+                for (let i = 0; i < 24; i++) {
+                     const dataIdx = currentHourIndex + i;
+                     
+                     // Handle bounds if data isn't enough (though we usually fetch 14 days)
+                     if (dataIdx >= h.temperature_2m.length) break;
+
+                     // Calculate 12h Format Time
+                     const hourVal = (currentHourIndex + i) % 24;
+                     let hour12 = hourVal % 12;
+                     if (hour12 === 0) hour12 = 12;
+                     const ampm = hourVal >= 12 ? 'PM' : 'AM';
+                     const timeStr = `${hour12}${ampm}`;
+
+                     const t = h.temperature_2m[dataIdx];
+                     const pp = h.precipitation_probability[dataIdx];
+                     const rain = h.precipitation[dataIdx];
+                     const wind = h.windspeed_10m[dataIdx];
+                     
+                     hourlyStr += `${timeStr}: Rain ${pp}% (${rain}mm), Wind ${wind}km/h, Temp ${t}C\n`;
+                }
+            }
+
+            // 2. Construct 14-Day Outlook Context with dd/m format
+            let dailyStr = "14-DAY OUTLOOK:\n";
+            if (h) {
+                for (let d = 0; d < 14; d++) {
+                    const start = d * 24; 
+                    const ts = h.temperature_2m.slice(start, start + 24);
+                    const ps = h.precipitation_probability.slice(start, start + 24);
+                    const rainSum = h.precipitation.slice(start, start + 24).reduce((a,b)=>a+b,0).toFixed(1);
+                    const mP = ps.length ? Math.max(...ps) : "--";
+                    
+                    // Format Date as dd/m (e.g. 05/1)
+                    const forecastDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d);
+                    const dayStr = String(forecastDate.getDate()).padStart(2, '0');
+                    const monthStr = forecastDate.getMonth() + 1;
+                    const dateStr = `${dayStr}/${monthStr}`;
+
+                    // Updated Logic: Day 0 -> Today, others -> dd/m only
+                    const dayLabel = (d === 0) ? `Today (${dateStr})` : dateStr;
+
+                    dailyStr += `${dayLabel}: MaxRainProb ${mP}%, TotalRain ${rainSum}mm.\n`;
+                }
+            }
+
+            // Language aware prompt using full name and strict rules
+            const localTitle = labels.brief.replace('✨ ', '');
+            
+            // DYNAMIC LOCALIZATION BLOCK
+            // Separates English rules from Non-English rules to prevent language leakage
+            let localizationBlock = "";
+            
+            if (langCode === 'en') {
+                localizationBlock = `
+            CRITICAL LOCALIZATION RULES:
+            1. The response must be 100% in English.
+            2. Do NOT use Malay, Chinese, Tamil, or Burmese terms.
+            3. Do NOT translate "Action Advice" or headers into other languages.
+            4. Use professional agricultural terminology suitable for a ${cropName} grower.
+                `;
+            } else {
+                let specificRule = "";
+                if (langCode === 'zh') {
+                    const simpleCrop = cropName.split('/')[0];
+                    specificRule = `Address the user as '${simpleCrop}芭老板'. Content must be 100% Chinese. Do NOT use English headers (e.g. NO 'Smart Briefing', NO 'Action Advice'). EXCEPTION: English is allowed ONLY for specific scientific names of Pests/Diseases.`;
+                } else if (langCode === 'ms') {
+                    specificRule = "Use 'Pekebun' instead of Growers. Use 'Saranan Tindakan' for Action Advice. Use 'Ringkasan Pintar' for title.";
+                } else {
+                    specificRule = "Do NOT mix with English words unless absolutely necessary for scientific names.";
+                }
+
+                localizationBlock = `
+            CRITICAL LOCALIZATION RULES:
+            1. The response must be 100% in ${targetLangName}.
+            2. Do NOT use English headers or terms. Use local equivalents (e.g. "${localTitle}").
+            3. ${specificRule}
+                `;
+            }
+
+            // Logic for Durian Flower Inducing
+            // FIX: Check ID instead of localized name to ensure it works for Chinese/Tamil etc.
+            const currentCropId = locationCrops[id] || 'durian';
+            const isDurian = currentCropId === 'durian';
+            
+            let flowerInducingPrompt = "";
+            if (isDurian) {
+                flowerInducingPrompt = `For Durian, specifically assess if today's weather supports Flower Inducing (Dry Stress). MANDATORY: You MUST include this assessment translated in ${targetLangName} inside the Weather section.`;
+                if (langCode === 'zh') {
+                    flowerInducingPrompt += " (Use the term '催花' explicitly).";
+                }
+            }
+
+            const prompt = `You are a Smart Farming AI Agronomist for a ${cropName} farm.
+            
+            CURRENT DATE: ${now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
+            CURRENT TIME: ${timeStrDisplay}
+            
+            DATA ANALYSIS:
+            ${hourlyStr}
+            ${dailyStr}
+
+            TASK: Provide a Daily Smart Briefing in ${targetLangName} language. 
+            
+            ${localizationBlock}
+            
+            FORMAT (Use emojis, ensure distinct paragraphs for each action item):
+            1. 🕰 **Greeting**: Start with a short, time-appropriate greeting based on CURRENT TIME ${greetingEx}.
+            2. 🌦 **Weather**: Summarize rain. IMPORTANT: State approximate HOURS of rain (use 12h AM/PM format, e.g. 3PM-5PM) and VOLUME if significant (e.g. "~8mm"). ${flowerInducingPrompt}
+            3. 🚜 **Action**:
+               
+               💦 **Spraying** (Pesticide/Foliar): [Advice - Yes/No/Best Window]
+               
+               ✂️ **Pruning**: [Advice - Safe?]
+               
+               💩 **Fertilizer** (Ground): [Advice - Suitable?]
+
+            4. 📅 **Outlook**: Brief outlook (e.g. "Wetter week ahead" or "Dry spell coming"). Use 'Today' and dd/m date format.
+
+            5. 📈 **Market/Trend**: Brief insight on market price trends or demand for ${cropName} (Malaysia context).
+            
+            Keep it strictly agricultural and practical.`;
+            
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                // Use fetchGemini to handle Auth errors gracefully
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json(); 
+                let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unavailable.";
+                
+                // Filter Markdown & Visual artifacts (Global for ALL languages)
+                text = text.replace(/#{1,}/g, '')        // Remove # headers
+                           .replace(/\*{1,}/g, '')        // Remove * (bold/italic/bullets)
+                           .replace(/-{3,}/g, '')         // Remove --- lines
+                           .replace(/\|[:\s|]*\|/g, '')   // Remove table divider rows like | : | : |
+                           .replace(/\|/g, '')            // Remove remaining pipes
+                           .replace(/:::/g, '')           // Remove colon artifacts
+                           .replace(/<\/?[^>]+>/g, '')    // Remove potential HTML tags like </blockquote>
+                           .trim();
+
+                content.innerText = text;
+            } catch (e) { content.innerText = "Network Error."; console.error(e); } finally { btn.disabled = false; spin.style.display = "none"; }
+        };
+
+        window.getShortWeatherContext = (id, days) => {
+            const h = detailData[id];
+            if (!h) return "No data.";
+            let ctx = ""; const now = new Date();
+            for (let i = 0; i < days; i++) {
+                const s = i * 24;
+                const date = new Date(now.getTime() + i * 86400000).toLocaleDateString();
+                const rain = Math.max(...(h.precipitation_probability.slice(s, s+24) || [0]));
+                const wind = Math.max(...(h.windspeed_10m.slice(s, s+24) || [0]));
+                const tempH = Math.max(...(h.temperature_2m.slice(s, s+24) || [0]));
+                ctx += `[${date}: Rain ${rain}%, Wind ${wind}km/h, MaxTemp ${tempH}C] `;
+            }
+            return ctx;
+        }
+
+        window.generateWorkPlan = async (id) => {
+            const btn = document.getElementById(`plan-btn-${id}`), grid = document.getElementById(`plan-grid-${id}`);
+            if (!btn || !grid) return;
+            
+            // Toggle Logic
+            if (grid.innerHTML.trim() !== "" && grid.style.display !== 'none') {
+                grid.style.display = 'none';
+                return;
+            }
+            grid.style.display = 'grid'; // Ensure visible if it was hidden
+
+            const labels = getTrans(id);
+            // Updated: Spinner on RIGHT side (ml-2)
+            btn.disabled = true; 
+            btn.innerHTML = `${labels.plan}<div class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin ml-2 inline-block"></div>`;
+            grid.innerHTML = `<div class="col-span-3 text-center text-xs text-slate-400 py-4 animate-pulse">${labels.consult}</div>`;
+            
+            // UPDATED: Use Label for better context
+            const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+            const ctx = window.getShortWeatherContext(id, 3);
+            
+            // Prompt: Ask for Day Name in Local Language, but keep logic values in English
+            const prompt = `Analyze this weather strictly for ${crop}: ${ctx}. 
+            Task: Assess suitability for 1) Spraying and 2) Fertilizing for next 3 days.
+            Constraint: Return strictly valid JSON array: [{ "day": "DayName (in ${getLangName(id)})", "spray": "Safe"|"Risky"|"Unsafe", "fert": "Safe"|"Risky"|"Unsafe" }].
+            IMPORTANT: The 'spray' and 'fert' values MUST remain as 'Safe', 'Risky', or 'Unsafe' in English for system logic. Translate ONLY the 'day' value.`;
+
+            try {
+                const payload = {
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    };
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json();
+                const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+                const plan = JSON.parse(jsonText);
+                
+                grid.innerHTML = plan.map(d => {
+                    const sb = d.spray === 'Safe' ? 'badge-safe' : (d.spray === 'Risky' ? 'badge-risk' : 'badge-unsafe');
+                    const fb = d.fert === 'Safe' ? 'badge-safe' : (d.fert === 'Risky' ? 'badge-risk' : 'badge-unsafe');
+                    
+                    // Map English logic values to Localized Display Text
+                    const sText = d.spray === 'Safe' ? labels.safe : (d.spray === 'Risky' ? labels.risk : labels.unsafe);
+                    const fText = d.fert === 'Safe' ? labels.safe : (d.fert === 'Risky' ? labels.risk : labels.unsafe);
+
+                    return `<div class="plan-day">
+                        <div class="plan-date">${d.day || 'Day'}</div>
+                        <div class="text-[9px] text-slate-500 font-bold uppercase">${labels.spray}</div>
+                        <div class="plan-badge ${sb}">${sText}</div>
+                        <div class="text-[9px] text-slate-500 font-bold mt-1 uppercase">${labels.fert}</div>
+                        <div class="plan-badge ${fb}">${fText}</div>
+                    </div>`;
+                }).join('');
+            } catch (e) {
+                console.error(e); grid.innerHTML = '<div class="col-span-3 text-center text-xs text-red-500 py-2">AI Plan Unavailable</div>';
+            } finally {
+                btn.disabled = false; btn.innerText = labels.plan;
+            }
+        };
+
+        window.fetchYieldInsight = async (id) => {
+            const btn = document.getElementById(`yield-btn-${id}`), box = document.getElementById(`yield-result-${id}`);
+            if (!btn || !box) return;
+            
+            // Toggle Logic
+            if (box.style.display === 'block') {
+                box.style.display = 'none';
+                return;
+            }
+
+            const labels = getTrans(id);
+            // Updated: Spinner on RIGHT side (ml-2)
+            btn.disabled = true; 
+            btn.innerHTML = `${labels.yield}<div class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin ml-2 inline-block"></div>`; 
+            box.style.display = 'block'; box.innerText = labels.consult;
+            
+            const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+            const ctx = window.getShortWeatherContext(id, 7); 
+            
+            const prompt = `Act as an agricultural economist expert strictly in ${crop}. 
+            Weather Context (Next 7 days): ${ctx}.
+            Provide a concise strategic insight in 3 bullet points (Yield, Quality, Strategy).
+            MANDATORY: Reply in ${getLangName(id)} language. No markdown.`;
+
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json();
+                box.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Insight unavailable.";
+            } catch (e) { box.innerText = "Connection error."; } finally { btn.disabled = false; btn.innerText = labels.yield; }
+        };
+
+        window.generateSOP = async (id) => {
+             const btn = document.getElementById(`sop-btn-${id}`);
+             const container = document.getElementById(`sop-container-${id}`);
+             const list = document.getElementById(`sop-list-${id}`);
+             
+             if(!btn || !container || !list) return;
+             
+             // Toggle Logic
+             if(container.style.display === 'block') { 
+                 container.style.display = 'none'; 
+                 return; 
+             }
+             
+             const labels = getTrans(id);
+             
+             // Loading State
+             btn.disabled = true;
+             btn.innerHTML = `${labels.sop}<div class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin ml-2 inline-block"></div>`;
+             
+             container.style.display = 'block';
+             list.innerHTML = `<div class="text-sm font-bold text-fuchsia-800 animate-pulse py-2">${labels.consult}</div>`;
+             
+             const ctx = window.getShortWeatherContext(id, 2);
+             // UPDATED: Use Label
+             const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+
+             const prompt = `Context: ${crop} farm. Weather: ${ctx}.
+             Task: Generate a 5-item Checklist of SOPs for tomorrow.
+             MANDATORY: Return strictly valid JSON array of strings in ${getLangName(id)} language.`;
+
+             try {
+                 const payload = {
+                        contents: [{ parts: [{ text: prompt }] }],
+                        generationConfig: { responseMimeType: "application/json" }
+                    };
+                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                 if(!res.ok) throw new Error("API Error");
+                 const data = await res.json();
+                 const items = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text);
+                 
+                 list.innerHTML = items.map(item => `<label class="sop-item"><input type="checkbox" class="sop-check"><span>${item}</span></label>`).join('');
+                 
+             } catch(e) {
+                 list.innerHTML = '<div class="text-xs text-red-400">Failed.</div>';
+             } finally {
+                 btn.disabled = false;
+                 btn.innerText = labels.sop;
+             }
+        };
+
+        window.toggleSoilAdvisor = (id) => {
+             const ui = document.getElementById(`soil-ui-${id}`);
+             if(ui) ui.style.display = ui.style.display === 'none' ? 'block' : 'none';
+        };
+        
+        // Added missing function to toggle AI Tools panel
+        window.toggleAiTools = (id) => {
+             const panel = document.getElementById(`ai-tools-panel-${id}`);
+             if (panel) {
+                 panel.style.display = panel.style.display === 'block' ? 'none' : 'block';
+             }
+        };
+
+        window.consultSoil = async (id) => {
+            const input = document.getElementById(`soil-input-${id}`);
+            const result = document.getElementById(`soil-result-${id}`);
+            const btn = document.getElementById(`soil-btn-${id}`);
+            if(!input || !result || !btn || !input.value.trim()) return;
+            const labels = getTrans(id);
+
+            const desc = input.value.trim();
+            // Updated: Spinner on RIGHT side (ml-2)
+            btn.disabled = true; 
+            btn.innerHTML = `✨ ${labels.rec}<div class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin ml-2 inline-block"></div>`;
+            result.style.display = 'block'; result.innerText = labels.consult;
+
+            // UPDATED: Inject Crop Context
+            const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+            const ctx = window.getShortWeatherContext(id, 7);
+            
+            const prompt = `Act as a Soil Scientist strictly for ${crop}. User Soil: "${desc}". Forecast: "${ctx}".
+            Task: Fertilizer advice.
+            MANDATORY: Reply in ${getLangName(id)} language.`;
+
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json();
+                result.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            } catch(e) {
+                result.innerText = "Consultation failed.";
+            } finally {
+                btn.disabled = false; btn.innerText = "✨ " + labels.rec;
+            }
+        };
+
+        window.toggleIrrigation = (id) => {
+            const ui = document.getElementById(`irrig-ui-${id}`);
+            if(ui) ui.style.display = ui.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.calculateIrrigation = async (id) => {
+            const input = document.getElementById(`irrig-input-${id}`);
+            const result = document.getElementById(`irrig-result-${id}`);
+            const btn = document.getElementById(`irrig-btn-${id}`);
+            if(!input || !result || !btn || !input.value.trim()) return;
+            const labels = getTrans(id);
+
+            const treeInfo = input.value.trim();
+            // Updated: Spinner on RIGHT side (ml-2)
+            btn.disabled = true; 
+            btn.innerHTML = `✨ ${labels.calc}<div class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin ml-2 inline-block"></div>`;
+            // Added: Ensure result box shows loading state immediately
+            result.style.display = 'block'; result.innerText = labels.consult;
+            
+            const h = detailData[id];
+            let et0 = 0, rain = 0;
+            if(h) {
+                et0 = (h.et0_fao_evapotranspiration?.slice(0, 24).reduce((a,b)=>a+b,0) || 0).toFixed(1);
+                rain = (h.precipitation?.slice(0, 24).reduce((a,b)=>a+b,0) || 0).toFixed(1);
+            }
+            
+            // UPDATED: Inject Crop Context
+            const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+            
+            const prompt = `Act as an Irrigation Expert strictly for ${crop}. Data: ET0=${et0}mm, Rain=${rain}mm. Tree Info: "${treeInfo}".
+            Calculate precise irrigation (Liters/tree).
+            MANDATORY: Reply in ${getLangName(id)} language. 1 sentence only.`;
+
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json();
+                result.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+            } catch(e) {
+                result.innerText = "Calc error.";
+            } finally {
+                btn.disabled = false; btn.innerText = "✨ " + labels.calc;
+            }
+        };
+
+        window.toggleHarvest = (id) => {
+            const ui = document.getElementById(`harvest-ui-${id}`);
+            if(ui) ui.style.display = ui.style.display === 'none' ? 'block' : 'none';
+        };
+
+        window.predictHarvest = async (id) => {
+            const input = document.getElementById(`harvest-input-${id}`);
+            const result = document.getElementById(`harvest-result-${id}`);
+            const btn = document.getElementById(`harvest-btn-${id}`);
+            if (!input || !result || !btn) return;
+            const stage = input.value.trim();
+            if(!stage) return;
+            const labels = getTrans(id);
+
+            // Updated: Spinner on RIGHT side (ml-2)
+            btn.disabled = true; 
+            btn.innerHTML = `✨ ${labels.est}<div class="w-3 h-3 border-2 border-white/40 border-t-white rounded-full animate-spin ml-2 inline-block"></div>`;
+            // Added: Ensure result box shows loading state immediately
+            result.style.display = 'block'; result.innerText = labels.consult;
+            
+            // UPDATED: Inject Crop Context
+            const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
+            const ctx = window.getShortWeatherContext(id, 14);
+            
+            const prompt = `Act as a Harvest Expert strictly for ${crop}. Input: "${stage}". Weather: ${ctx}.
+            Estimate Days to Harvest and Risks.
+            MANDATORY: Reply in ${getLangName(id)} language.`;
+            
+            try {
+                const payload = { contents: [{ parts: [{ text: prompt }] }] };
+                const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent`, payload);
+                if(!res.ok) throw new Error("API Error");
+                const data = await res.json();
+                result.innerText = data.candidates?.[0]?.content?.parts?.[0]?.text || "Estimation failed.";
+            } catch(e) { result.innerText = "Error."; } finally { btn.disabled = false; btn.innerText = "✨ " + labels.est; }
+        };
+
+        // ... [Negotiator Logic Retained - No changes needed as prompt is user driven, but reply is roleplay] ...
+        // ... (rest of code is the same)
+
+        function createReportHTML(id, loc) {
+             const lang = getLang(id);
+             // Updated: Use helper for crop label
+             const crop = getLocalizedCropName(locationCrops[id] || 'durian', lang);
+             
+             const custom = renamedLocations[id];
+             const nameEn = custom?.en || loc.en;
+             const nameZh = custom?.zh || loc.zh;
+             const labels = TRANS[lang];
+
+             const langBtns = LANG_CODES.map(c => 
+                 `<span id="lang-btn-${id}-${c}" onclick="window.setLocLanguage('${id}', '${c}')" class="lang-text ${c===lang?'active':''}">${LANG_LABELS[c]}</span>`
+             ).join('<span class="text-slate-300 text-[10px] font-bold mx-0.5">/</span>');
+             
+             // Reduced mt-2 to mt-0.5 and added leading-none to English headers to save vertical space
+             return `<div class="report-card" id="report-card-${id}">
+                <div class="report-header"><div class="w-full flex flex-col"><div class="flex justify-between items-start w-full"><div class="flex items-center gap-2"><h2 class="text-xl font-black uppercase text-slate-900 leading-none">${nameEn}</h2></div><h2 id="m-range-${id}" class="text-xl font-black uppercase text-slate-900 leading-none">--</h2></div><div class="flex justify-between items-end w-full mt-0.5"><div class="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 class="text-xl font-black text-blue-700 leading-none">${nameZh}</h2><div class="flex items-center">${langBtns}</div></div><div class="flex items-center gap-1"><span id="m-crop-toggle-${id}" onclick="window.toggleCrop('${id}')" class="crop-pill">${crop}</span><span onclick="window.toggleModel()" class="model-toggle-btn">${activeModel==='best_match'?'AI Model':'ECMWF'}</span></div></div></div></div>
+                
+                <div class="mt-2 mb-2">
+                    <button id="ai-btn-${id}" class="ai-btn semi-bleed" style="margin-bottom:0;" onclick="window.handleSmartBriefClick('${id}')"><div class="ai-btn-progress" id="ai-prog-${id}"></div><span id="ai-btn-text-${id}">${labels.brief}</span><div class="ai-loading-spinner" id="ai-spin-${id}"></div></button>
+                    <div id="ai-brief-result-${id}" class="ai-result-box relative" style="display:none; margin-top:12px; margin-bottom:12px;">
+                        <div id="ai-content-brief-${id}"></div>
+                    </div>
+                </div>
+                
+                <div class="mb-2">
+                    <button id="pest-btn-${id}" class="ai-btn pest-btn semi-bleed justify-center" style="margin-bottom:0;" onclick="window.fetchPestRisk('${id}')">${labels.pest}</button>
+                    <div id="ai-pest-result-${id}" class="ai-result-box pest-result relative" style="display:none; margin-top:12px; margin-bottom:12px;">
+                        <div id="ai-content-pest-${id}"></div>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                     <button id="tools-btn-${id}" onclick="window.toggleAiTools('${id}')" class="ai-btn tools-btn semi-bleed justify-center" style="margin-bottom:0;">${labels.tools}</button>
+                </div>
+                
+                <div id="ai-tools-panel-${id}" class="ai-tools-panel">
+                    
+                    <button id="irrig-btn-main-${id}" onclick="window.toggleIrrigation('${id}')" class="ai-btn w-full justify-center" style="background: linear-gradient(135deg, #06b6d4 0%, #0891b2 100%); font-size:12px;">${labels.irrig}</button>
+                    <div id="irrig-ui-${id}" style="display:none; margin-top:8px;">
+                         <input type="text" id="irrig-input-${id}" class="w-input" placeholder="e.g. 5 year old tree, big canopy">
+                         <button id="irrig-btn-${id}" onclick="window.calculateIrrigation('${id}')" class="w-btn-primary" style="margin-top:0; font-size:12px;">✨ ${labels.calc}</button>
+                         <div id="irrig-result-${id}" class="ai-result-box" style="display:none; margin-top:8px; border-color:#22d3ee; background:#ecfeff; color:#155e75;"></div>
+                    </div>
+
+                    <button id="harvest-btn-main-${id}" onclick="window.toggleHarvest('${id}')" class="ai-btn w-full justify-center" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); font-size:12px; margin-top:8px;">${labels.harvest}</button>
+                    <div id="harvest-ui-${id}" style="display:none; margin-top:8px;">
+                        <input type="text" id="harvest-input-${id}" class="w-input" placeholder="e.g. Durian flowers fully open yesterday">
+                        <button id="harvest-btn-${id}" onclick="window.predictHarvest('${id}')" class="w-btn-primary" style="margin-top:0; font-size:12px;">✨ ${labels.est}</button>
+                        <div id="harvest-result-${id}" class="ai-result-box" style="display:none; margin-top:8px; border-color:#fcd34d; background:#fffbeb; color:#92400e;"></div>
+                    </div>
+
+                    <button id="soil-btn-main-${id}" onclick="window.toggleSoilAdvisor('${id}')" class="ai-btn w-full justify-center" style="background: linear-gradient(135deg, #d97706 0%, #b45309 100%); font-size:12px; margin-top:8px;">${labels.soil}</button>
+                    <div id="soil-ui-${id}" style="display:none; margin-top:8px;">
+                         <input type="text" id="soil-input-${id}" class="w-input" placeholder="e.g. Sandy soil, prone to leaching...">
+                         <button id="soil-btn-${id}" onclick="window.consultSoil('${id}')" class="w-btn-primary" style="margin-top:0; font-size:12px;">✨ ${labels.rec}</button>
+                         <div id="soil-result-${id}" class="ai-result-box" style="display:none; margin-top:8px; border-color:#fcd34d; background:#fffbeb; color:#92400e;"></div>
+                    </div>
+
+                    <button id="plan-btn-${id}" onclick="window.generateWorkPlan('${id}')" class="ai-btn w-full justify-center" style="background:#4f46e5;font-size:12px; margin-top:8px;">${labels.plan}</button>
+                    <div id="plan-grid-${id}" class="plan-grid"></div>
+
+                    <button id="sop-btn-${id}" onclick="window.generateSOP('${id}')" class="ai-btn w-full justify-center" style="background: linear-gradient(135deg, #a855f7 0%, #7e22ce 100%); font-size:12px; margin-top:8px;">${labels.sop}</button>
+                    <div id="sop-container-${id}" class="sop-card">
+                         <div class="flex items-center gap-2 mb-3">
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#d946ef" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                            <h4 id="sop-header-${id}" class="text-fuchsia-700 font-black text-[11px] uppercase tracking-widest">${labels.action}</h4>
+                         </div>
+                         <div id="sop-list-${id}"></div>
+                    </div>
+                    
+                    <button id="yield-btn-${id}" onclick="window.fetchYieldInsight('${id}')" class="ai-btn w-full justify-center" style="background: linear-gradient(135deg, #0ea5e9 0%, #0284c7 100%); font-size:12px; margin-top:8px;">${labels.yield}</button>
+                    
+                    <div id="yield-result-${id}" class="ai-result-box" style="display:none; margin-top:8px; border-color:#7dd3fc; background:#f0f9ff; color:#0c4a6e;"></div>
+
+                    <!-- Removed Chat UI as integrated into Smart Briefing -->
+                </div>
+
+                <div class="info-row" id="row-dates-top-${id}"></div>
+                <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)</div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 24px;"></div></div>
+                <div class="relative"><div class="row-label-overlay">Temp / Dew Pt <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color: #7e22ce;">DeltaT (8AM) / Safe Hours (H)</span></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
+                <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
+                <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:48px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:32px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:32px;"></div></div>
+                <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 50px; padding-top: 14px;"></div></div>
+                <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:100px;padding-top:20px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="100"></svg></div>
+                <div class="relative bg-slate-50/10"><div class="row-label-overlay"><span style="color:#1e3a8a">Rainfall</span> & <span style="color:#059669">ET0</span> (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:80px;padding-top:20px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="80"></svg></div>
+                <div class="info-row" id="row-dates-bottom-${id}"></div>
+             </div>`;
+        }
+
+        function calculateWVET(w2m_kmh, vpd, dailyEt0, gust10m_kmh, cropType, deltaT) {
+            const w_ms = w2m_kmh / 3.6;
+            let W = (w_ms < 0.5) ? 0.2 : (w_ms <= 2.0) ? 0.5 : (w_ms <= 4.0) ? 0.8 : 1.0;
+            let V = (vpd < 0.6) ? 0.2 : (vpd <= 1.2) ? 0.4 : (vpd <= 1.8) ? 0.7 : 1.0;
+            let E = (dailyEt0 < 3) ? 0.3 : (dailyEt0 <= 5) ? 0.6 : (dailyEt0 <= 7) ? 0.8 : 1.0;
+            let wvet = (0.3 * W) + (0.4 * V) + (0.3 * E);
+            let level = (wvet > 0.75) ? 'SEVERE' : (wvet > ((cropType === 'durian') ? 0.65 : 0.60)) ? 'HIGH' : (wvet > 0.4) ? 'MOD' : 'LOW';
+            let color = (level === 'SEVERE') ? 'wvet-sev' : (level === 'HIGH') ? 'wvet-high' : (level === 'MOD') ? 'wvet-mod' : 'wvet-low';
+            const isSafeWind = w_ms >= 0.5 && w_ms <= 3.0; const isSafeDeltaT = typeof deltaT === 'number' ? (deltaT >= 2.0 && deltaT <= 8.0) : true;
+            const canSpray = isSafeWind && vpd < 1.5 && wvet < 0.60 && isSafeDeltaT;
+            return { val: wvet.toFixed(2), color, canSpray };
+        }
+
+        function populateReportData(id) {
+            const data = detailData[id]; if (!data) return;
+            const days = [], crop = locationCrops[id] || 'durian', vars = ['temperature_2m','dew_point_2m','precipitation_probability','precipitation','cloudcover_high','cloudcover_mid','cloudcover_low','et0_fao_evapotranspiration','windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m','vapour_pressure_deficit','cape','visibility'];
+            const map = {}; vars.forEach(v => map[v] = getHourlyData(id, v, true));
+            
+            const getSkyColor = (idx) => {
+                if (!map.precipitation_probability) return '#e2e8f0';
+                const pp = map.precipitation_probability[idx] || 0;
+                const cl = map.cloudcover_low?.[idx] || 0;
+                const cm = map.cloudcover_mid?.[idx] || 0;
+                const ch = map.cloudcover_high?.[idx] || 0;
+                const vis = map.visibility?.[idx] || 10000;
+
+                // Priority 1: Rain/Storm
+                if (pp > 60) return '#475569'; // Slate 700 (Stormy/Dark)
+
+                // Priority 2: Fog/Haze
+                if (vis < 4000) return '#d6d3d1'; // Stone 300 (Hazy)
+
+                // Priority 3: Heavy Low Clouds (Dull/Gray)
+                if (cl > 70 || cm > 75) return '#94a3b8'; // Slate 400 (Overcast)
+
+                // Priority 4: High Clouds + Low Cloud (Vibrant Sunrise/Sunset)
+                // "Burning Sky" condition: Good amount of high clouds to catch light, low clouds not blocking horizon
+                if (ch > 40 && cl < 30 && cm < 40) return 'linear-gradient(135deg, #be123c, #fb7185)'; // Rose/Pink (Vibrant)
+                if (ch > 20 && cl < 50) return '#f97316'; // Orange 500 (Nice Glow)
+
+                // Priority 5: Clear/Fair (Golden Hour)
+                return '#fbbf24'; // Amber 400 (Golden/Sunny)
+            };
+
+            for(let i=0; i<14; i++) {
+                const start = i * 24, k8 = start + 8;
+                // AM Index: 7:00 AM (approx sunrise time) -> start + 7
+                // PM Index: 7:00 PM (approx sunset time) -> start + 19
+                const skyAM = getSkyColor(start + 7);
+                const skyPM = getSkyColor(start + 19);
+
+                const tS = map.temperature_2m?.slice(start, start+24) || [], dpS = map.dew_point_2m?.slice(start, start+24) || [];
+                if (tS.length > 0) {
+                    const current8AmT = map.temperature_2m?.[k8], current8AmDP = map.dew_point_2m?.[k8];
+                    const dT8 = (current8AmT!==undefined && current8AmDP!==undefined) ? Math.round((current8AmT - current8AmDP)*10)/10 : null;
+                    const etS = map.et0_fao_evapotranspiration?.slice(start, start+24).reduce((a,b)=>a+b,0) || 0;
+                    let safe = 0;
+                    for(let h=0; h<24; h++){
+                        const idx = start + h; if(idx < 336){
+                            const w = map.windspeed_2m?.[idx] || map.windspeed_10m?.[idx] || 0, hT = map.temperature_2m?.[idx], hDP = map.dew_point_2m?.[idx];
+                            const hDT = (hT!==undefined && hDP!==undefined) ? (hT - hDP) : null;
+                            const res = calculateWVET(w, map.vapour_pressure_deficit?.[idx]||0, etS, map.windgusts_10m?.[idx]||0, crop, hDT);
+                            if(res.canSpray) safe++;
+                        }
+                    }
+                    days.push({ 
+                        date: `${new Date(new Date().getTime() + i*86400000).getDate()}/${new Date(new Date().getTime() + i*86400000).getMonth()+1}`,
+                        hi: Math.round(Math.max(...tS)*10)/10, lo: Math.round(Math.min(...tS)*10)/10, dp: Math.round((dpS.reduce((a,b)=>a+b,0)/dpS.length)*10)/10,
+                        dT: dT8 ?? "--", safe, et: Math.round(etS*10)/10, pp: Math.round(map.precipitation_probability?.[start]||0), rv: Math.round((map.precipitation?.[start]||0)*10)/10,
+                        ch: map.cloudcover_high?.[start]||0, cm: map.cloudcover_mid?.[start]||0, cl: map.cloudcover_low?.[start]||0,
+                        w2m: Math.round((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0)), wd: Math.round(map.winddirection_10m?.[start]||0), wg: Math.round(map.windgusts_10m?.[start]||0),
+                        wvet: calculateWVET((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0), map.vapour_pressure_deficit?.[start]||0, etS, map.windgusts_10m?.[start]||0, crop, dT8), cape: map.cape?.[start]||0,
+                        vis: map.visibility?.[start] ?? 10000,
+                        skyAM, skyPM
+                    });
+                }
+            }
+            const range = document.getElementById(`m-range-${id}`); if(range && days.length>=14) range.innerText = `${days[0].date} - ${days[13].date}`;
+            const dateH = days.map(d => `<div class="info-data-cell date-cell-special">${d.date}</div>`).join('');
+            document.getElementById(`row-dates-top-${id}`).innerHTML = dateH; document.getElementById(`row-dates-bottom-${id}`).innerHTML = dateH;
+            document.getElementById(`row-temp-combined-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
+            document.getElementById(`row-wind-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="text-[10px] font-black">${d.w2m}</div><div style="transform:rotate(${d.wd+180}deg);margin:3px 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-slate-400"><path d="M12 2L19 21L12 17L5 21L12 2Z"/></svg></div><div class="text-[9px] font-black ${d.wg>=25?'text-orange-600':'text-slate-400'}">${d.wg}</div></div>`).join('');
+            document.getElementById(`row-wvet-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="wvet-traffic-light ${d.wvet.color}"></div><span class="text-[9px] font-black text-slate-500 mt-1">${d.wvet.val}</span></div>`).join('');
+            const ren = (r, k) => { document.getElementById(r).innerHTML = days.map(d => `<div class="info-data-cell">${r.includes('row-cl-')?`<div class="flex flex-col items-center"><span>${d[k]}</span><div class="pictogram-stack">${[1,2,3,4].map(b=>`<div class="pictogram-block ${b<=Math.round(d[k]/25)?'active':''}"></div>`).join('')}</div>${d.cape>=400 && d.pp>=40?`<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>`:''}${(k==='cl' && d.vis<2000 && d.w2m<12)?`<div class="fog-badge">FOG</div>`:''}</div>` : ''}</div>`).join(''); };
+            ren(`row-cl-high-${id}`, 'ch'); ren(`row-cl-mid-${id}`, 'cm'); ren(`row-cl-low-${id}`, 'cl');
+            
+            // New Sky Tint Row Rendering
+            document.getElementById(`row-sky-${id}`).innerHTML = days.map(d => `
+                <div class="info-data-cell">
+                    <div class="w-full h-full flex flex-col gap-1 px-1 justify-center">
+                        <div class="w-full h-2.5 rounded-sm" style="background:${d.skyAM}" title="AM Tint"></div>
+                        <div class="w-full h-2.5 rounded-sm" style="background:${d.skyPM}" title="PM Tint"></div>
+                    </div>
+                </div>
+            `).join('');
+
+            document.getElementById(`row-rain-pp-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join(''); document.getElementById(`row-rain-vv-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
+            requestAnimationFrame(() => setTimeout(() => drawTrends(days, id), 50));
+        }
+
+        function drawTrends(days, suffix) {
+            const svgT = document.getElementById(`trend-layer-temp-${suffix}`), svgPP = document.getElementById(`trend-layer-pp-${suffix}`), svgVV = document.getElementById(`trend-layer-vv-${suffix}`);
+            if (!svgT) return; 
+            // Fix: Use the fixed width (390) minus padding (usually 40px total) for calculations if getting width fails
+            const w = svgT.parentElement.clientWidth || 350; 
+            const s = w / 14;
+            svgT.innerHTML = ''; svgPP.innerHTML = ''; svgVV.innerHTML = ''; svgT.setAttribute('width', w); svgPP.setAttribute('width', w); svgVV.setAttribute('width', w);
+            const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
+            const minT = Math.min(...allT), maxT = Math.max(...allT), rngT = (maxT-minT)||1, getTY = (v) => 40 + (1 - (v - minT) / rngT) * 120;
+            const drawTL = (key, color, dir, dash=false) => {
+                let p = ""; days.forEach((d, i) => {
+                    const x = i * s + s/2, val = (key==='dT' && typeof d.dT !== 'number') ? 15 : d[key], y = (key==='dT') ? Math.max(getTY(val)-25, getTY(d.lo)+45) : getTY(val);
+                    p += (i===0 ? "M " : " L ") + x + " " + y;
+                    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", color); svgT.appendChild(c);
+                    if (key === 'dT') {
+                        const isSafeDeltaT = typeof d.dT === 'number' && d.dT >= 2.0 && d.dT <= 8.0; const dTColor = isSafeDeltaT ? "#7e22ce" : "#ef4444"; const safeHoursColor = d.safe > 0 ? "#166534" : "#ef4444";
+                        const tD = document.createElementNS("http://www.w3.org/2000/svg", "text"); tD.setAttribute("x", x); tD.setAttribute("y", y - 10); tD.setAttribute("text-anchor", "middle"); tD.setAttribute("font-size", "11"); tD.setAttribute("font-weight", "950"); tD.setAttribute("fill", dTColor); tD.textContent = d.dT; svgT.appendChild(tD);
+                        const tH = document.createElementNS("http://www.w3.org/2000/svg", "text"); tH.setAttribute("x", x); tH.setAttribute("y", y + 18); tH.setAttribute("text-anchor", "middle"); tH.setAttribute("font-size", "10.5"); tH.setAttribute("font-weight", "950"); tH.setAttribute("fill", safeHoursColor); tH.textContent = d.safe; svgT.appendChild(tH);
+                    } else if (dir !== 'none') {
+                        const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y + (dir==='up'?-10:16)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "11"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", color); t.textContent = d[key]; svgT.appendChild(t);
+                    }
+                });
+                const l = document.createElementNS("http://www.w3.org/2000/svg", "path"); l.setAttribute("d", p); l.setAttribute("stroke", color); l.setAttribute("stroke-width", "3"); l.setAttribute("fill", "none"); l.setAttribute("opacity", dash?"0.5":"0.6"); if(dash) l.setAttribute("stroke-dasharray","4,2"); svgT.appendChild(l);
+            };
+            drawTL('hi', '#f97316', 'up'); drawTL('lo', '#2563eb', 'down'); drawTL('dp', '#06b6d4', 'none', true); drawTL('dT', '#7e22ce', 'none');
+            let ppP = ""; days.forEach((d, i) => {
+                const x = i*s + s/2, y = 25 + (1 - d.pp/100)*55; ppP += (i===0?"M ":" L ")+x+" "+y;
+                const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", "#1e3a8a"); svgPP.appendChild(c);
+                const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?16:-10)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
+            });
+            const ppl = document.createElementNS("http://www.w3.org/2000/svg", "path"); ppl.setAttribute("d", ppP); ppl.setAttribute("stroke", "#1e3a8a"); ppl.setAttribute("stroke-width", "3"); ppl.setAttribute("fill", "none"); ppl.setAttribute("opacity", "0.6"); svgPP.appendChild(ppl);
+            const maxW = Math.max(...days.flatMap(d => [d.rv, d.et])) || 1;
+            days.forEach((d, i) => {
+                const x = i*s + (s-10)/2, h = (d.rv/maxW)*40, r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                r.setAttribute("x", x); r.setAttribute("y", 75-h); r.setAttribute("width", 10); r.setAttribute("height", h); r.setAttribute("fill", "#1e3a8a"); r.setAttribute("rx", "2"); svgVV.appendChild(r);
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", x+5); txt.setAttribute("y", 75-h-6); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#1e3a8a"); txt.textContent = d.rv; svgVV.appendChild(txt);
+            });
+            let etP = ""; days.forEach((d, i) => {
+                const x = i*s + s/2, y = 75 - (d.et/maxW)*40; etP += (i===0?"M ":" L ")+x+" "+y;
+                if (d.et>0) { const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", x); txt.setAttribute("y", y-8); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "7.5"); txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); txt.textContent = d.et; svgVV.appendChild(txt); }
+            });
+            const etl = document.createElementNS("http://www.w3.org/2000/svg", "path"); etl.setAttribute("d", etP); etl.setAttribute("stroke", "#059669"); etl.setAttribute("stroke-width", "2"); etl.setAttribute("fill", "none"); etl.setAttribute("opacity", "0.6"); svgVV.appendChild(etl);
+        }
+
+        function initGestures() {
+            const vp = document.getElementById('m-grid-viewport'), r = document.getElementById('infographic-report');
+            let startX = 0, startY = 0;
+            
+            // Handle Resize for orientation changes
+            window.addEventListener('resize', () => {
+                if(!document.getElementById('modal').classList.contains('hidden')) {
+                    resetZoom();
+                }
+            });
+
+            vp.addEventListener('touchstart', (e) => {
+                if(e.target.closest('.ai-btn') || e.target.closest('.ai-result-box') || e.target.closest('.crop-pill') || e.target.closest('.back-btn') || e.target.closest('.ai-tools-panel')) return;
+                const n = Date.now(); if(n - lastTapTime < 300) { resetZoom(); lastTapTime = 0; return; } lastTapTime = n;
+                if(e.touches.length === 2) initialPinchDist = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                else if(e.touches.length === 1) { 
+                    // Always allow pan
+                    startX = e.touches[0].pageX - posX; startY = e.touches[0].pageY - posY; 
+                }
+            }, { passive: true });
+            vp.addEventListener('touchmove', (e) => {
+                if(e.target.closest('.ai-btn') || e.target.closest('.ai-result-box') || e.target.closest('.crop-pill') || e.target.closest('.back-btn') || e.target.closest('.ai-tools-panel')) return;
+                if(e.touches.length === 2) {
+                    e.preventDefault(); const d = Math.hypot(e.touches[0].pageX - e.touches[1].pageX, e.touches[0].pageY - e.touches[1].pageY);
+                    scale = Math.min(Math.max(0.5, scale * (d / initialPinchDist)), 10); initialPinchDist = d; applyTransform();
+                } else if(e.touches.length === 1) { 
+                     // Allow pan if we are zoomed in OR if we want to move around the fixed canvas
+                     // With fixed width 390px, we might need to pan if zoomed in.
+                     if (scale > (window.innerWidth / 390)) {
+                        e.preventDefault(); 
+                        posX = e.touches[0].pageX - startX; 
+                        posY = e.touches[0].pageY - startY; 
+                        applyTransform(); 
+                     }
+                }
+            }, { passive: false });
+        }
+
+        function applyTransform() {
+            const r = document.getElementById('infographic-report'), vp = document.getElementById('m-grid-viewport');
+            
+            // Calculate boundaries to prevent panning too far away
+            // Visual Width = 390 * scale
+            const visualW = 390 * scale;
+            const screenW = vp.clientWidth || vp.offsetWidth; // Updated to clientWidth for consistency
+            
+            // X Boundary
+            if (visualW <= screenW) {
+                // Center it
+                posX = (screenW - visualW) / 2;
+            } else {
+                // Clamp
+                const minX = screenW - visualW;
+                const maxX = 0;
+                posX = Math.min(Math.max(posX, minX), maxX);
+            }
+
+            // Y Boundary
+            posY = 0; 
+
+            r.style.transform = `translate3d(${posX}px, ${posY}px, 0) scale(${scale})`;
+            
+            // Fix Scroll Height issue for both scaling up AND down
+            // offsetHeight is the stable, unscaled height
+            const h = r.offsetHeight; 
+            const diff = h * (1 - scale);
+            
+            // If scale > 1 (e.g. 2.0), diff is negative. We need positive margin to push scroll boundaries down.
+            // If scale < 1 (e.g. 0.8), diff is positive. We need negative margin to pull whitespace up.
+            // Formula: marginBottom = -diff
+            r.style.marginBottom = `${-diff}px`;
+        }
+
+        function resetZoom() { 
+            const vp = document.getElementById('m-grid-viewport');
+            const r = document.getElementById('infographic-report');
+            if(!vp || !r) return;
+
+            // Use clientWidth to handle scrollbars correctly on Desktop
+            const screenW = vp.clientWidth || vp.offsetWidth;
+            const contentW = 390; // Fixed Design Width
+
+            // Auto-Calculate Fit Scale
+            let fitScale = screenW / contentW;
+            
+            // Relaxed cap for Desktop/Wide Screens (up from 2.5)
+            // Allows full width scaling on most landscape displays
+            if (fitScale > 10.0) fitScale = 10.0;
+            
+            scale = fitScale; 
+            posX = 0; 
+            posY = 0; 
+            
+            applyTransform(); 
+        }
+
+        window.toggleFavorite = async (id) => {
+            const s = new Set(favoriteIds);
+            const isAdding = !s.has(id);
+            if(s.has(id)) s.delete(id); else s.add(id);
+            favoriteIds = Array.from(s);
+            renderList();
+            if (isAdding) {
+                setTimeout(() => {
+                    const el = document.getElementById(`content-${id}`);
+                    if(el) {
+                        el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                        const btn = el.querySelector('.pin-btn');
+                        if(btn) { btn.focus({ preventScroll: true }); }
+                        el.style.transition = 'background-color 0.3s ease-in-out';
+                        el.style.backgroundColor = '#dcfce7'; 
+                        setTimeout(() => { 
+                            el.style.transition = 'background-color 1.5s ease-out';
+                            el.style.backgroundColor = ''; 
+                        }, 800);
+                    }
+                }, 100);
+            }
+            localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+            await saveUserData();
+        };
+
+        window.closeModal = () => { currentDisplayedIds = []; document.getElementById('modal').classList.add('hidden'); fetchLandingWeather(); };
+        window.downloadInfographic = async (e) => {
+            if(e) e.preventDefault(); const btn = document.getElementById('dl-btn'); if(btn.disabled) return;
+            try {
+                btn.disabled = true; btn.style.opacity = "0.5"; const oS = scale, oX = posX, oY = posY; resetZoom(); await new Promise(r => setTimeout(r, 400));
+                const files = []; for (const lid of currentDisplayedIds) {
+                    const card = document.getElementById(`report-card-${lid}`); if (!card) continue;
+                    
+                    // Enhanced html2canvas config
+                    const canvas = await html2canvas(card, { 
+                        scale: 2, 
+                        useCORS: true, 
+                        backgroundColor: "#ffffff",
+                        onclone: (clonedDoc) => {
+                            // 1. CONTAINER CLEANUP
+                            const reportContainer = clonedDoc.getElementById('infographic-report');
+                            if(reportContainer) {
+                                reportContainer.style.transform = 'none';
+                            }
+
+                            // 2. GLOBAL TEXT CLEANUP
+                            const allElements = clonedDoc.querySelectorAll('*');
+                            allElements.forEach(el => {
+                                el.style.letterSpacing = 'normal'; 
+                                el.style.fontVariantLigatures = 'none';
+                            });
+
+                            // 3. TARGETED AI BOX CLEANUP
+                            const boxes = clonedDoc.querySelectorAll('.ai-result-box, [id^="yield-result-"]');
+                            boxes.forEach(b => {
+                                // Capture original styles needed to maintain look
+                                const computed = window.getComputedStyle(b);
+                                const bg = computed.backgroundColor;
+                                const color = computed.color;
+                                const border = computed.border;
+                                
+                                // Reset to simple, safe rendering
+                                b.style.boxShadow = 'none';
+                                b.style.textShadow = 'none';
+                                b.style.transform = 'none';
+                                b.style.backdropFilter = 'none';
+                                
+                                // Explicitly set background/border/color to computed values
+                                b.style.backgroundColor = bg;
+                                b.style.color = color;
+                                b.style.border = border;
+
+                                // FONT FIX: 
+                                // Reordered Stack: Put "Microsoft YaHei" FIRST. 
+                                // This ensures English numbers/dates and Chinese characters use the SAME font metrics, preventing the "High/Low" baseline jump.
+                                // Emoji fonts are moved to end as fallbacks.
+                                b.style.fontFamily = '"Microsoft YaHei", "SimHei", "Heiti SC", "Arial", sans-serif, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji"';
+                                
+                                // WEIGHT FIX: Prevent faux-bold smearing
+                                b.style.fontWeight = 'normal';
+                                
+                                // SPACING FIX: Reduced slightly to 0.2px (enough for overlap protection, tight enough for cohesion)
+                                b.style.letterSpacing = '0.2px';
+                                b.style.lineHeight = '1.6';
+                                
+                                // Remove text stroke artifacts
+                                b.style.webkitTextStroke = '0';
+                                
+                                // Ensure children inherit this cleanliness
+                                const children = b.querySelectorAll('*');
+                                children.forEach(c => {
+                                    c.style.fontFamily = '"Microsoft YaHei", "SimHei", "Heiti SC", "Arial", sans-serif, "Segoe UI Emoji", "Apple Color Emoji", "Noto Color Emoji"';
+                                    c.style.fontWeight = 'normal';
+                                    c.style.letterSpacing = '0.2px';
+                                    c.style.textShadow = 'none';
+                                });
+                            });
+
+                            // 4. BUTTON ALIGNMENT FIX (Fix "Center Low" text issue in image)
+                            const aiBtns = clonedDoc.querySelectorAll('.ai-btn');
+                            aiBtns.forEach(btn => {
+                                btn.style.display = 'flex';
+                                btn.style.alignItems = 'center';
+                                btn.style.justifyContent = 'center';
+                                // Shift text UP by decreasing top padding and increasing bottom padding
+                                // Original is 12px top/bottom. Previous total shift was 5px.
+                                // Requested another 2px higher -> Total 7px shift.
+                                // New Top: 12 - 7 = 5px
+                                // New Bottom: 12 + 7 = 19px
+                                btn.style.paddingTop = '5px';
+                                btn.style.paddingBottom = '19px';
+                                btn.style.lineHeight = '1.1'; 
+                            });
+                        }
+                    });
+                    const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+                    if (blob) files.push(new File([blob], `WeatherNext_${lid}.png`, { type: 'image/png' }));
+                }
+                scale = oS; posX = oX; posY = oY; applyTransform();
+                
+                if (files.length > 0) { 
+                    let handled = false;
+
+                    // Detect Windows explicitly.
+                    // On Windows, we prefer a direct download (Save to Folder) over the System Share Menu,
+                    // which often only offers Mail/OneNote and confuses users who just want the file.
+                    const isWindows = /Windows/i.test(navigator.userAgent);
+
+                    // Try Native Share (Works best on iOS/Android Chrome)
+                    // We SKIP this on Windows to force the direct download logic below.
+                    if (!isWindows && navigator.share && navigator.canShare && navigator.canShare({ files })) {
+                        try {
+                            await navigator.share({ files, title: 'WeatherNext', text: 'Weather Report' });
+                            handled = true;
+                        } catch (err) {
+                            // AbortError means user closed the share sheet - consider handled (user cancelled).
+                            // Other errors mean we should fall back to download.
+                            if (err.name === 'AbortError') handled = true;
+                            else console.warn("Share failed, using fallback:", err);
+                        }
+                    } 
+                    
+                    // Direct Download Logic
+                    // Triggered if:
+                    // 1. It is Windows (forced)
+                    // 2. Share API is unavailable (Desktop Chrome/Mac)
+                    // 3. Share API failed
+                    if (!handled) {
+                        files.forEach((f, index) => { 
+                            // Add slight delay if multiple files to prevent browser blocking "automatic downloads"
+                            setTimeout(() => {
+                                const url = URL.createObjectURL(f);
+                                const a = document.createElement('a'); 
+                                a.style.display = 'none';
+                                a.href = url; 
+                                a.download = f.name; 
+                                
+                                // Append to body (Required for Firefox/Android/Windows compatibility)
+                                document.body.appendChild(a);
+                                a.click(); 
+                                
+                                // Clean up
+                                setTimeout(() => { 
+                                    document.body.removeChild(a); 
+                                    URL.revokeObjectURL(url); 
+                                }, 2000);
+                            }, index * 500); // 500ms stagger for multiple files
+                        }); 
+                    }
+                }
+            } catch (err) { console.error(err); } finally { btn.disabled = false; btn.style.opacity = "1"; }
+        };
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            await initApp(); onAuthStateChanged(auth, (u) => { if(u) { user = u; startSilentSync(); } });
+            document.getElementById('timeline').oninput = syncUI;
+            setInterval(syncUI, 1000); setInterval(updateLunarDate, 60000);
+            setInterval(() => { if(currentDisplayedIds.length === 0) fetchLandingWeather(); }, 10 * 60 * 1000); 
+        });
+    </script>
+
+    <!-- ============================================================ -->
+    <!-- PWA: Install banner + update banner + registration           -->
+    <!-- ============================================================ -->
+    <div id="pwa-install-banner" role="dialog" aria-label="Install WeatherNext">
+      <div class="pwa-icon">
+        <svg width="22" height="22" viewBox="0 0 100 100">
+          <path d="M30 70 L45 35 L55 55 L75 15" fill="none" stroke="#1d4ed8" stroke-width="10" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="75" cy="15" r="7" fill="#fbbf24"/>
+          <path d="M20 80 H80" stroke="#60a5fa" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="pwa-text">
+        <div class="pwa-title">Install WeatherNext</div>
+        <div class="pwa-sub">添加到主屏幕 · Faster, works offline</div>
+      </div>
+      <button id="pwa-install-btn" type="button">Install</button>
+      <button class="pwa-close" id="pwa-dismiss-btn" type="button" aria-label="Dismiss">✕</button>
+    </div>
+
+    <div id="pwa-update-banner" role="status">
+      <span>New version ready</span>
+      <button id="pwa-reload-btn" type="button">Reload</button>
+    </div>
+
+    <script>
+    (function () {
+      'use strict';
+
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('sw.js', { scope: './' })
+            .then((reg) => {
+              console.log('[PWA] Service worker registered, scope:', reg.scope);
+              if (reg.waiting) showUpdateBanner(reg.waiting);
+              reg.addEventListener('updatefound', () => {
+                const newWorker = reg.installing;
+                if (!newWorker) return;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    showUpdateBanner(newWorker);
+                  }
+                });
+              });
+            })
+            .catch((err) => console.warn('[PWA] SW registration failed:', err));
+
+          let refreshing = false;
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (refreshing) return;
+            refreshing = true;
+            window.location.reload();
+          });
+        });
+      }
+
+      function showUpdateBanner(worker) {
+        const banner = document.getElementById('pwa-update-banner');
+        const reloadBtn = document.getElementById('pwa-reload-btn');
+        if (!banner || !reloadBtn) return;
+        banner.classList.add('show');
+        reloadBtn.addEventListener('click', () => {
+          worker.postMessage('SKIP_WAITING');
+          banner.classList.remove('show');
+        }, { once: true });
+      }
+
+      let deferredInstallPrompt = null;
+      const DISMISS_KEY = 'wnext_pwa_install_dismissed_v1';
+      const DISMISS_DAYS = 7;
+
+      const isDismissed = () => {
+        const t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
+        if (!t) return false;
+        const elapsed = (Date.now() - t) / (1000 * 60 * 60 * 24);
+        return elapsed < DISMISS_DAYS;
+      };
+
+      const isStandalone = () => {
+        return window.matchMedia('(display-mode: standalone)').matches ||
+               window.navigator.standalone === true ||
+               document.referrer.startsWith('android-app://');
+      };
+
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredInstallPrompt = e;
+        if (!isDismissed() && !isStandalone()) {
+          setTimeout(() => {
+            const banner = document.getElementById('pwa-install-banner');
+            if (banner) banner.classList.add('show');
+          }, 2500);
+        }
+      });
+
+      const installBtn = document.getElementById('pwa-install-btn');
+      const dismissBtn = document.getElementById('pwa-dismiss-btn');
+      const banner = document.getElementById('pwa-install-banner');
+
+      if (installBtn) {
+        installBtn.addEventListener('click', async () => {
+          if (!deferredInstallPrompt) return;
+          banner.classList.remove('show');
+          deferredInstallPrompt.prompt();
+          const { outcome } = await deferredInstallPrompt.userChoice;
+          console.log('[PWA] Install outcome:', outcome);
+          deferredInstallPrompt = null;
+          if (outcome === 'dismissed') {
+            localStorage.setItem(DISMISS_KEY, String(Date.now()));
+          }
+        });
+      }
+
+      if (dismissBtn) {
+        dismissBtn.addEventListener('click', () => {
+          banner.classList.remove('show');
+          localStorage.setItem(DISMISS_KEY, String(Date.now()));
+        });
+      }
+
+      const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+      const isSafari = /^((?!chrome|android|crios|fxios|edgios).)*safari/i.test(navigator.userAgent);
+      if (isIOS && isSafari && !isStandalone() && !isDismissed()) {
+        setTimeout(() => {
+          if (!banner) return;
+          const title = banner.querySelector('.pwa-title');
+          const sub = banner.querySelector('.pwa-sub');
+          const iBtn = document.getElementById('pwa-install-btn');
+          if (title) title.innerText = 'Add to Home Screen';
+          if (sub) sub.innerHTML = 'Tap <span style="font-weight:900">Share</span> → <span style="font-weight:900">Add to Home Screen</span>';
+          if (iBtn) iBtn.style.display = 'none';
+          banner.classList.add('show');
+        }, 2500);
+      }
+
+      window.addEventListener('appinstalled', () => {
+        console.log('[PWA] App installed');
+        if (banner) banner.classList.remove('show');
+        deferredInstallPrompt = null;
+      });
+
+      window.addEventListener('load', () => {
+        const params = new URLSearchParams(window.location.search);
+        const action = params.get('action');
+        if (!action) return;
+        const tryOpen = (attempt) => {
+          attempt = attempt || 0;
+          if (attempt > 20) return;
+          if (action === 'add' && typeof window.openAddModal === 'function') {
+            window.openAddModal();
+          } else if (action === 'search' && typeof window.openSearch === 'function') {
+            window.openSearch();
+          } else {
+            setTimeout(() => tryOpen(attempt + 1), 250);
+            return;
+          }
+          const url = new URL(window.location.href);
+          url.searchParams.delete('action');
+          window.history.replaceState({}, '', url.toString());
+        };
+        tryOpen();
+      });
+    })();
+    </script>
+</body>
+</html>

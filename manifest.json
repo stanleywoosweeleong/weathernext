@@ -1,0 +1,59 @@
+{
+  "name": "农友天气 WeatherNext",
+  "short_name": "WeatherNext",
+  "description": "Bilingual smart farming weather app for Malaysian agriculture / 马来西亚农业智能天气预报",
+  "id": "/wnext-ag/",
+  "start_url": "./?source=pwa",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["window-controls-overlay", "standalone", "minimal-ui"],
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#1d4ed8",
+  "lang": "zh-CN",
+  "dir": "ltr",
+  "categories": ["weather", "productivity", "utilities", "agriculture"],
+  "prefer_related_applications": false,
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-maskable-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "icon-maskable-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Add Location / 添加地点",
+      "short_name": "Add",
+      "description": "Quickly add a new farm location",
+      "url": "./?action=add",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Search / 搜索",
+      "short_name": "Search",
+      "description": "Search for a location",
+      "url": "./?action=search",
+      "icons": [{ "src": "icon-192.png", "sizes": "192x192" }]
+    }
+  ]
+}
