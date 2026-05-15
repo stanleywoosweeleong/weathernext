@@ -525,6 +525,11 @@
 
         /* Modal Styles */
         .w-modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); z-index: 2000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(2px); }
+        /* CRITICAL: ensure .hidden always wins over .w-modal-overlay's display:flex.
+           Tailwind CDN normally handles this, but on some PWA contexts the cascade
+           order can break. This explicit override is bulletproof. */
+        .w-modal-overlay.hidden,
+        .hidden { display: none !important; }
         .w-modal-card { background: white; width: 85%; max-width: 320px; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: modal-in 0.2s ease-out; }
         @keyframes modal-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
         .w-input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; font-size: 16px; outline: none; }
