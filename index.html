@@ -272,7 +272,8 @@
             width: 390px; /* FIXED WIDTH to prevent text wrapping */
             min-width: 390px; /* Ensure it doesn't shrink in layout */
             height: auto;
-            position: relative; transform-origin: 0 0; touch-action: pan-y; padding-bottom: 60px; min-height: 100%; will-change: transform;
+            margin: 0 auto; /* Self-center horizontally as fallback if JS centering misfires */
+            position: relative; transform-origin: 50% 0; touch-action: pan-y; padding-bottom: 60px; min-height: 100%; will-change: transform;
         }
 
         .report-card { background: white; padding: 20px; padding-bottom: 40px; margin-bottom: 20px; border-bottom: 4px solid #f1f5f9; }
@@ -288,7 +289,7 @@
         }
 
         .row-label-overlay {
-            position: absolute; left: 6px; top: 4px; font-size: 8px; font-weight: 900; 
+            position: absolute; left: 0; top: 4px; font-size: 8px; font-weight: 900; 
             text-transform: uppercase; color: #475569; letter-spacing: 0.08em; pointer-events: none;
             z-index: 40; background: rgba(255,255,255,0.95); padding: 2px 6px; border-radius: 4px;
             box-shadow: 0 1px 2px rgba(0,0,0,0.05);
@@ -2179,7 +2180,7 @@
              
              // Reduced mt-2 to mt-0.5 and added leading-none to English headers to save vertical space
              return `<div class="report-card" id="report-card-${id}">
-                <div class="report-header"><div class="w-full flex flex-col"><div class="flex justify-between items-start w-full"><div class="flex items-center gap-2"><h2 class="text-xl font-black uppercase text-slate-900 leading-none">${nameEn}</h2></div><h2 id="m-range-${id}" class="text-xl font-black uppercase text-slate-900 leading-none">--</h2></div><div class="flex justify-between items-end w-full mt-0.5"><div class="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 class="text-xl font-black text-blue-700 leading-none">${nameZh}</h2><div class="flex items-center">${langBtns}</div></div><div class="flex items-center gap-1"><span id="m-crop-toggle-${id}" onclick="window.toggleCrop('${id}')" class="crop-pill">${crop}</span><span onclick="window.toggleModel()" class="model-toggle-btn">${activeModel==='best_match'?'AI Model':'ECMWF'}</span></div></div></div></div>
+                <div class="report-header"><div class="w-full flex flex-col"><div class="flex justify-between items-start w-full"><div class="flex items-center gap-2"><h2 class="text-xl font-black uppercase text-slate-900 leading-none">${nameEn}</h2></div><h2 id="m-range-${id}" class="text-sm font-black uppercase text-slate-900 leading-none">--</h2></div><div class="flex justify-between items-end w-full mt-0.5"><div class="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 class="text-xl font-black text-blue-700 leading-none">${nameZh}</h2><div class="flex items-center">${langBtns}</div></div><div class="flex items-center gap-1"><span id="m-crop-toggle-${id}" onclick="window.toggleCrop('${id}')" class="crop-pill">${crop}</span><span onclick="window.toggleModel()" class="model-toggle-btn">${activeModel==='best_match'?'AI Model':'ECMWF'}</span></div></div></div></div>
                 
                 <div class="mt-2 mb-2">
                     <button id="ai-btn-${id}" class="ai-btn semi-bleed" style="margin-bottom:0;" onclick="window.handleSmartBriefClick('${id}')"><div class="ai-btn-progress" id="ai-prog-${id}"></div><span id="ai-btn-text-${id}">${labels.brief}</span><div class="ai-loading-spinner" id="ai-spin-${id}"></div></button>
@@ -2470,13 +2471,17 @@
             const visualW = 390 * scale;
             const screenW = vp.clientWidth || vp.offsetWidth;
             
-            // X Boundary
+            // With transform-origin: 50% 0 and margin: 0 auto on #infographic-report,
+            // the element is centered in its parent BEFORE transform is applied.
+            // Transform scale now expands from horizontal center, so content stays
+            // centered automatically. posX is only needed for panning when zoomed in.
             if (visualW <= screenW) {
-                posX = (screenW - visualW) / 2;
+                posX = 0;  // No translation needed — CSS already centers it
             } else {
-                const minX = screenW - visualW;
-                const maxX = 0;
-                posX = Math.min(Math.max(posX, minX), maxX);
+                // When content is wider than screen (pinch-zoomed in), allow pan
+                // Half the overflow is on each side of center; clamp accordingly
+                const halfOverflow = (visualW - screenW) / 2;
+                posX = Math.min(Math.max(posX, -halfOverflow), halfOverflow);
             }
 
             posY = 0; 
@@ -2506,11 +2511,10 @@
             let fitScale;
             
             if (screenW < 600) {
-                // Phone: render content at 85% of screen width.
-                // Generous ~7.5% margin on each side ensures the last column
-                // ("28/5") is never clipped, even with subpixel rounding or
-                // any flex-distribution quirks.
-                fitScale = (screenW * 0.85) / contentW;
+                // Phone: render content at 92% of screen width.
+                // CSS margin:auto + transform-origin:50% 0 ensures content is centered
+                // regardless of subpixel rounding, so we can use more of the screen.
+                fitScale = (screenW * 0.92) / contentW;
             } else {
                 // Desktop/tablet: fit naturally
                 fitScale = screenW / contentW;
