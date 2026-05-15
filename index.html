@@ -143,6 +143,9 @@
         @media (max-width: 479px) {
             :root { --chrome-h: 175px; }
             
+            /* Forecast modal: pad top for iOS safe area (notch/Dynamic Island) */
+            #modal { padding-top: var(--safe-top) !important; }
+            
             /* Compact date/lunar-calendar block (kept visible — lunar info matters) */
             #header-datetime { margin-left: 4px !important; }
             #ui-greg-date { font-size: 12px !important; margin-bottom: 3px !important; }
