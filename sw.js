@@ -3,7 +3,7 @@
 // Version 1.0.0 — bump CACHE_VERSION on each release
 // ============================================================
 
-const CACHE_VERSION = 'wnext-v1.0.9';
+const CACHE_VERSION = 'wnext-v1.0.10';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const WEATHER_CACHE = `${CACHE_VERSION}-weather`;
@@ -15,8 +15,8 @@ const SHELL_ASSETS = [
   './manifest.json',
   './icon-192.png',
   './icon-512.png',
+  './tailwind.css',
   // External CDN assets — cache so app loads fully offline after first visit
-  'https://cdn.tailwindcss.com',
   'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js'
 ];
 
@@ -140,11 +140,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. CDN scripts (Tailwind, html2canvas) — cache-first (these rarely change)
-  if (
-    url.hostname.includes('cdn.tailwindcss.com') ||
-    url.hostname.includes('cdnjs.cloudflare.com')
-  ) {
+  // 4. CDN scripts (html2canvas) — cache-first (rarely changes)
+  if (url.hostname.includes('cdnjs.cloudflare.com')) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) {
