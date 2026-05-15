@@ -504,6 +504,16 @@
 </head>
 <body class="flex flex-col">
 
+<!-- STARTUP DIAGNOSTIC - REMOVE LATER -->
+<div id="startup-marker" style="position:fixed;bottom:0;left:0;right:0;background:magenta;color:white;font-family:monospace;font-size:14px;font-weight:900;padding:14px;z-index:2147483647;text-align:center;border-top:5px solid black;">
+  LOADED v1.0.37 — HTML reached browser
+</div>
+<script>
+  // Inline script — runs immediately, no need for triggers
+  document.getElementById('startup-marker').textContent = 
+    'LOADED v1.0.37 | innerWidth=' + window.innerWidth + ' | scrollY=' + window.scrollY;
+</script>
+
     <!-- Toast UI -->
     <div id="toast" class="toast-notification">
         <div id="toast-icon" class="w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0">
@@ -2525,20 +2535,18 @@
                 if (!dbg) {
                     dbg = document.createElement('div');
                     dbg.id = 'zoom-debug-overlay';
-                    dbg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:240px;background:lime;color:black;font-family:monospace;font-size:14px;font-weight:900;padding:20px;z-index:2147483647;line-height:1.4;white-space:pre;overflow:auto;text-align:left;';
+                    dbg.style.cssText = 'position:fixed;bottom:80px;left:0;right:0;background:lime;color:black;font-family:monospace;font-size:13px;font-weight:900;padding:14px;z-index:2147483647;line-height:1.4;white-space:pre;overflow:auto;text-align:left;border-top:3px solid black;border-bottom:3px solid black;';
                     document.documentElement.appendChild(dbg);
                 }
                 const vpTest = document.getElementById('m-grid-viewport');
                 const rTest = document.getElementById('infographic-report');
                 dbg.textContent = 
-                    'DEBUG v1.0.35 RESETZOOM CALLED' +
-                    '\nattempt: ' + (attempt || 0) +
-                    '\nvp found: ' + (!!vpTest) +
-                    '\nr found: ' + (!!rTest) +
+                    'DEBUG v1.0.37 RESETZOOM' +
                     '\nvp.clientWidth: ' + (vpTest ? vpTest.clientWidth : 'N/A') +
                     '\nwindow.innerWidth: ' + window.innerWidth +
-                    '\ndocument.body exists: ' + (!!document.body) +
-                    '\nmodal.hidden: ' + (document.getElementById('modal') ? document.getElementById('modal').classList.contains('hidden') : 'N/A');
+                    '\nr.offsetLeft: ' + (rTest ? rTest.offsetLeft : 'N/A') +
+                    '\nr.offsetWidth: ' + (rTest ? rTest.offsetWidth : 'N/A') +
+                    (rTest ? '\nrect.left/right: ' + rTest.getBoundingClientRect().left.toFixed(1) + ' / ' + rTest.getBoundingClientRect().right.toFixed(1) : '');
             } catch(e) {
                 alert('RESETZOOM DEBUG ERROR: ' + e.message);
             }
