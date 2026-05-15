@@ -129,61 +129,64 @@
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
         /* ============================================================
-           DESKTOP LAYOUT
-           Use full window width with proportionally larger text/elements
-           so the app actually feels desktop-sized, not mobile-in-a-big-window.
+           DESKTOP / LARGER SCREEN LAYOUT
+           Anything wider than a phone (>500px) gets bigger fonts and
+           full-width layout. Catches resized PWA windows too.
+           Selectors use body> prefix for higher specificity than Tailwind.
            ============================================================ */
-        @media (min-width: 600px) {
+        @media (min-width: 500px) {
             /* Main two-column list area: cap at comfortable max width */
-            #main-content { 
-                max-width: 1200px; 
-                margin: 0 auto; 
-                width: 100%;
+            body > main#main-content { 
+                max-width: 1200px !important; 
+                margin: 0 auto !important; 
+                width: 100% !important;
             }
             /* Forecast modal: center the 390px-design content in the window */
-            #m-grid-viewport { 
-                max-width: 900px; 
-                margin: 0 auto;
+            body #m-grid-viewport { 
+                max-width: 900px !important; 
+                margin: 0 auto !important;
             }
             
             /* Scale up the header */
-            header { height: calc(120px + var(--safe-top)) !important; }
-            header h1 { font-size: 24px !important; }
-            header .w-12 { width: 56px !important; height: 56px !important; }
-            header .w-12 > svg { width: 32px !important; height: 32px !important; }
-            #ui-greg-date { font-size: 28px !important; }
-            #ui-time { font-size: 18px !important; }
-            #ui-term-countdown { font-size: 14px !important; }
-            .model-pill { font-size: 14px !important; height: 28px !important; padding: 0 10px !important; }
+            body > header { height: calc(120px + var(--safe-top)) !important; }
+            body > header h1 { font-size: 24px !important; line-height: 1.2 !important; }
+            body > header .w-12 { width: 56px !important; height: 56px !important; }
+            body > header .w-12 > svg { width: 32px !important; height: 32px !important; }
+            body #ui-greg-date { font-size: 28px !important; }
+            body #ui-time { font-size: 18px !important; }
+            body #ui-term-countdown { font-size: 14px !important; }
+            body .model-pill { font-size: 14px !important; height: 28px !important; padding: 0 10px !important; }
             
-            /* Bigger column headers */
-            main > div > .p-4 { 
+            /* Bigger column headers ("西马 WEST" / "东马 EAST") */
+            body main > div > div.p-4 { 
                 font-size: 14px !important; 
                 padding: 16px !important;
             }
             
             /* Scale up the location cards */
-            .name-label-en { font-size: 28px !important; }
-            .name-label-zh { font-size: 24px !important; margin-top: 6px !important; }
-            .list-item-content { 
+            body .list-item-content .name-label-en { font-size: 28px !important; }
+            body .list-item-content .name-label-zh { font-size: 24px !important; margin-top: 6px !important; }
+            body .list-item-content { 
                 padding: 28px 24px !important; 
                 padding-right: 60px !important;
             }
-            .list-item-content .text-\[17px\] { font-size: 22px !important; }
-            .list-item-content .text-\[9px\] { font-size: 11px !important; }
-            .list-item-content .gap-10 { gap: 3rem !important; }
-            .list-item-content .mt-6 { margin-top: 1.25rem !important; }
-            .pin-btn { width: 56px !important; height: 56px !important; }
-            .pin-icon { width: 28px !important; height: 28px !important; }
+            body .list-item-content span[id^="t-"],
+            body .list-item-content span[id^="p-"] { font-size: 22px !important; }
+            body .list-item-content .text-\[9px\] { font-size: 11px !important; }
+            body .list-item-content .gap-10 { gap: 3rem !important; }
+            body .list-item-content .mt-6 { margin-top: 1.25rem !important; }
+            body .pin-btn { width: 56px !important; height: 56px !important; top: 18px !important; }
+            body .pin-icon { width: 28px !important; height: 28px !important; }
             
             /* Bigger footer */
-            footer { 
+            body > footer { 
                 height: calc(140px + var(--safe-bottom)) !important;
             }
-            #ui-proj-time { font-size: 16px !important; }
+            body #ui-proj-time { font-size: 16px !important; }
+            body #ui-date-display { font-size: 13px !important; }
             
             /* Adjust the chrome-h variable used for main height calc */
-            :root { --chrome-h: 260px; }
+            :root { --chrome-h: 260px !important; }
         }
 
         header { padding-top: var(--safe-top); height: calc(105px + var(--safe-top)); }
