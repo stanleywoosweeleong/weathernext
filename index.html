@@ -2468,6 +2468,40 @@
         function applyTransform() {
             const r = document.getElementById('infographic-report'), vp = document.getElementById('m-grid-viewport');
             
+            // ============ DIAGNOSTIC OVERLAY (FIRST, before anything can fail) ============
+            try {
+                let dbg = document.getElementById('zoom-debug-overlay');
+                if (!dbg) {
+                    dbg = document.createElement('div');
+                    dbg.id = 'zoom-debug-overlay';
+                    dbg.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;background:rgba(255,255,0,0.95);color:black;font-family:monospace;font-size:11px;font-weight:bold;padding:8px;border:3px solid red;border-radius:6px;z-index:99999;line-height:1.4;white-space:pre;overflow-x:auto;';
+                    document.body.appendChild(dbg);
+                }
+                const sW = vp ? (vp.clientWidth || vp.offsetWidth) : -1;
+                const vpRect = vp ? vp.getBoundingClientRect() : {left:-1,right:-1,width:-1};
+                const rRect = r ? r.getBoundingClientRect() : {left:-1,right:-1,width:-1};
+                dbg.textContent = 
+                    'DEBUG v1.0.33' + 
+                    '\nwindow.innerWidth: ' + window.innerWidth + 
+                    '\nvp.clientWidth:    ' + sW + 
+                    '\nvpRect.left/right: ' + vpRect.left.toFixed(1) + ' / ' + vpRect.right.toFixed(1) + 
+                    '\nvpRect.width:      ' + vpRect.width.toFixed(1) + 
+                    '\nscale:             ' + scale.toFixed(4) + 
+                    '\nvisualW:           ' + (390 * scale).toFixed(1) + 
+                    '\nr.offsetLeft:      ' + (r ? r.offsetLeft : '-1') + 
+                    '\nr.offsetWidth:     ' + (r ? r.offsetWidth : '-1') + 
+                    '\nrRect.left/right:  ' + rRect.left.toFixed(1) + ' / ' + rRect.right.toFixed(1) + 
+                    '\nrRect.width:       ' + rRect.width.toFixed(1) + 
+                    '\nleft gap:          ' + rRect.left.toFixed(1) + 
+                    '\nright gap:         ' + (window.innerWidth - rRect.right).toFixed(1);
+            } catch(e) {
+                let dbg = document.getElementById('zoom-debug-overlay');
+                if (dbg) dbg.textContent = 'DEBUG ERROR: ' + e.message;
+            }
+            // ============ END DIAGNOSTIC ============
+            
+            if (!r || !vp) return;
+            
             const visualW = 390 * scale;
             const screenW = vp.clientWidth || vp.offsetWidth;
             
@@ -2488,36 +2522,6 @@
             const h = r.offsetHeight; 
             const diff = h * (1 - scale);
             r.style.marginBottom = `${-diff}px`;
-            
-            // ============ DIAGNOSTIC OVERLAY ============
-            // Shows actual runtime values on-screen for debugging.
-            // To be removed once issue is identified.
-            let dbg = document.getElementById('zoom-debug-overlay');
-            if (!dbg) {
-                dbg = document.createElement('div');
-                dbg.id = 'zoom-debug-overlay';
-                dbg.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;background:rgba(255,255,0,0.95);color:black;font-family:monospace;font-size:11px;font-weight:bold;padding:8px;border:2px solid red;border-radius:6px;z-index:99999;line-height:1.4;white-space:pre;overflow-x:auto;';
-                document.body.appendChild(dbg);
-            }
-            const rRect = r.getBoundingClientRect();
-            const vpRect = vp.getBoundingClientRect();
-            dbg.textContent = 
-                'window.innerWidth: ' + window.innerWidth + 
-                '\nvp.clientWidth:    ' + vp.clientWidth + 
-                '\nvp.offsetWidth:    ' + vp.offsetWidth + 
-                '\nvpRect.left/right: ' + vpRect.left.toFixed(1) + ' / ' + vpRect.right.toFixed(1) + 
-                '\nvpRect.width:      ' + vpRect.width.toFixed(1) + 
-                '\nscale:             ' + scale.toFixed(4) + 
-                '\nvisualW:           ' + visualW.toFixed(1) + 
-                '\ncenteringTranslate:' + centeringTranslate.toFixed(1) + 
-                '\nposX:              ' + posX.toFixed(1) + 
-                '\ntx (applied):      ' + tx.toFixed(1) + 
-                '\nr.offsetLeft:      ' + r.offsetLeft + 
-                '\nr.offsetWidth:     ' + r.offsetWidth + 
-                '\nrRect.left/right:  ' + rRect.left.toFixed(1) + ' / ' + rRect.right.toFixed(1) + 
-                '\nrRect.width:       ' + rRect.width.toFixed(1) + 
-                '\nleft gap:          ' + rRect.left.toFixed(1) + 
-                '\nright gap:         ' + (window.innerWidth - rRect.right).toFixed(1);
         }
 
         function resetZoom(attempt) { 
