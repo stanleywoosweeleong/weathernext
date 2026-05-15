@@ -2467,35 +2467,24 @@
         function applyTransform() {
             const r = document.getElementById('infographic-report'), vp = document.getElementById('m-grid-viewport');
             
-            // Calculate boundaries to prevent panning too far away
-            // Visual Width = 390 * scale
             const visualW = 390 * scale;
-            const screenW = vp.clientWidth || vp.offsetWidth; // Updated to clientWidth for consistency
+            const screenW = vp.clientWidth || vp.offsetWidth;
             
             // X Boundary
             if (visualW <= screenW) {
-                // Center it
                 posX = (screenW - visualW) / 2;
             } else {
-                // Clamp
                 const minX = screenW - visualW;
                 const maxX = 0;
                 posX = Math.min(Math.max(posX, minX), maxX);
             }
 
-            // Y Boundary
             posY = 0; 
 
             r.style.transform = `translate3d(${posX}px, ${posY}px, 0) scale(${scale})`;
             
-            // Fix Scroll Height issue for both scaling up AND down
-            // offsetHeight is the stable, unscaled height
             const h = r.offsetHeight; 
             const diff = h * (1 - scale);
-            
-            // If scale > 1 (e.g. 2.0), diff is negative. We need positive margin to push scroll boundaries down.
-            // If scale < 1 (e.g. 0.8), diff is positive. We need negative margin to pull whitespace up.
-            // Formula: marginBottom = -diff
             r.style.marginBottom = `${-diff}px`;
         }
 
@@ -2517,10 +2506,11 @@
             let fitScale;
             
             if (screenW < 600) {
-                // Phone: ensure rendered width is at most 92% of screen width.
-                // This guarantees ~4% margin on each side no matter the phone size,
-                // so the last date column ("28/5") is never clipped on any iPhone.
-                fitScale = (screenW * 0.92) / contentW;
+                // Phone: render content at 85% of screen width.
+                // Generous ~7.5% margin on each side ensures the last column
+                // ("28/5") is never clipped, even with subpixel rounding or
+                // any flex-distribution quirks.
+                fitScale = (screenW * 0.85) / contentW;
             } else {
                 // Desktop/tablet: fit naturally
                 fitScale = screenW / contentW;
