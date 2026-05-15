@@ -2357,34 +2357,38 @@
             const svgT = document.getElementById(`trend-layer-temp-${suffix}`), svgPP = document.getElementById(`trend-layer-pp-${suffix}`), svgVV = document.getElementById(`trend-layer-vv-${suffix}`);
             if (!svgT) return; 
             
-            // Read actual rendered positions of the 14 date cells, then compute
-            // column centers in the SVG's coordinate space. This guarantees the
-            // chart aligns with the dates regardless of any padding/border quirks.
             const dateRow = document.getElementById(`row-dates-top-${suffix}`);
             const cells = dateRow ? dateRow.children : null;
             const columnCenters = [];
             let w;
             
             if (cells && cells.length === 14) {
-                // Use each cell's actual center, relative to the SVG's parent
-                const svgParentLeft = svgT.parentElement.getBoundingClientRect().left;
+                // SVG is positioned at dateRow's left edge (see code below).
+                // So cell.offsetLeft (relative to dateRow) maps directly to SVG x-coords.
                 for (let i = 0; i < 14; i++) {
-                    const rect = cells[i].getBoundingClientRect();
-                    columnCenters.push(rect.left + rect.width / 2 - svgParentLeft);
+                    const cell = cells[i];
+                    columnCenters.push(cell.offsetLeft + cell.offsetWidth / 2);
                 }
-                // Use the date row's total width so the chart never extends beyond it
-                const firstRect = cells[0].getBoundingClientRect();
-                const lastRect = cells[13].getBoundingClientRect();
-                w = lastRect.right - firstRect.left;
+                w = dateRow.offsetWidth;
             } else {
-                // Fallback if date row not yet rendered: even split of parent width
+                // Fallback: even split
                 w = svgT.parentElement.clientWidth || 350;
                 const s = w / 14;
                 for (let i = 0; i < 14; i++) columnCenters.push(i * s + s / 2);
             }
-            const s = w / 14; // legacy step (used for bar widths)
+            const s = w / 14; // used for bar widths in rain volume chart
             
-            svgT.innerHTML = ''; svgPP.innerHTML = ''; svgVV.innerHTML = ''; svgT.setAttribute('width', w); svgPP.setAttribute('width', w); svgVV.setAttribute('width', w);
+            svgT.innerHTML = ''; svgPP.innerHTML = ''; svgVV.innerHTML = ''; 
+            svgT.setAttribute('width', w); svgPP.setAttribute('width', w); svgVV.setAttribute('width', w);
+            // Critical: force SVG element style.width to match attribute width exactly,
+            // overriding CSS `width: 100%`. This prevents the SVG from rendering at
+            // svgParent's width (which may differ from dateRow's width by a few px)
+            // and then auto-scaling its content, which would shift x-coordinates.
+            svgT.style.width = w + 'px'; svgPP.style.width = w + 'px'; svgVV.style.width = w + 'px';
+            // Also align horizontal position: SVG is absolute-positioned, so shift it
+            // to match dateRow's left edge (in case svgParent has different left).
+            const svgLeft = (dateRow ? dateRow.offsetLeft - svgT.parentElement.offsetLeft : 0);
+            svgT.style.left = svgLeft + 'px'; svgPP.style.left = svgLeft + 'px'; svgVV.style.left = svgLeft + 'px';
             const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
             const minT = Math.min(...allT), maxT = Math.max(...allT), rngT = (maxT-minT)||1, getTY = (v) => 40 + (1 - (v - minT) / rngT) * 120;
             const drawTL = (key, color, dir, dash=false) => {
