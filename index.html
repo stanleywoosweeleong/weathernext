@@ -2486,7 +2486,14 @@
             }
 
             let fitScale = screenW / contentW;
-            if (fitScale < 1.0) fitScale = fitScale * 0.98;
+            
+            // On phone-sized screens, scale down 5% so the last day column
+            // (e.g. "28/5") never gets clipped against the right edge.
+            // Without this, viewports very close to 390px (iPhone 15 Pro at 393px)
+            // end up with no margin and the right edge clips.
+            if (screenW < 600) {
+                fitScale = fitScale * 0.95;
+            }
             if (fitScale > 10.0) fitScale = 10.0;
             
             scale = fitScale; 
