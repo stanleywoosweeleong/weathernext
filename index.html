@@ -2465,46 +2465,40 @@
             }, { passive: false });
         }
 
+        let __debug_call_count = 0;
         function applyTransform() {
+            __debug_call_count++;
             const r = document.getElementById('infographic-report'), vp = document.getElementById('m-grid-viewport');
             
-            // ============ DIAGNOSTIC OVERLAY (FIRST, before anything can fail) ============
+            // ============ DIAGNOSTIC OVERLAY (FULL SCREEN TAKEOVER) ============
             try {
                 let dbg = document.getElementById('zoom-debug-overlay');
                 if (!dbg) {
                     dbg = document.createElement('div');
                     dbg.id = 'zoom-debug-overlay';
-                    dbg.style.cssText = 'position:fixed;top:60px;left:8px;right:8px;background:rgba(255,255,0,0.95);color:black;font-family:monospace;font-size:11px;font-weight:bold;padding:8px;border:3px solid red;border-radius:6px;z-index:99999;line-height:1.4;white-space:pre;overflow-x:auto;';
-                    document.body.appendChild(dbg);
+                    dbg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:200px;background:red;color:white;font-family:monospace;font-size:14px;font-weight:900;padding:20px;z-index:2147483647;line-height:1.4;white-space:pre;overflow:auto;text-align:left;';
+                    document.documentElement.appendChild(dbg);
                 }
                 const sW = vp ? (vp.clientWidth || vp.offsetWidth) : -1;
-                const vpRect = vp ? vp.getBoundingClientRect() : {left:-1,right:-1,width:-1};
-                const rRect = r ? r.getBoundingClientRect() : {left:-1,right:-1,width:-1};
+                const rRect = r ? r.getBoundingClientRect() : null;
                 dbg.textContent = 
-                    'DEBUG v1.0.33' + 
+                    'DEBUG v1.0.34 calls=' + __debug_call_count + 
                     '\nwindow.innerWidth: ' + window.innerWidth + 
+                    '\nvp exists: ' + (!!vp) + 
                     '\nvp.clientWidth:    ' + sW + 
-                    '\nvpRect.left/right: ' + vpRect.left.toFixed(1) + ' / ' + vpRect.right.toFixed(1) + 
-                    '\nvpRect.width:      ' + vpRect.width.toFixed(1) + 
+                    '\nr exists: ' + (!!r) + 
                     '\nscale:             ' + scale.toFixed(4) + 
-                    '\nvisualW:           ' + (390 * scale).toFixed(1) + 
-                    '\nr.offsetLeft:      ' + (r ? r.offsetLeft : '-1') + 
-                    '\nr.offsetWidth:     ' + (r ? r.offsetWidth : '-1') + 
-                    '\nrRect.left/right:  ' + rRect.left.toFixed(1) + ' / ' + rRect.right.toFixed(1) + 
-                    '\nrRect.width:       ' + rRect.width.toFixed(1) + 
-                    '\nleft gap:          ' + rRect.left.toFixed(1) + 
-                    '\nright gap:         ' + (window.innerWidth - rRect.right).toFixed(1);
+                    (rRect ? '\nrRect.left/right:  ' + rRect.left.toFixed(1) + ' / ' + rRect.right.toFixed(1) : '') +
+                    (rRect ? '\nleft gap / right gap: ' + rRect.left.toFixed(1) + ' / ' + (window.innerWidth - rRect.right).toFixed(1) : '');
             } catch(e) {
                 let dbg = document.getElementById('zoom-debug-overlay');
                 if (dbg) dbg.textContent = 'DEBUG ERROR: ' + e.message;
             }
-            // ============ END DIAGNOSTIC ============
             
             if (!r || !vp) return;
             
             const visualW = 390 * scale;
             const screenW = vp.clientWidth || vp.offsetWidth;
-            
             const centeringTranslate = screenW / 2 - 195;
             
             if (visualW <= screenW) {
