@@ -115,6 +115,7 @@
         :root {
             --safe-top: env(safe-area-inset-top);
             --safe-bottom: env(safe-area-inset-bottom);
+            --chrome-h: 215px;
         }
         body { 
             font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
@@ -133,6 +134,70 @@
 
         .name-label-en { font-size: 22px; font-weight: 900; color: #0f172a; text-transform: uppercase; line-height: 1.1; letter-spacing: -0.02em; }
         .name-label-zh { font-size: 20px; font-weight: 900; color: #1d4ed8; line-height: 1.1; margin-top: 4px; }
+
+        /* ============================================================
+           MOBILE LAYOUT FIXES
+           Original UI was designed for ~480px+. On narrower phones,
+           tighten paddings/fonts so nothing overflows horizontally.
+           ============================================================ */
+        @media (max-width: 479px) {
+            :root { --chrome-h: 175px; }
+            
+            /* Header: compact spacing, smaller logo, smaller text */
+            header { 
+                height: calc(82px + var(--safe-top)) !important; 
+                padding-left: 10px !important; 
+                padding-right: 10px !important; 
+            }
+            header .gap-4 { gap: 8px !important; }
+            header .w-12 { width: 38px !important; height: 38px !important; }
+            header .rounded-2xl > svg { width: 20px !important; height: 20px !important; }
+            header .w-5 { width: 14px !important; height: 14px !important; }
+            header .w-5 > svg { width: 8px !important; height: 8px !important; }
+            header h1 { font-size: 14px !important; }
+            header .text-xl#ui-greg-date { font-size: 14px !important; margin-bottom: 4px !important; }
+            header .text-base#ui-time { font-size: 11px !important; }
+            header .mt-2 { margin-top: 4px !important; }
+            
+            .model-pill { 
+                font-size: 9px !important; 
+                height: 18px !important; 
+                padding: 0 5px !important; 
+            }
+            #ui-term-countdown { font-size: 9px !important; }
+            
+            /* List items: smaller names, tighter rows */
+            .name-label-en { font-size: 14px !important; }
+            .name-label-zh { font-size: 12px !important; margin-top: 2px !important; }
+            .list-item-content { 
+                padding: 14px 10px !important; 
+                padding-right: 38px !important; 
+            }
+            .list-item-content .text-\[17px\] { font-size: 13px !important; }
+            .list-item-content .text-\[9px\] { font-size: 8px !important; }
+            .list-item-content .gap-10 { gap: 1.5rem !important; }
+            .list-item-content .mt-6 { margin-top: 0.75rem !important; }
+            .list-item-content .mb-2 { margin-bottom: 0.25rem !important; }
+            .pin-btn { width: 36px !important; height: 36px !important; right: 0 !important; top: 8px !important; }
+            .pin-icon { width: 18px !important; height: 18px !important; }
+            
+            /* Column headers ("西马 WEST" / "东马 EAST") more compact */
+            main > div > .p-4 { padding: 8px !important; }
+            
+            /* Footer: slimmer */
+            footer { 
+                height: calc(85px + var(--safe-bottom)) !important;
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+            }
+        }
+        /* Extra-narrow phones (iPhone SE, iPhone 13 mini) */
+        @media (max-width: 374px) {
+            .name-label-en { font-size: 13px !important; }
+            .name-label-zh { font-size: 11px !important; }
+            header h1 { font-size: 13px !important; }
+            .list-item-content { padding-left: 8px !important; padding-right: 32px !important; }
+        }
 
         /* Swipeable List Item Styles */
         .list-item-wrapper {
@@ -470,7 +535,7 @@
         </div>
     </header>
 
-    <main style="height: calc(100vh - 215px - var(--safe-top) - var(--safe-bottom)); display: flex;" class="bg-slate-100">
+    <main id="main-content" style="height: calc(100vh - var(--chrome-h, 215px) - var(--safe-top) - var(--safe-bottom)); display: flex;" class="bg-slate-100">
         <div class="w-1/2 bg-white border-r-2 border-slate-200 flex flex-col overflow-hidden">
             <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">西马 West</div>
             <div id="list-west" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
