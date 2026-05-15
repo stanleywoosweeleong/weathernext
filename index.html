@@ -143,11 +143,16 @@
         @media (max-width: 479px) {
             :root { --chrome-h: 175px; }
             
+            /* Compact date/lunar-calendar block (kept visible — lunar info matters) */
+            #header-datetime { margin-left: 4px !important; }
+            #ui-greg-date { font-size: 12px !important; margin-bottom: 3px !important; }
+            #ui-time { font-size: 10px !important; }
+            
             /* Header: compact spacing, smaller logo, smaller text */
             header { 
-                height: calc(82px + var(--safe-top)) !important; 
-                padding-left: 10px !important; 
-                padding-right: 10px !important; 
+                height: calc(78px + var(--safe-top)) !important; 
+                padding-left: 8px !important; 
+                padding-right: 8px !important; 
             }
             header .gap-4 { gap: 8px !important; }
             header .w-12 { width: 38px !important; height: 38px !important; }
@@ -155,8 +160,6 @@
             header .w-5 { width: 14px !important; height: 14px !important; }
             header .w-5 > svg { width: 8px !important; height: 8px !important; }
             header h1 { font-size: 14px !important; }
-            header .text-xl#ui-greg-date { font-size: 14px !important; margin-bottom: 4px !important; }
-            header .text-base#ui-time { font-size: 11px !important; }
             header .mt-2 { margin-top: 4px !important; }
             
             .model-pill { 
@@ -529,7 +532,7 @@
                 </div>
             </div>
         </div>
-        <div class="flex flex-col justify-center items-end h-full pb-1 shrink-0 ml-2">
+        <div id="header-datetime" class="flex flex-col justify-center items-end h-full pb-1 shrink-0 ml-2">
             <div id="ui-greg-date" class="text-xl font-black text-slate-900 leading-none whitespace-nowrap text-right tracking-tighter mb-3">--/--</div>
             <div id="ui-time" class="text-base font-black text-blue-700 leading-none whitespace-nowrap text-right tracking-tighter">--</div>
         </div>
@@ -2466,7 +2469,8 @@
             r.style.marginBottom = `${-diff}px`;
         }
 
-        function resetZoom() { 
+        function resetZoom(attempt) { 
+            attempt = attempt || 0;
             const vp = document.getElementById('m-grid-viewport');
             const r = document.getElementById('infographic-report');
             if(!vp || !r) return;
@@ -2475,8 +2479,22 @@
             const screenW = vp.clientWidth || vp.offsetWidth;
             const contentW = 390; // Fixed Design Width
 
-            // Auto-Calculate Fit Scale
+            // If viewport isn't ready yet (clientWidth is 0 during transition),
+            // retry up to 10 times with increasing delays
+            if (screenW < 50 && attempt < 10) {
+                setTimeout(() => resetZoom(attempt + 1), 50);
+                return;
+            }
+
+            // Auto-Calculate Fit Scale (with safety margin on narrow phones
+            // to account for any padding/border that eats screen space)
             let fitScale = screenW / contentW;
+            
+            // Add a tiny margin (2%) so content never touches the very edges
+            // on narrow phones — looks cleaner and avoids edge-pixel issues
+            if (fitScale < 1.0) {
+                fitScale = fitScale * 0.98;
+            }
             
             // Relaxed cap for Desktop/Wide Screens (up from 2.5)
             // Allows full width scaling on most landscape displays
