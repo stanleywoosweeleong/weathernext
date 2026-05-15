@@ -2519,6 +2519,30 @@
         }
 
         function resetZoom(attempt) { 
+            // Show overlay IMMEDIATELY so we know resetZoom is being called
+            try {
+                let dbg = document.getElementById('zoom-debug-overlay');
+                if (!dbg) {
+                    dbg = document.createElement('div');
+                    dbg.id = 'zoom-debug-overlay';
+                    dbg.style.cssText = 'position:fixed;top:0;left:0;width:100vw;height:240px;background:lime;color:black;font-family:monospace;font-size:14px;font-weight:900;padding:20px;z-index:2147483647;line-height:1.4;white-space:pre;overflow:auto;text-align:left;';
+                    document.documentElement.appendChild(dbg);
+                }
+                const vpTest = document.getElementById('m-grid-viewport');
+                const rTest = document.getElementById('infographic-report');
+                dbg.textContent = 
+                    'DEBUG v1.0.35 RESETZOOM CALLED' +
+                    '\nattempt: ' + (attempt || 0) +
+                    '\nvp found: ' + (!!vpTest) +
+                    '\nr found: ' + (!!rTest) +
+                    '\nvp.clientWidth: ' + (vpTest ? vpTest.clientWidth : 'N/A') +
+                    '\nwindow.innerWidth: ' + window.innerWidth +
+                    '\ndocument.body exists: ' + (!!document.body) +
+                    '\nmodal.hidden: ' + (document.getElementById('modal') ? document.getElementById('modal').classList.contains('hidden') : 'N/A');
+            } catch(e) {
+                alert('RESETZOOM DEBUG ERROR: ' + e.message);
+            }
+            
             attempt = attempt || 0;
             const vp = document.getElementById('m-grid-viewport');
             const r = document.getElementById('infographic-report');
@@ -2527,21 +2551,15 @@
             const screenW = vp.clientWidth || vp.offsetWidth;
             const contentW = 390;
 
-            // Retry up to 10 times if viewport not ready yet
             if (screenW < 50 && attempt < 10) {
                 setTimeout(() => resetZoom(attempt + 1), 50);
                 return;
             }
 
             let fitScale;
-            
             if (screenW < 600) {
-                // Phone: render content at 92% of screen width.
-                // CSS margin:auto + transform-origin:50% 0 ensures content is centered
-                // regardless of subpixel rounding, so we can use more of the screen.
                 fitScale = (screenW * 0.92) / contentW;
             } else {
-                // Desktop/tablet: fit naturally
                 fitScale = screenW / contentW;
                 if (fitScale > 10.0) fitScale = 10.0;
             }
