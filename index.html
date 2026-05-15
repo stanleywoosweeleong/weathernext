@@ -2485,16 +2485,18 @@
                 return;
             }
 
-            let fitScale = screenW / contentW;
+            let fitScale;
             
-            // On phone-sized screens, scale down 5% so the last day column
-            // (e.g. "28/5") never gets clipped against the right edge.
-            // Without this, viewports very close to 390px (iPhone 15 Pro at 393px)
-            // end up with no margin and the right edge clips.
             if (screenW < 600) {
-                fitScale = fitScale * 0.95;
+                // Phone: ensure rendered width is at most 92% of screen width.
+                // This guarantees ~4% margin on each side no matter the phone size,
+                // so the last date column ("28/5") is never clipped on any iPhone.
+                fitScale = (screenW * 0.92) / contentW;
+            } else {
+                // Desktop/tablet: fit naturally
+                fitScale = screenW / contentW;
+                if (fitScale > 10.0) fitScale = 10.0;
             }
-            if (fitScale > 10.0) fitScale = 10.0;
             
             scale = fitScale; 
             posX = 0; 
