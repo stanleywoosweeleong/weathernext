@@ -2356,18 +2356,39 @@
         function drawTrends(days, suffix) {
             const svgT = document.getElementById(`trend-layer-temp-${suffix}`), svgPP = document.getElementById(`trend-layer-pp-${suffix}`), svgVV = document.getElementById(`trend-layer-vv-${suffix}`);
             if (!svgT) return; 
-            // Use the actual info-row width (which has the 14 date cells) so the chart
-            // x-coordinates align perfectly with the date columns above/below.
-            // Fall back to parent width, then to 350 as a last resort.
+            
+            // Read actual cell positions from the date row so charts align perfectly
+            // with the date column centers, regardless of flex rounding quirks.
             const dateRow = document.getElementById(`row-dates-top-${suffix}`);
-            const w = (dateRow && dateRow.clientWidth) || svgT.parentElement.clientWidth || 350; 
-            const s = w / 14;
+            const dateCells = dateRow ? dateRow.children : null;
+            
+            let columnCenters = [];
+            let w = svgT.parentElement.clientWidth || 350;
+            
+            if (dateCells && dateCells.length === 14) {
+                // Use getBoundingClientRect (absolute viewport coords) to avoid
+                // any offsetParent issues. Then subtract the SVG container's left
+                // edge to get coords inside the SVG's coordinate system.
+                const svgParentRect = svgT.parentElement.getBoundingClientRect();
+                for (let i = 0; i < 14; i++) {
+                    const cellRect = dateCells[i].getBoundingClientRect();
+                    const cellCenterX = cellRect.left + cellRect.width / 2;
+                    columnCenters.push(cellCenterX - svgParentRect.left);
+                }
+                w = dateRow.clientWidth;
+            } else {
+                // Fallback: even division
+                const s = w / 14;
+                for (let i = 0; i < 14; i++) columnCenters.push(i * s + s / 2);
+            }
+            const s = w / 14; // still needed for some legacy calculations like rectangle widths
+            
             svgT.innerHTML = ''; svgPP.innerHTML = ''; svgVV.innerHTML = ''; svgT.setAttribute('width', w); svgPP.setAttribute('width', w); svgVV.setAttribute('width', w);
             const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
             const minT = Math.min(...allT), maxT = Math.max(...allT), rngT = (maxT-minT)||1, getTY = (v) => 40 + (1 - (v - minT) / rngT) * 120;
             const drawTL = (key, color, dir, dash=false) => {
                 let p = ""; days.forEach((d, i) => {
-                    const x = i * s + s/2, val = (key==='dT' && typeof d.dT !== 'number') ? 15 : d[key], y = (key==='dT') ? Math.max(getTY(val)-25, getTY(d.lo)+45) : getTY(val);
+                    const x = columnCenters[i], val = (key==='dT' && typeof d.dT !== 'number') ? 15 : d[key], y = (key==='dT') ? Math.max(getTY(val)-25, getTY(d.lo)+45) : getTY(val);
                     p += (i===0 ? "M " : " L ") + x + " " + y;
                     const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", color); svgT.appendChild(c);
                     if (key === 'dT') {
@@ -2382,19 +2403,19 @@
             };
             drawTL('hi', '#f97316', 'up'); drawTL('lo', '#2563eb', 'down'); drawTL('dp', '#06b6d4', 'none', true); drawTL('dT', '#7e22ce', 'none');
             let ppP = ""; days.forEach((d, i) => {
-                const x = i*s + s/2, y = 25 + (1 - d.pp/100)*55; ppP += (i===0?"M ":" L ")+x+" "+y;
+                const x = columnCenters[i], y = 25 + (1 - d.pp/100)*55; ppP += (i===0?"M ":" L ")+x+" "+y;
                 const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", "#1e3a8a"); svgPP.appendChild(c);
                 const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?16:-10)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
             });
             const ppl = document.createElementNS("http://www.w3.org/2000/svg", "path"); ppl.setAttribute("d", ppP); ppl.setAttribute("stroke", "#1e3a8a"); ppl.setAttribute("stroke-width", "3"); ppl.setAttribute("fill", "none"); ppl.setAttribute("opacity", "0.6"); svgPP.appendChild(ppl);
             const maxW = Math.max(...days.flatMap(d => [d.rv, d.et])) || 1;
             days.forEach((d, i) => {
-                const x = i*s + (s-10)/2, h = (d.rv/maxW)*40, r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                const x = columnCenters[i] - 5, h = (d.rv/maxW)*40, r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
                 r.setAttribute("x", x); r.setAttribute("y", 75-h); r.setAttribute("width", 10); r.setAttribute("height", h); r.setAttribute("fill", "#1e3a8a"); r.setAttribute("rx", "2"); svgVV.appendChild(r);
                 const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", x+5); txt.setAttribute("y", 75-h-6); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#1e3a8a"); txt.textContent = d.rv; svgVV.appendChild(txt);
             });
             let etP = ""; days.forEach((d, i) => {
-                const x = i*s + s/2, y = 75 - (d.et/maxW)*40; etP += (i===0?"M ":" L ")+x+" "+y;
+                const x = columnCenters[i], y = 75 - (d.et/maxW)*40; etP += (i===0?"M ":" L ")+x+" "+y;
                 if (d.et>0) { const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", x); txt.setAttribute("y", y-8); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "7.5"); txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); txt.textContent = d.et; svgVV.appendChild(txt); }
             });
             const etl = document.createElementNS("http://www.w3.org/2000/svg", "path"); etl.setAttribute("d", etP); etl.setAttribute("stroke", "#059669"); etl.setAttribute("stroke-width", "2"); etl.setAttribute("fill", "none"); etl.setAttribute("opacity", "0.6"); svgVV.appendChild(etl);
