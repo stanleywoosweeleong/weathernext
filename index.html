@@ -130,24 +130,60 @@
 
         /* ============================================================
            DESKTOP LAYOUT
-           Use full window width on wide screens. Keep app readable
-           by capping individual column widths inside main, and centering
-           the forecast modal (which has a fixed 390px design width).
+           Use full window width with proportionally larger text/elements
+           so the app actually feels desktop-sized, not mobile-in-a-big-window.
            ============================================================ */
         @media (min-width: 600px) {
-            /* Main two-column list area: cap how wide each column gets
-               so location cards don't stretch to absurd widths on big monitors */
+            /* Main two-column list area: cap at comfortable max width */
             #main-content { 
                 max-width: 1200px; 
                 margin: 0 auto; 
                 width: 100%;
             }
-            /* Forecast modal: center the 390px-design content in the window
-               instead of plastering it across acres of white space */
+            /* Forecast modal: center the 390px-design content in the window */
             #m-grid-viewport { 
                 max-width: 900px; 
                 margin: 0 auto;
             }
+            
+            /* Scale up the header */
+            header { height: calc(120px + var(--safe-top)) !important; }
+            header h1 { font-size: 24px !important; }
+            header .w-12 { width: 56px !important; height: 56px !important; }
+            header .w-12 > svg { width: 32px !important; height: 32px !important; }
+            #ui-greg-date { font-size: 28px !important; }
+            #ui-time { font-size: 18px !important; }
+            #ui-term-countdown { font-size: 14px !important; }
+            .model-pill { font-size: 14px !important; height: 28px !important; padding: 0 10px !important; }
+            
+            /* Bigger column headers */
+            main > div > .p-4 { 
+                font-size: 14px !important; 
+                padding: 16px !important;
+            }
+            
+            /* Scale up the location cards */
+            .name-label-en { font-size: 28px !important; }
+            .name-label-zh { font-size: 24px !important; margin-top: 6px !important; }
+            .list-item-content { 
+                padding: 28px 24px !important; 
+                padding-right: 60px !important;
+            }
+            .list-item-content .text-\[17px\] { font-size: 22px !important; }
+            .list-item-content .text-\[9px\] { font-size: 11px !important; }
+            .list-item-content .gap-10 { gap: 3rem !important; }
+            .list-item-content .mt-6 { margin-top: 1.25rem !important; }
+            .pin-btn { width: 56px !important; height: 56px !important; }
+            .pin-icon { width: 28px !important; height: 28px !important; }
+            
+            /* Bigger footer */
+            footer { 
+                height: calc(140px + var(--safe-bottom)) !important;
+            }
+            #ui-proj-time { font-size: 16px !important; }
+            
+            /* Adjust the chrome-h variable used for main height calc */
+            :root { --chrome-h: 260px; }
         }
 
         header { padding-top: var(--safe-top); height: calc(105px + var(--safe-top)); }
