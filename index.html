@@ -108,7 +108,6 @@
     
     <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><rect width=%22100%22 height=%22100%22 rx=%2222%22 fill=%22%231d4ed8%22/><path d=%22M30 70 L45 35 L55 55 L75 15%22 fill=%22none%22 stroke=%22white%22 stroke-width=%228%22 stroke-linecap=%22round%22 stroke-linejoin=%22round%22/><circle cx=%2275%22 cy=%2215%22 r=%226%22 fill=%22%23fbbf24%22/><path d=%22M20 80 H80%22 stroke=%22%2360a5fa%22 stroke-width=%224%22 stroke-linecap=%22round%22/></svg>">
 
-    <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
     <style>
@@ -128,6 +127,28 @@
         }
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+        /* ============================================================
+           DESKTOP LAYOUT
+           Use full window width on wide screens. Keep app readable
+           by capping individual column widths inside main, and centering
+           the forecast modal (which has a fixed 390px design width).
+           ============================================================ */
+        @media (min-width: 600px) {
+            /* Main two-column list area: cap how wide each column gets
+               so location cards don't stretch to absurd widths on big monitors */
+            #main-content { 
+                max-width: 1200px; 
+                margin: 0 auto; 
+                width: 100%;
+            }
+            /* Forecast modal: center the 390px-design content in the window
+               instead of plastering it across acres of white space */
+            #m-grid-viewport { 
+                max-width: 900px; 
+                margin: 0 auto;
+            }
+        }
 
         header { padding-top: var(--safe-top); height: calc(105px + var(--safe-top)); }
         footer { padding-bottom: var(--safe-bottom); height: calc(110px + var(--safe-bottom)); }
@@ -504,6 +525,8 @@
 
     </style>
 
+    <!-- Tailwind utilities — loaded AFTER custom styles so utility classes (e.g. .hidden) win the cascade -->
+    <link rel="stylesheet" href="tailwind.css">
 </head>
 <body class="flex flex-col">
 
@@ -2501,9 +2524,11 @@
                 fitScale = fitScale * 0.98;
             }
             
-            // Relaxed cap for Desktop/Wide Screens (up from 2.5)
-            // Allows full width scaling on most landscape displays
-            if (fitScale > 10.0) fitScale = 10.0;
+            // Cap zoom on desktop/wide screens so 1500px+ windows don't
+            // render the 390px-design content at 3-4x size (looks gigantic).
+            // 2x is comfortable: roughly tablet-size on a desktop screen.
+            // Users can still pinch/double-tap to zoom in further if they want.
+            if (fitScale > 2.0) fitScale = 2.0;
             
             scale = fitScale; 
             posX = 0; 
