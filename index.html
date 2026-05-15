@@ -2356,8 +2356,11 @@
         function drawTrends(days, suffix) {
             const svgT = document.getElementById(`trend-layer-temp-${suffix}`), svgPP = document.getElementById(`trend-layer-pp-${suffix}`), svgVV = document.getElementById(`trend-layer-vv-${suffix}`);
             if (!svgT) return; 
-            // Fix: Use the fixed width (390) minus padding (usually 40px total) for calculations if getting width fails
-            const w = svgT.parentElement.clientWidth || 350; 
+            // Use the actual info-row width (which has the 14 date cells) so the chart
+            // x-coordinates align perfectly with the date columns above/below.
+            // Fall back to parent width, then to 350 as a last resort.
+            const dateRow = document.getElementById(`row-dates-top-${suffix}`);
+            const w = (dateRow && dateRow.clientWidth) || svgT.parentElement.clientWidth || 350; 
             const s = w / 14;
             svgT.innerHTML = ''; svgPP.innerHTML = ''; svgVV.innerHTML = ''; svgT.setAttribute('width', w); svgPP.setAttribute('width', w); svgVV.setAttribute('width', w);
             const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
