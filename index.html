@@ -143,8 +143,9 @@
         @media (max-width: 479px) {
             :root { --chrome-h: 175px; }
             
-            /* Forecast modal: pad top for iOS safe area (notch/Dynamic Island) */
-            #modal { padding-top: var(--safe-top) !important; }
+            /* Modal top safe-area handled inline via style attribute on #modal.
+               Add a little top breathing room for the scrollable content. */
+            #m-grid-viewport { padding-top: 8px !important; }
             
             /* Compact date/lunar-calendar block (kept visible — lunar info matters) */
             #header-datetime { margin-left: 4px !important; }
@@ -565,7 +566,7 @@
     </footer>
 
     <!-- Forecast Modal -->
-    <div id="modal" class="fixed inset-0 bg-white z-[1000] hidden flex flex-col overflow-hidden">
+    <div id="modal" class="fixed bg-white z-[1000] hidden flex flex-col overflow-hidden" style="top: var(--safe-top); right: 0; bottom: 0; left: 0;">
         <div class="flex-1 bg-white relative" id="m-grid-viewport">
             <div id="infographic-report">
                 <!-- Content generated dynamically -->
