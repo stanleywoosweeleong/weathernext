@@ -130,63 +130,19 @@
 
         /* ============================================================
            DESKTOP / LARGER SCREEN LAYOUT
-           Anything wider than a phone (>500px) gets bigger fonts and
-           full-width layout. Catches resized PWA windows too.
-           Selectors use body> prefix for higher specificity than Tailwind.
+           Instead of trying to override every font-size/padding rule
+           individually (which fights with Tailwind), use `zoom` to
+           scale the entire UI up proportionally on wider screens.
+           Browser support: Chrome/Edge/Safari (covers PWA contexts).
            ============================================================ */
-        @media (min-width: 500px) {
-            /* Main two-column list area: cap at comfortable max width */
-            body > main#main-content { 
-                max-width: 1200px !important; 
-                margin: 0 auto !important; 
-                width: 100% !important;
-            }
-            /* Forecast modal: center the 390px-design content in the window */
-            body #m-grid-viewport { 
-                max-width: 900px !important; 
-                margin: 0 auto !important;
-            }
-            
-            /* Scale up the header */
-            body > header { height: calc(120px + var(--safe-top)) !important; }
-            body > header h1 { font-size: 24px !important; line-height: 1.2 !important; }
-            body > header .w-12 { width: 56px !important; height: 56px !important; }
-            body > header .w-12 > svg { width: 32px !important; height: 32px !important; }
-            body #ui-greg-date { font-size: 28px !important; }
-            body #ui-time { font-size: 18px !important; }
-            body #ui-term-countdown { font-size: 14px !important; }
-            body .model-pill { font-size: 14px !important; height: 28px !important; padding: 0 10px !important; }
-            
-            /* Bigger column headers ("西马 WEST" / "东马 EAST") */
-            body main > div > div.p-4 { 
-                font-size: 14px !important; 
-                padding: 16px !important;
-            }
-            
-            /* Scale up the location cards */
-            body .list-item-content .name-label-en { font-size: 28px !important; }
-            body .list-item-content .name-label-zh { font-size: 24px !important; margin-top: 6px !important; }
-            body .list-item-content { 
-                padding: 28px 24px !important; 
-                padding-right: 60px !important;
-            }
-            body .list-item-content span[id^="t-"],
-            body .list-item-content span[id^="p-"] { font-size: 22px !important; }
-            body .list-item-content .text-\[9px\] { font-size: 11px !important; }
-            body .list-item-content .gap-10 { gap: 3rem !important; }
-            body .list-item-content .mt-6 { margin-top: 1.25rem !important; }
-            body .pin-btn { width: 56px !important; height: 56px !important; top: 18px !important; }
-            body .pin-icon { width: 28px !important; height: 28px !important; }
-            
-            /* Bigger footer */
-            body > footer { 
-                height: calc(140px + var(--safe-bottom)) !important;
-            }
-            body #ui-proj-time { font-size: 16px !important; }
-            body #ui-date-display { font-size: 13px !important; }
-            
-            /* Adjust the chrome-h variable used for main height calc */
-            :root { --chrome-h: 260px !important; }
+        @media (min-width: 500px) and (min-height: 500px) {
+            html { zoom: 1.6; }
+        }
+        @media (min-width: 1000px) and (min-height: 700px) {
+            html { zoom: 2.0; }
+        }
+        @media (min-width: 1400px) and (min-height: 800px) {
+            html { zoom: 2.3; }
         }
 
         header { padding-top: var(--safe-top); height: calc(105px + var(--safe-top)); }
