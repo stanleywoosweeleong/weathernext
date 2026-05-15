@@ -2357,31 +2357,32 @@
             const svgT = document.getElementById(`trend-layer-temp-${suffix}`), svgPP = document.getElementById(`trend-layer-pp-${suffix}`), svgVV = document.getElementById(`trend-layer-vv-${suffix}`);
             if (!svgT) return; 
             
-            // Read actual cell positions from the date row so charts align perfectly
-            // with the date column centers, regardless of flex rounding quirks.
+            // Read actual rendered positions of the 14 date cells, then compute
+            // column centers in the SVG's coordinate space. This guarantees the
+            // chart aligns with the dates regardless of any padding/border quirks.
             const dateRow = document.getElementById(`row-dates-top-${suffix}`);
-            const dateCells = dateRow ? dateRow.children : null;
+            const cells = dateRow ? dateRow.children : null;
+            const columnCenters = [];
+            let w;
             
-            let columnCenters = [];
-            let w = svgT.parentElement.clientWidth || 350;
-            
-            if (dateCells && dateCells.length === 14) {
-                // Use getBoundingClientRect (absolute viewport coords) to avoid
-                // any offsetParent issues. Then subtract the SVG container's left
-                // edge to get coords inside the SVG's coordinate system.
-                const svgParentRect = svgT.parentElement.getBoundingClientRect();
+            if (cells && cells.length === 14) {
+                // Use each cell's actual center, relative to the SVG's parent
+                const svgParentLeft = svgT.parentElement.getBoundingClientRect().left;
                 for (let i = 0; i < 14; i++) {
-                    const cellRect = dateCells[i].getBoundingClientRect();
-                    const cellCenterX = cellRect.left + cellRect.width / 2;
-                    columnCenters.push(cellCenterX - svgParentRect.left);
+                    const rect = cells[i].getBoundingClientRect();
+                    columnCenters.push(rect.left + rect.width / 2 - svgParentLeft);
                 }
-                w = dateRow.clientWidth;
+                // Use the date row's total width so the chart never extends beyond it
+                const firstRect = cells[0].getBoundingClientRect();
+                const lastRect = cells[13].getBoundingClientRect();
+                w = lastRect.right - firstRect.left;
             } else {
-                // Fallback: even division
+                // Fallback if date row not yet rendered: even split of parent width
+                w = svgT.parentElement.clientWidth || 350;
                 const s = w / 14;
                 for (let i = 0; i < 14; i++) columnCenters.push(i * s + s / 2);
             }
-            const s = w / 14; // still needed for some legacy calculations like rectangle widths
+            const s = w / 14; // legacy step (used for bar widths)
             
             svgT.innerHTML = ''; svgPP.innerHTML = ''; svgVV.innerHTML = ''; svgT.setAttribute('width', w); svgPP.setAttribute('width', w); svgVV.setAttribute('width', w);
             const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
