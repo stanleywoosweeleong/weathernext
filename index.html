@@ -128,22 +128,11 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-        /* ============================================================
-           DESKTOP / LARGER SCREEN LAYOUT
-           Instead of trying to override every font-size/padding rule
-           individually (which fights with Tailwind), use `zoom` to
-           scale the entire UI up proportionally on wider screens.
-           Browser support: Chrome/Edge/Safari (covers PWA contexts).
-           ============================================================ */
-        @media (min-width: 500px) and (min-height: 500px) {
-            html { zoom: 1.6; }
-        }
-        @media (min-width: 1000px) and (min-height: 700px) {
-            html { zoom: 2.0; }
-        }
-        @media (min-width: 1400px) and (min-height: 800px) {
-            html { zoom: 2.3; }
-        }
+        /* Desktop layout: kept intentionally minimal.
+           The app's layout system uses fixed vh-based heights that break
+           with CSS zoom or aggressive overrides. On a wide desktop window
+           the app renders at its native mobile sizes — small but functional.
+           If desktop scaling is needed, browser-level zoom (Ctrl + +) works fine. */
 
         header { padding-top: var(--safe-top); height: calc(105px + var(--safe-top)); }
         footer { padding-bottom: var(--safe-bottom); height: calc(110px + var(--safe-bottom)); }
