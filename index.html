@@ -1717,6 +1717,18 @@
             else if (langCode === 'zh') greetingEx = '(e.g. "早上好" or "下午好")';
             else if (langCode === 'ta') greetingEx = '(e.g. "Vanakkam")';
             else if (langCode === 'my') greetingEx = '(e.g. "Mingalaba")';
+            
+            // CROP-SPECIFIC SALUTATION
+            // Address the farmer in a way that reflects their actual crop, in their chosen language.
+            // Format: { cropId: { langCode: 'salutation' } }
+            const currentCropIdForGreeting = locationCrops[id] || 'durian';
+            const SALUTATIONS = {
+                durian: { en: 'Durian Grower', ms: 'Pekebun Durian', zh: '榴莲芭老板', ta: 'துரியன் விவசாயி', my: 'ဒူးရင်းခြံပိုင်ရှင်' },
+                rice:   { en: 'Rice/Vegetable Grower', ms: 'Pesawah/Petani Sayur', zh: '稻田/菜园老板', ta: 'நெல்/காய்கறி விவசாயி', my: 'စပါး/ဟင်းသီးခြံပိုင်ရှင်' },
+                palm:   { en: 'Oil Palm Grower', ms: 'Pekebun Sawit', zh: '油棕园老板', ta: 'எண்ணெய் பனை விவசாயி', my: 'ဆီအုန်းခြံပိုင်ရှင်' }
+            };
+            const cropSalutation = (SALUTATIONS[currentCropIdForGreeting] && SALUTATIONS[currentCropIdForGreeting][langCode]) 
+                                   || SALUTATIONS.durian.en;
 
             const h = detailData[id];
             
@@ -1792,8 +1804,7 @@
             } else {
                 let specificRule = "";
                 if (langCode === 'zh') {
-                    const simpleCrop = cropName.split('/')[0];
-                    specificRule = `Address the user as '${simpleCrop}芭老板'. Content must be 100% Chinese. Do NOT use English headers (e.g. NO 'Smart Briefing', NO 'Action Advice'). EXCEPTION: English is allowed ONLY for specific scientific names of Pests/Diseases.`;
+                    specificRule = `Address the user as '${cropSalutation}'. Content must be 100% Chinese. Do NOT use English headers (e.g. NO 'Smart Briefing', NO 'Action Advice'). EXCEPTION: English is allowed ONLY for specific scientific names of Pests/Diseases.`;
                 } else if (langCode === 'ms') {
                     specificRule = "Use 'Pekebun' instead of Growers. Use 'Saranan Tindakan' for Action Advice. Use 'Ringkasan Pintar' for title.";
                 } else {
@@ -1835,7 +1846,7 @@
             ${localizationBlock}
             
             FORMAT (Use emojis, ensure distinct paragraphs for each action item):
-            1. 🕰 **Greeting**: Start with a short, time-appropriate greeting based on CURRENT TIME ${greetingEx}.
+            1. 🕰 **Greeting**: Start with a short, time-appropriate greeting based on CURRENT TIME ${greetingEx}, followed by addressing the user as "${cropSalutation}". For example: "Good Morning, ${cropSalutation}!" — adapt the comma/punctuation to fit ${targetLangName} conventions naturally.
             2. 🌦 **Weather**: Summarize rain. IMPORTANT: State approximate HOURS of rain (use 12h AM/PM format, e.g. 3PM-5PM) and VOLUME if significant (e.g. "~8mm"). ${flowerInducingPrompt}
             3. 🚜 **Action**:
                
