@@ -613,6 +613,21 @@
         </div>
     </div>
 
+    <!-- Crop Picker Modal -->
+    <div id="crop-picker-modal" class="w-modal-overlay hidden" style="z-index: 7100;">
+        <div class="w-modal-card !p-0 overflow-hidden flex flex-col max-h-[80vh] !w-[90%] !max-w-[360px]">
+            <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
+                <h3 class="text-base font-black text-slate-800 uppercase tracking-wide">Select Crop / 选择作物</h3>
+                <button onclick="window.closeCropPicker()" class="p-2 text-slate-300 active:text-slate-500">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+                </button>
+            </div>
+            <div id="crop-picker-list" class="flex-1 overflow-y-auto bg-white">
+                <!-- Crop options injected here -->
+            </div>
+        </div>
+    </div>
+
     <!-- API Key Modal (New) -->
     <div id="api-key-modal" class="w-modal-overlay hidden" style="z-index: 6000;">
         <div class="w-modal-card relative">
@@ -803,9 +818,30 @@
         ];
 
         const CROP_TYPES = [
-            { id: 'durian', label: '🌳 DURIAN', zh: '榴莲/果树', ms: '🌳 DURIAN', ta: '🌳 துரியன்', my: '🌳 ဒူးရင်း' },
-            { id: 'rice', label: '🌾 RICE/VEG', zh: '稻田/蔬菜', ms: '🌾 PADI/SAYUR', ta: '🌾 நெல்/காய்', my: '🌾 စပါး/ဟင်းသီးဟင်းရွက်' },
-            { id: 'palm', label: '🌴 OIL PALM', zh: '油棕', ms: '🌴 SAWIT', ta: '🌴 எண்ணெய் பனை', my: '🌴 ဆီအုန်း' }
+            // === TREE CROPS / ORCHARD ===
+            { id: 'durian',     label: '🌳 DURIAN',       zh: '🌳 榴莲',          ms: '🌳 DURIAN',       ta: '🌳 துரியன்',         my: '🌳 ဒူးရင်း' },
+            { id: 'mango',      label: '🥭 MANGO',        zh: '🥭 芒果',          ms: '🥭 MANGGA',       ta: '🥭 மாம்பழம்',         my: '🥭 သရက်သီး' },
+            { id: 'banana',     label: '🍌 BANANA',       zh: '🍌 香蕉',          ms: '🍌 PISANG',       ta: '🍌 வாழைப்பழம்',       my: '🍌 ငှက်ပျောသီး' },
+            { id: 'pineapple',  label: '🍍 PINEAPPLE',    zh: '🍍 黄梨',          ms: '🍍 NANAS',        ta: '🍍 அன்னாசிப்பழம்',     my: '🍍 နာနတ်သီး' },
+            { id: 'coconut',    label: '🥥 COCONUT',      zh: '🥥 椰子',          ms: '🥥 KELAPA',       ta: '🥥 தேங்காய்',          my: '🥥 အုန်းသီး' },
+            { id: 'citrus',     label: '🍋 CITRUS',       zh: '🍋 柑橘/酸柑',      ms: '🍋 LIMAU',        ta: '🍋 எலுமிச்சை',         my: '🍋 လိမ္မော်သီး' },
+            { id: 'papaya',     label: '🍈 PAPAYA',       zh: '🍈 木瓜',          ms: '🍈 BETIK',        ta: '🍈 பப்பாளி',           my: '🍈 သင်္ဘောသီး' },
+            { id: 'rambutan',   label: '🌰 RAMBUTAN',     zh: '🌰 红毛丹',        ms: '🌰 RAMBUTAN',     ta: '🌰 ரம்புட்டான்',       my: '🌰 ကြက်မောက်သီး' },
+            // === PLANTATION ===
+            { id: 'palm',       label: '🌴 OIL PALM',     zh: '🌴 油棕',          ms: '🌴 SAWIT',        ta: '🌴 எண்ணெய் பனை',      my: '🌴 ဆီအုန်း' },
+            { id: 'coffee',     label: '☕ COFFEE',       zh: '☕ 咖啡',          ms: '☕ KOPI',         ta: '☕ காபி',              my: '☕ ကော်ဖီ' },
+            { id: 'rubber',     label: '🌱 RUBBER',       zh: '🌱 橡胶',          ms: '🌱 GETAH',        ta: '🌱 ரப்பர்',            my: '🌱 ရာဘာ' },
+            { id: 'pepper',     label: '🌶️ PEPPER',       zh: '🌶️ 胡椒',          ms: '🌶️ LADA HITAM',   ta: '🌶️ மிளகு',             my: '🌶️ ငရုပ်ကောင်း' },
+            { id: 'cocoa',      label: '🍫 COCOA',        zh: '🍫 可可',          ms: '🍫 KOKO',         ta: '🍫 கொக்கோ',            my: '🍫 ကိုကိုး' },
+            // === FIELD CROPS & VEGETABLES ===
+            { id: 'rice',       label: '🌾 RICE/PADDY',   zh: '🌾 稻米',          ms: '🌾 PADI',         ta: '🌾 நெல்',              my: '🌾 စပါး' },
+            { id: 'leafy',      label: '🥬 LEAFY VEG',    zh: '🥬 叶菜类',        ms: '🥬 SAYUR DAUN',   ta: '🥬 இலைக்காய்கறி',     my: '🥬 ဟင်းရွက်' },
+            { id: 'chili',      label: '🌶️ CHILI',        zh: '🌶️ 辣椒',          ms: '🌶️ CILI',          ta: '🌶️ மிளகாய்',           my: '🌶️ ငရုပ်သီး' },
+            { id: 'tomato',     label: '🍅 TOMATO',       zh: '🍅 番茄',          ms: '🍅 TOMATO',       ta: '🍅 தக்காளி',           my: '🍅 ခရမ်းချဉ်သီး' },
+            { id: 'cucurbit',   label: '🥒 CUCURBITS',    zh: '🥒 瓜类',          ms: '🥒 LABU/TIMUN',   ta: '🥒 பூசணி/வெள்ளரி',    my: '🥒 ဖရဲသီး/သခွားသီး' },
+            { id: 'corn',       label: '🌽 CORN',         zh: '🌽 玉米',          ms: '🌽 JAGUNG',       ta: '🌽 சோளம்',              my: '🌽 ပြောင်းဖူး' },
+            { id: 'beans',      label: '🫘 BEANS',        zh: '🫘 豆类',          ms: '🫘 KACANG',       ta: '🫘 பீன்ஸ்',             my: '🫘 ပဲမျိုးစုံ' },
+            { id: 'tea',        label: '🍃 TEA',          zh: '🍃 茶叶',          ms: '🍃 TEH',          ta: '🍃 தேயிலை',             my: '🍃 လက်ဖက်' }
         ];
 
         // NEW: Translations Dictionary
@@ -1161,17 +1197,59 @@
             // Fallback to label (English) if specific lang translation missing
             return c[langCode] || c.label;
         };
+        
+        // Build a strict crop-expert prompt prefix that scopes the AI's persona to one crop.
+        // Place this at the START of any crop-related prompt so the AI knows to give
+        // crop-specific advice rather than generic farming advice.
+        const getStrictCropExpertPrefix = (id) => {
+            const cropId = locationCrops[id] || 'durian';
+            const cropName = getLocalizedCropName(cropId, 'en'); // English name for the rule itself
+            return `You are an expert agronomist and master farmer specializing strictly in ${cropName}. ` +
+                   `Do not provide generic farming advice. ` +
+                   `All recommendations must be highly specific and actionable ONLY for ${cropName}. ` +
+                   `Focus on pests, diseases, irrigation, fertilization, pruning, and growth stages specific to ${cropName} as practiced in Malaysia. ` +
+                   `If a topic is not relevant to ${cropName}, say so briefly rather than giving generic advice.`;
+        };
 
-        window.toggleCrop = (id) => {
-            const currentCropId = locationCrops[id] || 'durian', idx = CROP_TYPES.findIndex(c => c.id === currentCropId);
-            const nextCrop = CROP_TYPES[(idx + 1) % CROP_TYPES.length];
-            locationCrops[id] = nextCrop.id; localStorage.setItem(PREF_CROPS_KEY, JSON.stringify(locationCrops));
+        // Open crop picker modal for a given location ID
+        window.toggleCrop = (id) => { window.openCropPicker(id); };
+        
+        window.openCropPicker = (id) => {
+            const lang = getLang(id);
+            const currentCropId = locationCrops[id] || 'durian';
+            const modal = document.getElementById('crop-picker-modal');
+            const list = document.getElementById('crop-picker-list');
+            if (!modal || !list) return;
             
-            // Updated: Use localized name based on current location language
+            // Build list of crops with localized names
+            list.innerHTML = CROP_TYPES.map(c => {
+                const name = getLocalizedCropName(c.id, lang);
+                const isSel = c.id === currentCropId;
+                return `<button onclick="window.selectCrop('${id}', '${c.id}')" 
+                    class="w-full text-left p-3 border-b border-slate-100 flex items-center justify-between active:bg-slate-50 ${isSel ? 'bg-blue-50' : ''}">
+                    <span class="font-bold text-sm ${isSel ? 'text-blue-700' : 'text-slate-800'}">${name}</span>
+                    ${isSel ? '<svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#1d4ed8" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>' : ''}
+                </button>`;
+            }).join('');
+            
+            modal.classList.remove('hidden');
+            modal.dataset.locationId = id;
+        };
+        
+        window.closeCropPicker = () => {
+            const modal = document.getElementById('crop-picker-modal');
+            if (modal) modal.classList.add('hidden');
+        };
+        
+        window.selectCrop = (id, cropId) => {
+            locationCrops[id] = cropId;
+            localStorage.setItem(PREF_CROPS_KEY, JSON.stringify(locationCrops));
+            
             const lang = getLang(id);
             const btn = document.getElementById(`m-crop-toggle-${id}`); 
-            if (btn) btn.innerText = getLocalizedCropName(nextCrop.id, lang);
+            if (btn) btn.innerText = getLocalizedCropName(cropId, lang);
             
+            window.closeCropPicker();
             if(detailData[id]) populateReportData(id);
         };
 
@@ -1681,7 +1759,10 @@
                 }
             }
             // Use full language name
-            const prompt = `Act as an expert agronomist strictly for ${crop}. Weather: ${summary}. Identify ONE major pest/disease risk. 
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            Weather: ${summary}. 
+            Task: Identify ONE major pest/disease risk for ${crop} given this forecast. 
             MANDATORY: Reply in ${getLangName(id)} language only. Be concise (max 40 words).`;
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
@@ -1720,12 +1801,32 @@
             
             // CROP-SPECIFIC SALUTATION
             // Address the farmer in a way that reflects their actual crop, in their chosen language.
-            // Format: { cropId: { langCode: 'salutation' } }
             const currentCropIdForGreeting = locationCrops[id] || 'durian';
             const SALUTATIONS = {
-                durian: { en: 'Durian Grower', ms: 'Pekebun Durian', zh: '榴莲芭老板', ta: 'துரியன் விவசாயி', my: 'ဒူးရင်းခြံပိုင်ရှင်' },
-                rice:   { en: 'Rice/Vegetable Grower', ms: 'Pesawah/Petani Sayur', zh: '稻田/菜园老板', ta: 'நெல்/காய்கறி விவசாயி', my: 'စပါး/ဟင်းသီးခြံပိုင်ရှင်' },
-                palm:   { en: 'Oil Palm Grower', ms: 'Pekebun Sawit', zh: '油棕园老板', ta: 'எண்ணெய் பனை விவசாயி', my: 'ဆီအုန်းခြံပိုင်ရှင်' }
+                // Tree crops
+                durian:    { en: 'Durian Grower',        ms: 'Pekebun Durian',     zh: '榴莲园老板',  ta: 'துரியன் விவசாயி',     my: 'ဒူးရင်းခြံပိုင်ရှင်' },
+                mango:     { en: 'Mango Grower',         ms: 'Pekebun Mangga',     zh: '芒果园老板',  ta: 'மாம்பழ விவசாயி',      my: 'သရက်ခြံပိုင်ရှင်' },
+                banana:    { en: 'Banana Grower',        ms: 'Pekebun Pisang',     zh: '香蕉园老板',  ta: 'வாழை விவசாயி',        my: 'ငှက်ပျောခြံပိုင်ရှင်' },
+                pineapple: { en: 'Pineapple Grower',     ms: 'Pekebun Nanas',      zh: '黄梨园老板',  ta: 'அன்னாசி விவசாயி',     my: 'နာနတ်ခြံပိုင်ရှင်' },
+                coconut:   { en: 'Coconut Grower',       ms: 'Pekebun Kelapa',     zh: '椰园老板',    ta: 'தென்னை விவசாயி',      my: 'အုန်းခြံပိုင်ရှင်' },
+                citrus:    { en: 'Citrus Grower',        ms: 'Pekebun Limau',      zh: '柑橘园老板',  ta: 'எலுமிச்சை விவசாயி',   my: 'လိမ္မော်ခြံပိုင်ရှင်' },
+                papaya:    { en: 'Papaya Grower',        ms: 'Pekebun Betik',      zh: '木瓜园老板',  ta: 'பப்பாளி விவசாயி',     my: 'သင်္ဘောသီးခြံပိုင်ရှင်' },
+                rambutan:  { en: 'Rambutan Grower',      ms: 'Pekebun Rambutan',   zh: '红毛丹园老板', ta: 'ரம்புட்டான் விவசாயி', my: 'ကြက်မောက်ခြံပိုင်ရှင်' },
+                // Plantation
+                palm:      { en: 'Oil Palm Grower',      ms: 'Pekebun Sawit',      zh: '油棕园老板',  ta: 'எண்ணெய் பனை விவசாயி', my: 'ဆီအုန်းခြံပိုင်ရှင်' },
+                coffee:    { en: 'Coffee Grower',        ms: 'Pekebun Kopi',       zh: '咖啡园老板',  ta: 'காபி விவசாயி',         my: 'ကော်ဖီခြံပိုင်ရှင်' },
+                rubber:    { en: 'Rubber Tapper',        ms: 'Penoreh Getah',      zh: '橡胶园老板',  ta: 'ரப்பர் விவசாயி',       my: 'ရာဘာခြံပိုင်ရှင်' },
+                pepper:    { en: 'Pepper Grower',        ms: 'Pekebun Lada',       zh: '胡椒园老板',  ta: 'மிளகு விவசாயி',         my: 'ငရုပ်ကောင်းခြံပိုင်ရှင်' },
+                cocoa:     { en: 'Cocoa Grower',         ms: 'Pekebun Koko',       zh: '可可园老板',  ta: 'கொக்கோ விவசாயி',       my: 'ကိုကိုးခြံပိုင်ရှင်' },
+                // Field crops & vegetables
+                rice:      { en: 'Rice Farmer',          ms: 'Pesawah',            zh: '稻农老板',    ta: 'நெல் விவசாயி',          my: 'စပါးခြံပိုင်ရှင်' },
+                leafy:     { en: 'Vegetable Grower',     ms: 'Petani Sayur',       zh: '菜园老板',    ta: 'காய்கறி விவசாயி',      my: 'ဟင်းရွက်ခြံပိုင်ရှင်' },
+                chili:     { en: 'Chili Grower',         ms: 'Petani Cili',        zh: '辣椒园老板',  ta: 'மிளகாய் விவசாயி',      my: 'ငရုပ်သီးခြံပိုင်ရှင်' },
+                tomato:    { en: 'Tomato Grower',        ms: 'Petani Tomato',      zh: '番茄园老板',  ta: 'தக்காளி விவசாயி',      my: 'ခရမ်းချဉ်ခြံပိုင်ရှင်' },
+                cucurbit:  { en: 'Melon/Gourd Grower',   ms: 'Petani Labu/Timun',  zh: '瓜园老板',    ta: 'பூசணி விவசாயி',         my: 'ဖရဲခြံပိုင်ရှင်' },
+                corn:      { en: 'Corn Grower',          ms: 'Petani Jagung',      zh: '玉米园老板',  ta: 'சோள விவசாயி',           my: 'ပြောင်းခြံပိုင်ရှင်' },
+                beans:     { en: 'Bean Grower',          ms: 'Petani Kacang',      zh: '豆园老板',    ta: 'பீன்ஸ் விவசாயி',         my: 'ပဲခြံပိုင်ရှင်' },
+                tea:       { en: 'Tea Grower',           ms: 'Pekebun Teh',        zh: '茶园老板',    ta: 'தேயிலை விவசாயி',       my: 'လက်ဖက်ခြံပိုင်ရှင်' }
             };
             const cropSalutation = (SALUTATIONS[currentCropIdForGreeting] && SALUTATIONS[currentCropIdForGreeting][langCode]) 
                                    || SALUTATIONS.durian.en;
@@ -1832,7 +1933,9 @@
                 }
             }
 
-            const prompt = `You are a Smart Farming AI Agronomist for a ${cropName} farm.
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            You are now writing a Smart Farming Briefing for a ${cropName} farm.
             
             CURRENT DATE: ${now.toLocaleDateString('en-GB', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
             CURRENT TIME: ${timeStrDisplay}
@@ -1921,8 +2024,10 @@
             const ctx = window.getShortWeatherContext(id, 3);
             
             // Prompt: Ask for Day Name in Local Language, but keep logic values in English
-            const prompt = `Analyze this weather strictly for ${crop}: ${ctx}. 
-            Task: Assess suitability for 1) Spraying and 2) Fertilizing for next 3 days.
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            Analyze this weather for ${crop}: ${ctx}. 
+            Task: Assess suitability for 1) Spraying and 2) Fertilizing for next 3 days, considering ${crop}-specific risks.
             Constraint: Return strictly valid JSON array: [{ "day": "DayName (in ${getLangName(id)})", "spray": "Safe"|"Risky"|"Unsafe", "fert": "Safe"|"Risky"|"Unsafe" }].
             IMPORTANT: The 'spray' and 'fert' values MUST remain as 'Safe', 'Risky', or 'Unsafe' in English for system logic. Translate ONLY the 'day' value.`;
 
@@ -1979,9 +2084,11 @@
             const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
             const ctx = window.getShortWeatherContext(id, 7); 
             
-            const prompt = `Act as an agricultural economist expert strictly in ${crop}. 
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            You are now also acting as an agricultural economist for ${crop}.
             Weather Context (Next 7 days): ${ctx}.
-            Provide a concise strategic insight in 3 bullet points (Yield, Quality, Strategy).
+            Provide a concise strategic insight in 3 bullet points (Yield, Quality, Strategy) specific to ${crop} in Malaysia.
             MANDATORY: Reply in ${getLangName(id)} language. No markdown.`;
 
             try {
@@ -2019,8 +2126,10 @@
              // UPDATED: Use Label
              const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
 
-             const prompt = `Context: ${crop} farm. Weather: ${ctx}.
-             Task: Generate a 5-item Checklist of SOPs for tomorrow.
+             const prompt = `${getStrictCropExpertPrefix(id)}
+             
+             Context: ${crop} farm. Weather: ${ctx}.
+             Task: Generate a 5-item Checklist of SOPs (Standard Operating Procedures) for tomorrow, specific to ${crop} cultivation tasks.
              MANDATORY: Return strictly valid JSON array of strings in ${getLangName(id)} language.`;
 
              try {
@@ -2073,8 +2182,12 @@
             const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
             const ctx = window.getShortWeatherContext(id, 7);
             
-            const prompt = `Act as a Soil Scientist strictly for ${crop}. User Soil: "${desc}". Forecast: "${ctx}".
-            Task: Fertilizer advice.
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            You are now also acting as a Soil Scientist for ${crop}.
+            User-Reported Soil Condition: "${desc}".
+            Weather Forecast: "${ctx}".
+            Task: Provide specific fertilizer/amendment advice for ${crop} based on this soil and weather context.
             MANDATORY: Reply in ${getLangName(id)} language.`;
 
             try {
@@ -2119,8 +2232,11 @@
             // UPDATED: Inject Crop Context
             const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
             
-            const prompt = `Act as an Irrigation Expert strictly for ${crop}. Data: ET0=${et0}mm, Rain=${rain}mm. Tree Info: "${treeInfo}".
-            Calculate precise irrigation (Liters/tree).
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            You are now also acting as an Irrigation Expert for ${crop}.
+            Today's data: ET0=${et0}mm, Rain=${rain}mm. User Input on plants: "${treeInfo}".
+            Task: Calculate precise irrigation requirement (Liters per plant/tree) for ${crop} given this data.
             MANDATORY: Reply in ${getLangName(id)} language. 1 sentence only.`;
 
             try {
@@ -2160,8 +2276,12 @@
             const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
             const ctx = window.getShortWeatherContext(id, 14);
             
-            const prompt = `Act as a Harvest Expert strictly for ${crop}. Input: "${stage}". Weather: ${ctx}.
-            Estimate Days to Harvest and Risks.
+            const prompt = `${getStrictCropExpertPrefix(id)}
+            
+            You are now also acting as a Harvest Expert for ${crop}.
+            User-reported current growth stage / observation: "${stage}".
+            14-day weather forecast: ${ctx}.
+            Task: Estimate Days to Harvest and identify Risks specific to ${crop} given this stage and weather.
             MANDATORY: Reply in ${getLangName(id)} language.`;
             
             try {
