@@ -466,6 +466,14 @@
         .w-modal-overlay.hidden, .hidden { display: none !important; }
         .w-modal-card { background: white; width: 85%; max-width: 320px; border-radius: 20px; padding: 24px; box-shadow: 0 10px 25px rgba(0,0,0,0.1); animation: modal-in 0.2s ease-out; }
         @keyframes modal-in { from { transform: scale(0.95); opacity: 0; } to { transform: scale(1); opacity: 1; } }
+        
+        /* Crop picker: bigger fonts and padding on desktop */
+        @media (min-width: 600px) {
+            .crop-picker-card { max-width: 520px !important; max-height: 75vh !important; }
+            .crop-picker-card .crop-picker-title { font-size: 18px !important; }
+            .crop-picker-card #crop-picker-list button { padding: 16px 20px !important; font-size: 17px !important; }
+            .crop-picker-card #crop-picker-list button span { font-size: 17px !important; }
+        }
         .w-input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; font-size: 16px; outline: none; }
         .w-input:focus { border-color: #2563eb; }
         .w-btn-primary { width: 100%; padding: 12px; background: #2563eb; color: white; border-radius: 10px; font-weight: 700; margin-top: 8px; border: none; }
@@ -615,9 +623,9 @@
 
     <!-- Crop Picker Modal -->
     <div id="crop-picker-modal" class="w-modal-overlay hidden" style="z-index: 7100;">
-        <div class="w-modal-card !p-0 overflow-hidden flex flex-col max-h-[80vh] !w-[90%] !max-w-[360px]">
+        <div class="w-modal-card !p-0 overflow-hidden flex flex-col max-h-[80vh] !w-[92%] !max-w-[520px] crop-picker-card">
             <div class="p-4 border-b border-slate-100 flex items-center justify-between bg-slate-50/50">
-                <h3 class="text-base font-black text-slate-800 uppercase tracking-wide">Select Crop / 选择作物</h3>
+                <h3 class="text-base font-black text-slate-800 uppercase tracking-wide crop-picker-title">Select Crop / 选择作物</h3>
                 <button onclick="window.closeCropPicker()" class="p-2 text-slate-300 active:text-slate-500">
                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
                 </button>
@@ -2084,12 +2092,26 @@
             const crop = getLocalizedCropName(locationCrops[id] || 'durian', getLang(id));
             const ctx = window.getShortWeatherContext(id, 7); 
             
-            const prompt = `${getStrictCropExpertPrefix(id)}
+            const cropEn = getLocalizedCropName(locationCrops[id] || 'durian', 'en');
             
-            You are now also acting as an agricultural economist for ${crop}.
-            Weather Context (Next 7 days): ${ctx}.
-            Provide a concise strategic insight in 3 bullet points (Yield, Quality, Strategy) specific to ${crop} in Malaysia.
-            MANDATORY: Reply in ${getLangName(id)} language. No markdown.`;
+            // Yield & Market Insight uses a market-economist framing (NOT the strict agronomy prefix,
+            // which would push the AI toward pests/diseases instead of market analysis).
+            const prompt = `You are an agricultural market analyst and economist specializing in Malaysian ${cropEn} cultivation and trade.
+            
+            Your scope is STRICTLY: yield projections, market prices, demand trends, supply-chain considerations, harvest timing for best market prices, export vs domestic outlook, and quality-grading impact on price.
+            
+            Do NOT discuss: pest control, disease management, pruning techniques, fertilizer recommendations, or general agronomy advice. Those topics belong to other tools.
+            
+            Weather context for the next 7 days at this location: ${ctx}.
+            
+            TASK: Provide a focused 3-section market & yield insight for ${cropEn} in Malaysia:
+            1. YIELD OUTLOOK: How will the upcoming 7-day weather likely affect yield/output volume for ${cropEn}? (1-2 sentences with specific reasoning)
+            2. QUALITY & GRADE: Expected impact on ${cropEn} quality/grading given this weather. (1-2 sentences)
+            3. MARKET & PRICE STRATEGY: Current Malaysian market conditions for ${cropEn} — supply outlook, price trend direction, best timing for selling, and any export/wholesale considerations. (2-3 sentences)
+            
+            Be concrete and commercial in tone. Avoid agronomic instructions. If you mention any agronomic factor, frame it ONLY in terms of its market/yield consequence.
+            
+            MANDATORY: Reply in ${getLangName(id)} language. No markdown formatting (no #, *, -, |). Use plain numbered sections.`;
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
@@ -2128,9 +2150,24 @@
 
              const prompt = `${getStrictCropExpertPrefix(id)}
              
-             Context: ${crop} farm. Weather: ${ctx}.
-             Task: Generate a 5-item Checklist of SOPs (Standard Operating Procedures) for tomorrow, specific to ${crop} cultivation tasks.
-             MANDATORY: Return strictly valid JSON array of strings in ${getLangName(id)} language.`;
+             Context: ${crop} farm in Malaysia. Tomorrow's weather: ${ctx}.
+             
+             TASK: Generate a 5-item SOP (Standard Operating Procedure) checklist for tomorrow's farm work, specifically tailored to ${crop} cultivation and tomorrow's weather.
+             
+             Each item MUST be:
+             - A concrete, actionable task a worker can tick off (not vague advice)
+             - Weather-responsive (e.g. if rain expected at 3PM, schedule spraying before; if hot, recommend pre-dawn fertilizing)
+             - Specific to ${crop} biology and Malaysian practices (mention ${crop}-specific parts/stages/risks)
+             - Include a time-of-day window where relevant (e.g. "before 9 AM", "after 4 PM")
+             
+             Cover a balanced mix from these categories (not all from one):
+             1. Field operations (spraying, fertilizing, pruning, harvesting if applicable)
+             2. Plant inspection (pest/disease early signs specific to ${crop})
+             3. Irrigation / water management
+             4. Worker safety or equipment prep based on weather
+             5. Quality control / record-keeping relevant to ${crop}
+             
+             MANDATORY: Return strictly valid JSON array of 5 strings in ${getLangName(id)} language. No markdown. Each string 12-25 words.`;
 
              try {
                  const payload = {
@@ -2184,11 +2221,19 @@
             
             const prompt = `${getStrictCropExpertPrefix(id)}
             
-            You are now also acting as a Soil Scientist for ${crop}.
+            You are now also acting as a Soil Scientist and Fertilizer Advisor for ${crop} in Malaysia.
+            
             User-Reported Soil Condition: "${desc}".
-            Weather Forecast: "${ctx}".
-            Task: Provide specific fertilizer/amendment advice for ${crop} based on this soil and weather context.
-            MANDATORY: Reply in ${getLangName(id)} language.`;
+            Weather Forecast (next 7 days): "${ctx}".
+            
+            TASK: Provide a structured soil & fertilizer recommendation for ${crop} covering exactly these 3 labeled sections:
+            1. SOIL ASSESSMENT: Identify the key soil issue(s) from the user's description (e.g. drainage, pH, leaching tendency, organic matter, compaction) and how it affects ${crop} specifically.
+            2. FERTILIZER RECOMMENDATION: Suggest a specific NPK ratio or fertilizer type appropriate for ${crop} given the soil condition (e.g. "NPK 12-12-17 at 0.5kg/tree" or "compost + slow-release K"). Include amendment if needed (lime, gypsum, organic matter).
+            3. APPLICATION TIMING: Best window to apply within the next 7 days based on the weather forecast — avoid applying before heavy rain (leaching) or during extreme heat. State which day(s) and time-of-day.
+            
+            Format as 3 short labeled paragraphs (1-2 sentences each). No markdown.
+            
+            MANDATORY: Reply in ${getLangName(id)} language. Keep total under 90 words.`;
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
@@ -2234,10 +2279,19 @@
             
             const prompt = `${getStrictCropExpertPrefix(id)}
             
-            You are now also acting as an Irrigation Expert for ${crop}.
-            Today's data: ET0=${et0}mm, Rain=${rain}mm. User Input on plants: "${treeInfo}".
-            Task: Calculate precise irrigation requirement (Liters per plant/tree) for ${crop} given this data.
-            MANDATORY: Reply in ${getLangName(id)} language. 1 sentence only.`;
+            You are now also acting as an Irrigation Expert for ${crop} in Malaysia.
+            
+            Today's data: ET0 (reference evapotranspiration) = ${et0}mm. Rainfall = ${rain}mm.
+            User's plant info: "${treeInfo}".
+            
+            TASK: Provide a precise irrigation recommendation for ${crop} covering exactly 3 points:
+            1. AMOUNT: Calculate liters per plant/tree needed today (account for ET0 minus effective rainfall, ${crop} water-use coefficient Kc, plant size from user input)
+            2. TIMING: Best time-of-day window to irrigate (consider Malaysian heat and evaporation losses — typically early morning or late afternoon)
+            3. FREQUENCY: Whether to irrigate today at all, and when to next reassess (e.g. "skip today if rain forecast", "irrigate again in 2 days if dry")
+            
+            Format as 3 short labeled lines, each starting with the label (Amount / Timing / Frequency). No markdown, no extra paragraphs.
+            
+            MANDATORY: Reply in ${getLangName(id)} language. Keep total under 60 words.`;
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
@@ -2278,11 +2332,19 @@
             
             const prompt = `${getStrictCropExpertPrefix(id)}
             
-            You are now also acting as a Harvest Expert for ${crop}.
+            You are now also acting as a Harvest Expert for ${crop} in Malaysia.
+            
             User-reported current growth stage / observation: "${stage}".
             14-day weather forecast: ${ctx}.
-            Task: Estimate Days to Harvest and identify Risks specific to ${crop} given this stage and weather.
-            MANDATORY: Reply in ${getLangName(id)} language.`;
+            
+            TASK: Provide a structured harvest assessment for ${crop} with exactly these 3 labeled sections:
+            1. DAYS TO HARVEST: Estimated range (e.g. "12-18 days") based on the user's reported stage and typical ${crop} maturity timing in Malaysia. Briefly state reasoning.
+            2. WEATHER RISKS: 1-2 specific risks within the 14-day window that could affect harvest quality or timing (e.g. heavy rain during fruit ripening, drought stress, fungal-favoring humidity). Tie to ${crop}-specific concerns.
+            3. OPTIMAL HARVEST WINDOW: Best calendar dates (if discernible from the forecast) and time-of-day for ${crop}. Mention any post-harvest weather concerns for transport/drying if relevant.
+            
+            Format as 3 short labeled paragraphs (1-2 sentences each). No markdown.
+            
+            MANDATORY: Reply in ${getLangName(id)} language. Keep total under 80 words.`;
             
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
