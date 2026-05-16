@@ -474,6 +474,41 @@
             .crop-picker-card #crop-picker-list button { padding: 16px 20px !important; font-size: 17px !important; }
             .crop-picker-card #crop-picker-list button span { font-size: 17px !important; }
         }
+        
+        /* Main location list: scale up on desktop to match the forecast modal's visual weight */
+        @media (min-width: 900px) {
+            /* Bigger header */
+            header h1.text-base { font-size: 22px !important; }
+            #ui-greg-date { font-size: 22px !important; }
+            #ui-time { font-size: 18px !important; }
+            #ui-term-countdown { font-size: 14px !important; }
+            
+            /* Bigger West/East column headers */
+            #main-content > div > div.p-4 { 
+                font-size: 14px !important;
+                padding: 18px !important;
+                letter-spacing: 0.15em !important;
+            }
+            
+            /* Bigger location card content */
+            .list-item-content { padding: 28px 28px !important; }
+            .name-label-en { font-size: 32px !important; }
+            .name-label-zh { font-size: 26px !important; margin-top: 6px !important; }
+            
+            /* Bigger temperature/rain readings */
+            .list-item-content .text-\[17px\] { font-size: 26px !important; }
+            .list-item-content .text-\[9px\] { font-size: 13px !important; }
+            .list-item-content .mt-6 { margin-top: 1.5rem !important; }
+            
+            /* Bigger pin/heart icon */
+            .pin-btn { width: 64px !important; height: 64px !important; right: 10px !important; top: 16px !important; }
+            .pin-icon { width: 36px !important; height: 36px !important; }
+            
+            /* Footer slider taller for clickability */
+            footer { padding: 16px 32px !important; }
+            #ui-proj-time { font-size: 18px !important; }
+            #ui-date-display { font-size: 14px !important; }
+        }
         .w-input { width: 100%; padding: 12px; border: 1px solid #cbd5e1; border-radius: 10px; margin-bottom: 12px; font-size: 16px; outline: none; }
         .w-input:focus { border-color: #2563eb; }
         .w-btn-primary { width: 100%; padding: 12px; background: #2563eb; color: white; border-radius: 10px; font-weight: 700; margin-top: 8px; border: none; }
