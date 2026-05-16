@@ -2137,16 +2137,28 @@
             
             Do NOT discuss: pest control, disease management, pruning techniques, fertilizer recommendations, or general agronomy advice. Those topics belong to other tools.
             
+            Today's date: ${new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' })}.
             Weather context for the next 7 days at this location: ${ctx}.
             
-            TASK: Provide a focused 3-section market & yield insight for ${cropEn} in Malaysia:
-            1. YIELD OUTLOOK: How will the upcoming 7-day weather likely affect yield/output volume for ${cropEn}? (1-2 sentences with specific reasoning)
-            2. QUALITY & GRADE: Expected impact on ${cropEn} quality/grading given this weather. (1-2 sentences)
-            3. MARKET & PRICE STRATEGY: Current Malaysian market conditions for ${cropEn} — supply outlook, price trend direction, best timing for selling, and any export/wholesale considerations. (2-3 sentences)
+            TASK: Provide a focused 4-section market & yield insight for ${cropEn} in Malaysia:
             
-            Be concrete and commercial in tone. Avoid agronomic instructions. If you mention any agronomic factor, frame it ONLY in terms of its market/yield consequence.
+            1. SEASONAL CONTEXT: State where today's date falls in the typical ${cropEn} harvest cycle in Malaysia (peak season / off-season / between peaks). This is the most important framing — without it the rest is meaningless.
             
-            MANDATORY: Reply in ${getLangName(id)} language. No markdown formatting (no #, *, -, |). Use plain numbered sections.`;
+            2. YIELD OUTLOOK: How will the upcoming 7-day weather likely affect yield/output VOLUME for ${cropEn}? Be specific about the mechanism (e.g. "rain at flowering stage reduces fruit set", "wet harvest = more split fruit"). Use relative language ("above/below typical for this point in season").
+            
+            3. QUALITY & GRADE IMPACT: Reference the actual grading conventions used for ${cropEn} in Malaysia (e.g. for fruits: Grade A/Premium vs Grade B vs Reject; for paddy: dry/wet, grain quality classes). Explain how this week's weather shifts the mix between grades.
+            
+            4. THIS WEEK'S MARKET STRATEGY: A concrete, actionable plan covering:
+               - WHEN to harvest/sell (specific days within the 7-day window if discernible)
+               - WHERE to sell — name SPECIFIC Malaysian channels suitable for ${cropEn} (e.g. Pasar Borong Selayang, FAMA, pasar tani, wholesale to JB/Singapore, online platforms like Shopee Fresh / Lazada Mart, processors, contract buyers)
+               - PRICE EXPECTATION: use relative language only ("above seasonal baseline" / "softer than last month" / "premium grade can fetch 20-30% above standard"). DO NOT invent specific RM/kg prices unless you are certain about ${cropEn} in Malaysia.
+               - One specific tactic to capture better margin this week given the weather
+            
+            HONESTY RULE: If you don't have reliable information about a specific aspect of ${cropEn} market in Malaysia, say so briefly rather than inventing data. Better to say "specific export volumes for ${cropEn} from Malaysia not well-documented" than to make up numbers.
+            
+            Format as 4 short labeled sections (label in CAPS, then 1-3 sentences). No markdown formatting (no #, *, -, |). 
+            
+            MANDATORY: Reply in ${getLangName(id)} language. Total under 140 words.`;
 
             try {
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
