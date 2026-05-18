@@ -1061,6 +1061,12 @@
                         });
                      }
                 }
+                // v1.0.63: Better diagnostic logging on any non-OK response
+                if (!res.ok) {
+                    let errBody = '';
+                    try { errBody = await res.clone().text(); } catch(e) { errBody = '(unreadable)'; }
+                    console.error(`[Gemini] HTTP ${res.status} ${res.statusText} — ${errBody.slice(0, 500)}`);
+                }
                 return res;
             } catch(e) {
                 console.error("Fetch Gemini Error:", e);
@@ -1960,12 +1966,12 @@
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 // Use fetchGemini to handle Auth errors gracefully
                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
-                if(!res.ok) throw new Error("API Error");
+                if(!res.ok) throw new Error(`API Error ${res.status}`);
                 const data = await res.json(); 
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis unavailable.";
                 // Added .trim() to remove leading newlines that cause "middle" alignment
                 content.innerText = text.trim(); 
-            } catch (e) { content.innerText = "Connection failed."; console.error(e); } finally { btn.disabled = false; btn.innerText = labels.pest; }
+            } catch (e) { content.innerText = `Connection failed: ${e.message}`; console.error(e); } finally { btn.disabled = false; btn.innerText = labels.pest; }
         };
 
         window.executeSmartBrief = async (id) => {
@@ -2161,7 +2167,7 @@
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 // Use fetchGemini to handle Auth errors gracefully
                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
-                if(!res.ok) throw new Error("API Error");
+                if(!res.ok) throw new Error(`API Error ${res.status}`);
                 const data = await res.json(); 
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unavailable.";
                 
@@ -2176,7 +2182,7 @@
                            .trim();
 
                 content.innerText = text;
-            } catch (e) { content.innerText = "Network Error."; console.error(e); } finally { btn.disabled = false; spin.style.display = "none"; }
+            } catch (e) { content.innerText = `Network Error: ${e.message}`; console.error(e); } finally { btn.disabled = false; spin.style.display = "none"; }
         };
 
         window.getShortWeatherContext = (id, days) => {
