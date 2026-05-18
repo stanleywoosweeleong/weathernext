@@ -2569,9 +2569,9 @@
                 <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:48px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:32px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:32px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 50px; padding-top: 14px;"></div></div>
-                <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:100px;padding-top:20px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="100"></svg></div>
-                <div class="relative bg-slate-50/10"><div class="row-label-overlay" style="color:#1e3a8a">Rainfall (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:70px;padding-top:20px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="70"></svg></div>
-                <div class="relative"><div class="row-label-overlay" style="color:#059669">ET0 (mm)</div><div class="info-row" id="row-et-${id}" style="min-height:60px;padding-top:24px;"></div><svg id="trend-layer-et-${id}" class="trend-layer" height="60"></svg></div>
+                <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:80px;padding-top:20px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="80"></svg></div>
+                <div class="relative bg-slate-50/10"><div class="row-label-overlay" style="color:#1e3a8a">Rainfall (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:60px;padding-top:20px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="60"></svg></div>
+                <div class="relative"><div class="row-label-overlay" style="color:#059669">ET0 (mm)</div><div class="info-row" id="row-et-${id}" style="min-height:50px;padding-top:22px;"></div><svg id="trend-layer-et-${id}" class="trend-layer" height="50"></svg></div>
                 <div class="info-row" id="row-dates-bottom-${id}"></div>
              </div>`;
         }
@@ -2897,14 +2897,15 @@
             };
             drawTL('hi', '#f97316', 'up'); drawTL('lo', '#2563eb', 'down'); drawTL('dp', '#06b6d4', 'none', true); drawTL('dT', '#7e22ce', 'none');
             let ppP = ""; days.forEach((d, i) => {
-                const x = columnCenters[i], y = 25 + (1 - d.pp/100)*55; ppP += (i===0?"M ":" L ")+x+" "+y;
+                // Rain Prob: y range from 22 (top, 100% line) to 70 (bottom, 0%) — fits 80px row
+                const x = columnCenters[i], y = 22 + (1 - d.pp/100)*48; ppP += (i===0?"M ":" L ")+x+" "+y;
                 const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", "#1e3a8a"); svgPP.appendChild(c);
-                const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?16:-10)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
+                const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?14:-8)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
             });
             const ppl = document.createElementNS("http://www.w3.org/2000/svg", "path"); ppl.setAttribute("d", ppP); ppl.setAttribute("stroke", "#1e3a8a"); ppl.setAttribute("stroke-width", "3"); ppl.setAttribute("fill", "none"); ppl.setAttribute("opacity", "0.6"); svgPP.appendChild(ppl);
-            // RAINFALL (separate row, height=70). Bars anchored to bottom, label above bar top.
+            // RAINFALL (separate row, height=60). Bars anchored to bottom.
             const maxRV = Math.max(...days.map(d => d.rv), 1);
-            const RV_BASELINE = 65, RV_MAX_HEIGHT = 38;  // bars from y=65 up to y=27
+            const RV_BASELINE = 55, RV_MAX_HEIGHT = 30;  // bars from y=55 up to y=25
             days.forEach((d, i) => {
                 const x = columnCenters[i] - 5, h = (d.rv / maxRV) * RV_MAX_HEIGHT;
                 const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -2922,11 +2923,11 @@
                 }
             });
             
-            // ET0 (separate row, height=60). Line plot — y range stays below the row label.
-            // Row label occupies y=4 to ~y=20. So ET0 plot uses y=28 (top) to y=55 (bottom).
+            // ET0 (separate row, height=50). Line plot — y range stays below the row label.
+            // Row label occupies y=4 to ~y=20. So ET0 plot uses y=24 (top) to y=46 (bottom).
             if (svgET) {
                 const maxET = Math.max(...days.map(d => d.et), 1);
-                const ET_BASELINE = 55, ET_MAX_HEIGHT = 27;  // line from y=55 up to y=28
+                const ET_BASELINE = 46, ET_MAX_HEIGHT = 22;  // line from y=46 up to y=24
                 let etP = "";
                 days.forEach((d, i) => {
                     const x = columnCenters[i];
