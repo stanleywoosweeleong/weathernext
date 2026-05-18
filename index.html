@@ -1456,62 +1456,90 @@
         };
 
         // ===== HELP CARD: DeltaT & Safe Hours explainer =====
-        // Tapping the "?" icon next to the temp row label expands an inline
-        // explainer card. Content is multilingual based on the location's lang.
+        // Reality check for tropical Malaysia: DeltaT at 8AM is almost ALWAYS too humid (<2.0),
+        // so the red number is the typical state — it's a "morning is too humid" warning.
+        // The PURPLE TREND LINE shows trend over days (is it drying out?).
+        // The GREEN/RED bottom number is Safe Hours = actual sprayable window today.
+        // Safe Hours is the real decision metric.
         const HELP_CARD_CONTENT = {
             en: {
-                deltatTitle: "DeltaT (8AM)",
-                deltatBody: "Morning air temperature minus dew point. Tells you whether spray droplets will evaporate before reaching the leaf surface.",
-                deltatSafe: "2.0 – 8.0  Safe",
-                deltatRisk: "< 2.0 or > 8.0  Risky",
-                safeTitle: "Safe Hours",
-                safeBody: "Hours that day when ALL spray conditions (wind, humidity, DeltaT, crop stress) are within safe range. The actual sprayable window.",
-                safeGreen: "≥ 1 hr  Plan a spray",
-                safeRed: "0 hrs  Skip today",
+                whatYouSee: "What you see in the chart",
+                trendLineLabel: "Purple trend line — Delta T pattern across days",
+                trendLineBody: "Shows whether mornings are getting drier (rising line) or staying humid (flat low line). Useful to predict drier days ahead.",
+                redNumLabel: "Red number above line — morning is too humid/dry",
+                redNumBody: "Delta T value when outside safe range (2.0 – 8.0). In Malaysia this is typical for early morning — means spray droplets will evaporate or run off poorly. Don't spray at 8 AM on red-number days.",
+                greenNumLabel: "Green number below line — sprayable hours today",
+                greenNumBody: "How many hours TODAY have ALL conditions safe (wind, humidity, VPD, crop stress). This is your real spray window.",
+                greenNumRed: "If red instead of green = 0 sprayable hours = skip today.",
+                howToUse: "How to decide each day",
+                rule1: "Red number is typical for Malaysian mornings — focus on the green number for go/no-go",
+                rule2: "Green ≥ 1 = spray is possible — open the day's detail to see WHICH hours are safe",
+                rule3: "Green = 0 (shown as red) = no safe spray window today, skip",
+                rule4: "Watch the purple trend line — if it rises toward 2.0+, mornings are drying out (better spray days coming)",
                 close: "Close"
             },
             zh: {
-                deltatTitle: "温湿差 DeltaT (8时)",
-                deltatBody: "清晨气温减去露点温度。判断喷洒药水是否会在到达叶面前蒸发流失。",
-                deltatSafe: "2.0 – 8.0  安全",
-                deltatRisk: "< 2.0 或 > 8.0  风险",
-                safeTitle: "安全时数 Safe Hours",
-                safeBody: "当日所有喷洒条件（风、湿度、温湿差、作物压力）都在安全范围内的小时数。这是真正可喷洒的窗口。",
-                safeGreen: "≥ 1 小时  可安排喷洒",
-                safeRed: "0 小时  今日不宜",
+                whatYouSee: "图表上你看到的",
+                trendLineLabel: "紫色趋势线 — 各日温湿差变化",
+                trendLineBody: "显示清晨是否逐渐变干（线上升）或持续湿润（线平稳低）。可预测未来几日变干情况。",
+                redNumLabel: "线上方的红色数字 — 清晨太湿或太干",
+                redNumBody: "DeltaT 超出安全范围（2.0 – 8.0）时显示。马来西亚清晨通常如此 — 表示喷洒药水会蒸发或滴落浪费。红色数字日不宜清晨喷洒。",
+                greenNumLabel: "线下方的绿色数字 — 今日可喷洒时数",
+                greenNumBody: "当日所有条件（风、湿度、VPD、作物压力）都安全的小时数。这是真正的喷洒窗口。",
+                greenNumRed: "若显示红色而非绿色 = 0 小时可喷洒 = 今日跳过。",
+                howToUse: "每日决策指南",
+                rule1: "马来西亚清晨红色数字属常态 — 主要看绿色数字判断可否喷洒",
+                rule2: "绿色 ≥ 1 = 可喷洒 — 打开当日详情查看具体安全时段",
+                rule3: "绿色 = 0（显示红色）= 今日无安全窗口，请跳过",
+                rule4: "观察紫色趋势线 — 若上升接近 2.0+，清晨在变干（接下来几日更适合喷洒）",
                 close: "关闭"
             },
             ms: {
-                deltatTitle: "DeltaT (8 pagi)",
-                deltatBody: "Suhu udara pagi tolak titik embun. Menunjukkan sama ada titisan semburan akan menguap sebelum sampai ke daun.",
-                deltatSafe: "2.0 – 8.0  Selamat",
-                deltatRisk: "< 2.0 atau > 8.0  Berisiko",
-                safeTitle: "Jam Selamat (Safe Hours)",
-                safeBody: "Jumlah jam dalam sehari apabila SEMUA syarat semburan (angin, kelembapan, DeltaT, tekanan tanaman) berada dalam julat selamat.",
-                safeGreen: "≥ 1 jam  Boleh sembur",
-                safeRed: "0 jam  Elakkan hari ini",
+                whatYouSee: "Apa yang anda lihat dalam carta",
+                trendLineLabel: "Garis tren ungu — corak Delta T merentas hari",
+                trendLineBody: "Menunjukkan sama ada pagi semakin kering (garis naik) atau kekal lembap (garis rendah rata). Berguna untuk meramalkan hari kering yang akan datang.",
+                redNumLabel: "Nombor merah di atas garis — pagi terlalu lembap/kering",
+                redNumBody: "Nilai Delta T di luar julat selamat (2.0 – 8.0). Di Malaysia ini biasa untuk pagi awal — bermakna titisan semburan akan menguap atau mengalir keluar dengan buruk. Jangan sembur pada 8 pagi pada hari nombor merah.",
+                greenNumLabel: "Nombor hijau di bawah garis — jam boleh sembur hari ini",
+                greenNumBody: "Berapa jam HARI INI mempunyai SEMUA syarat selamat (angin, kelembapan, VPD, tekanan tanaman). Inilah tetingkap semburan sebenar anda.",
+                greenNumRed: "Jika merah, bukan hijau = 0 jam boleh sembur = langkau hari ini.",
+                howToUse: "Cara membuat keputusan setiap hari",
+                rule1: "Nombor merah adalah biasa untuk pagi Malaysia — fokus pada nombor hijau untuk pergi/tidak",
+                rule2: "Hijau ≥ 1 = semburan boleh — buka butiran hari untuk lihat jam MANA yang selamat",
+                rule3: "Hijau = 0 (ditunjukkan merah) = tiada tetingkap selamat hari ini, langkau",
+                rule4: "Perhatikan garis tren ungu — jika naik ke 2.0+, pagi semakin kering (hari semburan lebih baik akan datang)",
                 close: "Tutup"
             },
             ta: {
-                deltatTitle: "DeltaT (காலை 8 மணி)",
-                deltatBody: "காலை வெப்பநிலை கழித்து பனிப்புள்ளி. தெளிப்பு துளிகள் இலையை அடைவதற்கு முன் ஆவியாகுமா என்பதைக் காட்டுகிறது.",
-                deltatSafe: "2.0 – 8.0  பாதுகாப்பானது",
-                deltatRisk: "< 2.0 அல்லது > 8.0  ஆபத்து",
-                safeTitle: "பாதுகாப்பான மணிநேரங்கள்",
-                safeBody: "ஒரு நாளில் அனைத்து தெளிப்பு நிலைமைகளும் (காற்று, ஈரப்பதம், DeltaT, பயிர் அழுத்தம்) பாதுகாப்பான வரம்பில் இருக்கும் மணிநேரங்கள்.",
-                safeGreen: "≥ 1 மணி  தெளிப்பு திட்டமிடலாம்",
-                safeRed: "0 மணி  இன்று தவிர்க்கவும்",
+                whatYouSee: "வரைபடத்தில் நீங்கள் காண்பது",
+                trendLineLabel: "ஊதா போக்கு கோடு — நாட்களில் Delta T முறை",
+                trendLineBody: "காலை வேளைகள் வறண்டு வருகிறதா (உயரும் கோடு) அல்லது ஈரப்பதமாக இருக்கிறதா (தாழ்ந்த தட்டையான கோடு) என்பதைக் காட்டுகிறது.",
+                redNumLabel: "கோட்டின் மேல் சிவப்பு எண் — காலை மிக ஈரப்பதம்/வறட்சி",
+                redNumBody: "Delta T பாதுகாப்பான வரம்புக்கு (2.0 – 8.0) வெளியே இருக்கும்போது. மலேசியாவில் காலையில் இது சாதாரணம் — தெளிப்பு துளிகள் ஆவியாகும். சிவப்பு எண் நாட்களில் காலை 8 மணிக்கு தெளிக்க வேண்டாம்.",
+                greenNumLabel: "கோட்டின் கீழ் பச்சை எண் — இன்று தெளிக்கக்கூடிய மணிநேரங்கள்",
+                greenNumBody: "இன்று எத்தனை மணிநேரங்கள் அனைத்து நிலைமைகளும் (காற்று, ஈரப்பதம், VPD, பயிர் அழுத்தம்) பாதுகாப்பானவை. இதுவே உண்மையான தெளிப்பு சாளரம்.",
+                greenNumRed: "பச்சைக்கு பதிலாக சிவப்பாக இருந்தால் = 0 மணிநேரம் = இன்று தவிர்க்கவும்.",
+                howToUse: "ஒவ்வொரு நாளும் முடிவெடுப்பது எப்படி",
+                rule1: "மலேசிய காலைகளில் சிவப்பு எண் சாதாரணம் — செல்ல/செல்லாமைக்கு பச்சை எண்ணில் கவனம் செலுத்துங்கள்",
+                rule2: "பச்சை ≥ 1 = தெளிக்கலாம் — எந்த மணிநேரங்கள் பாதுகாப்பானவை என்று பார்க்க அன்றைய விவரங்களைத் திறக்கவும்",
+                rule3: "பச்சை = 0 (சிவப்பாகக் காட்டப்படும்) = இன்று பாதுகாப்பான சாளரம் இல்லை, தவிர்க்கவும்",
+                rule4: "ஊதா போக்கு கோட்டைப் பாருங்கள் — அது 2.0+ ஆக உயர்ந்தால், காலைகள் வறண்டு வருகின்றன (சிறந்த தெளிப்பு நாட்கள் வருகின்றன)",
                 close: "மூடு"
             },
             my: {
-                deltatTitle: "DeltaT (နံနက် ၈ နာရီ)",
-                deltatBody: "နံနက်ပိုင်း လေထုအပူချိန်ကို ဆီးနှင်းကိုက်အပူချိန်နှင့် နှုတ်ထားသည်။ ဆေးပက်ဖျန်းချိန် ဆေးအစက်များ အရွက်ပေါ်မရောက်ခင် အငွေ့ပျံသွားမည်ဟုတ်/မဟုတ် ပြသသည်။",
-                deltatSafe: "2.0 – 8.0  လုံခြုံ",
-                deltatRisk: "< 2.0 သို့ > 8.0  အန္တရာယ်ရှိ",
-                safeTitle: "လုံခြုံသော နာရီများ",
-                safeBody: "ဆေးပက်ဖျန်းခြင်းအတွက် အခြေအနေအားလုံး (လေ၊ စိုထိုင်းဆ၊ DeltaT၊ သီးနှံဖိစီးမှု) လုံခြုံသော အပိုင်းအခြားအတွင်း ရှိနေသည့် တစ်ရက်အတွင်း နာရီများ။",
-                safeGreen: "≥ ၁ နာရီ  ဆေးပက်နိုင်",
-                safeRed: "၀ နာရီ  ယနေ့ ရှောင်ပါ",
+                whatYouSee: "ဇယားတွင် သင်တွေ့မြင်ရသည်",
+                trendLineLabel: "ခရမ်းရောင် ဦးတည်ချက်လိုင်း — နေ့စဉ် Delta T ပုံစံ",
+                trendLineBody: "နံနက်များ ပိုခြောက်လာသလား (လိုင်းတက်လာ) သို့မဟုတ် စိုစွတ်နေဆဲလား (လိုင်းနိမ့်ပြားနေ) ပြသသည်။",
+                redNumLabel: "လိုင်းအထက် အနီရောင်နံပါတ် — နံနက်ပိုင်း စိုစွတ်/ခြောက်သွေ့လွန်း",
+                redNumBody: "Delta T သည် လုံခြုံသော အပိုင်းအခြား (2.0 – 8.0) ပြင်ပတွင် ရှိနေသောအခါ။ မလေးရှားနံနက်ပိုင်းတွင် ဤအခြေအနေသည် ပုံမှန် — ဆေးအစက်များ အငွေ့ပျံသွားလိမ့်မည်။ အနီရောင်နံပါတ်နေ့များတွင် နံနက် ၈ နာရီ၌ မပက်ပါနှင့်။",
+                greenNumLabel: "လိုင်းအောက် အစိမ်းရောင်နံပါတ် — ယနေ့ ဆေးပက်နိုင်သော နာရီများ",
+                greenNumBody: "ယနေ့ အခြေအနေအားလုံး လုံခြုံသော နာရီအရေအတွက် (လေ၊ စိုထိုင်းဆ၊ VPD၊ သီးနှံဖိစီးမှု)။ ၎င်းသည် သင်၏ စစ်မှန်သော ဆေးပက်ဝင်းဒိုး။",
+                greenNumRed: "အစိမ်းအစား အနီရောင်ဖြစ်ပါက = ၀ နာရီ = ယနေ့ ကျော်ပါ။",
+                howToUse: "နေ့စဉ် ဆုံးဖြတ်နည်း",
+                rule1: "မလေးရှားနံနက်များတွင် အနီနံပါတ်သည် ပုံမှန် — သွား/မသွား အတွက် အစိမ်းနံပါတ်ကို အာရုံစိုက်ပါ",
+                rule2: "အစိမ်း ≥ ၁ = ဆေးပက်နိုင် — မည်သည့်နာရီများ လုံခြုံသည်ကို ကြည့်ရန် ထိုနေ့၏ အသေးစိတ်ကို ဖွင့်ပါ",
+                rule3: "အစိမ်း = ၀ (အနီအဖြစ်ပြ) = ယနေ့ လုံခြုံသော ဝင်းဒိုးမရှိ၊ ကျော်ပါ",
+                rule4: "ခရမ်းရောင် ဦးတည်ချက်လိုင်းကို ကြည့်ပါ — 2.0+ သို့ တက်လာပါက နံနက်များ ပိုခြောက်လာ (ဆေးပက်ရန် ပိုကောင်းသောနေ့များ လာမည်)",
                 close: "ပိတ်"
             }
         };
@@ -1524,39 +1552,46 @@
             if (isOpen) {
                 card.classList.remove('open');
                 icon.classList.remove('active');
-                // Clear inner content after the closing animation to free DOM
                 setTimeout(() => { if (!card.classList.contains('open')) card.innerHTML = ''; }, 250);
                 return;
             }
-            // Populate with localized content
             const lang = getLang(id);
             const t = HELP_CARD_CONTENT[lang] || HELP_CARD_CONTENT.en;
+            // Small colored dot to anchor each explanation visually to what's on the chart.
+            const dot = (c) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};vertical-align:middle;margin-right:5px;"></span>`;
             card.innerHTML = `
                 <span class="help-card-close" onclick="window.toggleHelpCard('${id}')" aria-label="${t.close}">×</span>
+                
                 <div class="help-card-section">
-                    <div class="help-card-title">
-                        <span class="help-card-title-dot" style="background:#7e22ce;"></span>
-                        <span style="color:#7e22ce;">${t.deltatTitle}</span>
+                    <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.whatYouSee}</div>
+                    
+                    <div style="margin-bottom:8px;">
+                        <div style="font-weight:700; color:#7e22ce; margin-bottom:2px;">${dot('#7e22ce')}${t.trendLineLabel}</div>
+                        <div style="color:#475569; padding-left:13px;">${t.trendLineBody}</div>
                     </div>
-                    <div style="margin-bottom:6px;">${t.deltatBody}</div>
-                    <div class="help-card-pills">
-                        <div class="help-card-pill safe">${t.deltatSafe}</div>
-                        <div class="help-card-pill risk">${t.deltatRisk}</div>
+                    
+                    <div style="margin-bottom:8px;">
+                        <div style="font-weight:700; color:#ef4444; margin-bottom:2px;">${dot('#ef4444')}${t.redNumLabel}</div>
+                        <div style="color:#475569; padding-left:13px;">${t.redNumBody}</div>
+                    </div>
+                    
+                    <div style="margin-bottom:0;">
+                        <div style="font-weight:700; color:#166534; margin-bottom:2px;">${dot('#166534')}${t.greenNumLabel}</div>
+                        <div style="color:#475569; padding-left:13px;">${t.greenNumBody}</div>
+                        <div style="color:#475569; padding-left:13px; margin-top:2px; font-style:italic;">${t.greenNumRed}</div>
                     </div>
                 </div>
-                <div class="help-card-section">
-                    <div class="help-card-title">
-                        <span class="help-card-title-dot" style="background:#166534;"></span>
-                        <span style="color:#166534;">${t.safeTitle}</span>
-                    </div>
-                    <div style="margin-bottom:6px;">${t.safeBody}</div>
-                    <div class="help-card-pills">
-                        <div class="help-card-pill green">${t.safeGreen}</div>
-                        <div class="help-card-pill risk">${t.safeRed}</div>
+                
+                <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
+                    <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                    <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                        <div style="margin-bottom:4px;">• ${t.rule1}</div>
+                        <div style="margin-bottom:4px;">• ${t.rule2}</div>
+                        <div style="margin-bottom:4px;">• ${t.rule3}</div>
+                        <div>• ${t.rule4}</div>
                     </div>
                 </div>
             `;
-            // Open with next animation frame so transition runs
             requestAnimationFrame(() => {
                 card.classList.add('open');
                 icon.classList.add('active');
