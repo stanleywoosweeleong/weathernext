@@ -786,6 +786,83 @@
             appId: "1:90552560075:web:e23a642cfe55778123ee4e"
         };
         const appId = 'wnext-ag-v41';
+        
+        // ===== SAFE LOCALSTORAGE HELPERS (v1.0.62) =====
+        // localStorage.setItem can throw QuotaExceededError when full (5-10MB browser limit).
+        // safeSet catches the error, logs it, optionally calls an emergency cleanup, and lets
+        // the app continue running instead of crashing the active code path.
+        // safeGetJson centralizes try/catch + fallback for any cached JSON read.
+        function safeSet(key, value) {
+            try {
+                localStorage.setItem(key, value);
+                return true;
+            } catch (e) {
+                // Likely QuotaExceededError. Try clearing the weather cache (largest by far) and retry once.
+                console.warn('[Storage] setItem failed for', key, '— attempting emergency cleanup', e);
+                try {
+                    localStorage.removeItem(WEATHER_CACHE_KEY);
+                    localStorage.setItem(key, value);
+                    if (typeof window !== 'undefined' && window.showToast) {
+                        window.showToast('Storage full — weather cache cleared');
+                    }
+                    return true;
+                } catch (e2) {
+                    console.error('[Storage] Critical: cleanup retry also failed for', key, e2);
+                    if (typeof window !== 'undefined' && window.showToast) {
+                        window.showToast('Storage error / 存储错误', true);
+                    }
+                    return false;
+                }
+            }
+        }
+        function safeGetJson(key, fallback) {
+            try {
+                const raw = localStorage.getItem(key);
+                if (raw == null) return fallback;
+                const parsed = JSON.parse(raw);
+                return parsed == null ? fallback : parsed;
+            } catch (e) {
+                console.warn('[Storage] parse failed for', key, '— using fallback', e);
+                return fallback;
+            }
+        }
+        // Math.max(...[]) returns -Infinity silently — corrupts downstream math and display.
+        // safeMax returns the fallback (default 0) when the array is empty/missing.
+        function safeMax(arr, fallback = 0) {
+            if (!Array.isArray(arr) || arr.length === 0) return fallback;
+            // Filter out undefined/null/NaN — Math.max can also be polluted by those
+            const clean = arr.filter(v => typeof v === 'number' && isFinite(v));
+            return clean.length === 0 ? fallback : Math.max(...clean);
+        }
+        function safeMin(arr, fallback = 0) {
+            if (!Array.isArray(arr) || arr.length === 0) return fallback;
+            const clean = arr.filter(v => typeof v === 'number' && isFinite(v));
+            return clean.length === 0 ? fallback : Math.min(...clean);
+        }
+        // Defensive AI response parser. AI sometimes wraps JSON in markdown ```json fences
+        // despite responseMimeType, or returns objects when an array was requested. This
+        // helper strips fences, parses safely, and returns null on failure so callers
+        // can show a friendly error rather than crashing on .map / property access.
+        function parseAiJson(text, expectedType) {
+            if (typeof text !== 'string' || text.trim().length === 0) return null;
+            // Strip ```json ... ``` or ``` ... ``` wrappers (any whitespace pattern)
+            let cleaned = text.trim();
+            // Match opening fence
+            cleaned = cleaned.replace(/^```(?:json|JSON)?\s*\n?/, '');
+            // Match closing fence
+            cleaned = cleaned.replace(/\n?```\s*$/, '');
+            cleaned = cleaned.trim();
+            try {
+                const parsed = JSON.parse(cleaned);
+                if (expectedType === 'array' && !Array.isArray(parsed)) return null;
+                if (expectedType === 'object' && (typeof parsed !== 'object' || Array.isArray(parsed) || parsed === null)) return null;
+                return parsed;
+            } catch (e) {
+                console.warn('[AI] JSON parse failed:', e, '| text was:', text.slice(0, 200));
+                return null;
+            }
+        }
+        
         let apiKey = localStorage.getItem('wnext_v41_api_key') || ""; 
 
         const WEATHER_CACHE_KEY = `wnext_v41_weather_store`;
@@ -948,7 +1025,7 @@
             const newKey = input.value.trim();
             if (newKey) {
                 apiKey = newKey;
-                localStorage.setItem('wnext_v41_api_key', newKey);
+                safeSet('wnext_v41_api_key', newKey);
                 document.getElementById('api-key-modal').classList.add('hidden');
                 if (apiKeyResolve) { apiKeyResolve(newKey); apiKeyResolve = null; }
             } else {
@@ -1107,7 +1184,12 @@
                     }
 
                     hiddenIds = hiddenIds.filter(id => getAllLocations().some(l => l.id === id));
-                    renamedLocations = d.renamed || {};
+                    
+                    // === SYNC MERGE LOGIC (v1.0.62 fix) ===
+                    // Previously: renames/langs were cloud-overwrite, dropping offline local changes.
+                    // Now: merge with local preference — local entries win on key collision, cloud-only entries preserved.
+                    const cloudRenamed = d.renamed || {};
+                    renamedLocations = { ...cloudRenamed, ...renamedLocations };
 
                     const cloudFavs = d.ids || [];
                     const mergedFavs = new Set([...favoriteIds, ...cloudFavs]);
@@ -1116,7 +1198,7 @@
                     if (d.model && (d.model === 'best_match' || d.model === 'ecmwf_ifs025')) {
                          if (activeModel !== d.model) {
                              activeModel = d.model;
-                             localStorage.setItem(PREF_MODEL_KEY, activeModel);
+                             safeSet(PREF_MODEL_KEY, activeModel);
                              updateModelUI();
                              if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); 
                              else fetchLandingWeather();
@@ -1124,30 +1206,50 @@
                     }
 
                     if (d.aiLangs) {
-                        const parsed = d.aiLangs || {};
+                        const cloudParsed = d.aiLangs || {};
                         // Normalize cloud data just in case
-                        for(let k in parsed) {
-                             if(typeof parsed[k] === 'number') {
-                                 parsed[k] = LANG_CODES[(parsed[k] - 1) % 5] || 'zh';
+                        for(let k in cloudParsed) {
+                             if(typeof cloudParsed[k] === 'number') {
+                                 cloudParsed[k] = LANG_CODES[(cloudParsed[k] - 1) % 5] || 'zh';
                              }
                         }
-                        locationAiLangs = parsed;
-                        localStorage.setItem(PREF_AI_KEY, JSON.stringify(locationAiLangs));
+                        // Merge: local wins on collision, cloud-only entries preserved
+                        locationAiLangs = { ...cloudParsed, ...locationAiLangs };
+                        safeSet(PREF_AI_KEY, JSON.stringify(locationAiLangs));
+                    }
+                    
+                    // Merge location crops too (was not in sync before)
+                    if (d.locationCrops) {
+                        locationCrops = { ...d.locationCrops, ...locationCrops };
+                        safeSet(PREF_CROPS_KEY, JSON.stringify(locationCrops));
                     }
 
-                    localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
-                    localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
-                    localStorage.setItem(RENAME_CACHE_KEY, JSON.stringify(renamedLocations));
-                    localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
-                    localStorage.setItem(PURGED_CACHE_KEY, JSON.stringify(purgedIds));
-                    localStorage.setItem(PREF_MODEL_KEY, activeModel);
+                    safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+                    safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
+                    safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations));
+                    safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
+                    safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds));
+                    safeSet(PREF_MODEL_KEY, activeModel);
                     
                     renderList(); setStatus("Cloud Synced", true);
+                    
+                    // === DIRTY CHECK (v1.0.62 expanded) ===
+                    // Previously only checked counts of customLocations/favoriteIds/purgedIds.
+                    // Now also checks if local has more/different renames, langs, or crops.
+                    const localRenameKeys = Object.keys(renamedLocations).length;
+                    const cloudRenameKeys = Object.keys(d.renamed || {}).length;
+                    const localLangKeys = Object.keys(locationAiLangs).length;
+                    const cloudLangKeys = Object.keys(d.aiLangs || {}).length;
+                    const localCropKeys = Object.keys(locationCrops).length;
+                    const cloudCropKeys = Object.keys(d.locationCrops || {}).length;
                     
                     if (
                         customLocations.length > (d.custom?.length || 0) || 
                         favoriteIds.length > (d.ids?.length || 0) ||
-                        purgedIds.length > (d.purged?.length || 0)
+                        purgedIds.length > (d.purged?.length || 0) ||
+                        localRenameKeys > cloudRenameKeys ||
+                        localLangKeys > cloudLangKeys ||
+                        localCropKeys > cloudCropKeys
                     ) {
                         saveUserData();
                     }
@@ -1173,7 +1275,8 @@
                     custom: customLocations, 
                     purged: purgedIds,
                     model: activeModel,
-                    aiLangs: locationAiLangs
+                    aiLangs: locationAiLangs,
+                    locationCrops: locationCrops  // v1.0.62: now synced to cloud
                 });
             } catch(e) {
                 setStatus("Save Failed", 'error');
@@ -1227,7 +1330,7 @@
 
         // ... [Model & UI Functions Retained] ...
         window.setModel = (model) => {
-            activeModel = model; localStorage.setItem(PREF_MODEL_KEY, activeModel); updateModelUI();
+            activeModel = model; safeSet(PREF_MODEL_KEY, activeModel); updateModelUI();
             saveUserData();
             if (landingAbortController) { landingAbortController.abort(); landingAbortController = null; }
             if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); else fetchLandingWeather();
@@ -1235,7 +1338,7 @@
 
         window.toggleModel = () => {
             activeModel = activeModel === 'best_match' ? 'ecmwf_ifs025' : 'best_match';
-            localStorage.setItem(PREF_MODEL_KEY, activeModel); updateModelUI();
+            safeSet(PREF_MODEL_KEY, activeModel); updateModelUI();
             saveUserData();
             if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); else fetchLandingWeather();
         };
@@ -1293,7 +1396,7 @@
         
         window.selectCrop = (id, cropId) => {
             locationCrops[id] = cropId;
-            localStorage.setItem(PREF_CROPS_KEY, JSON.stringify(locationCrops));
+            safeSet(PREF_CROPS_KEY, JSON.stringify(locationCrops));
             
             const lang = getLang(id);
             const btn = document.getElementById(`m-crop-toggle-${id}`); 
@@ -1324,7 +1427,7 @@
         window.setLocLanguage = (id, lang) => {
             
             locationAiLangs[id] = lang;
-            localStorage.setItem(PREF_AI_KEY, JSON.stringify(locationAiLangs));
+            safeSet(PREF_AI_KEY, JSON.stringify(locationAiLangs));
             saveUserData();
             
             // Update UI immediately
@@ -1414,7 +1517,7 @@
                     }
                 });
                 
-                localStorage.setItem(WEATHER_CACHE_KEY, JSON.stringify(weatherData));
+                safeSet(WEATHER_CACHE_KEY, JSON.stringify(weatherData));
                 syncUI(); setStatus("Ready", true); landingAbortController = null;
             } catch (e) { if (e.name !== 'AbortError') setStatus("Network Error", 'error'); }
         }
@@ -1483,7 +1586,7 @@
             const timeline = document.getElementById('timeline'); if (!timeline) return;
             const now = new Date(), val = parseInt(timeline.value) || 0, proj = new Date(now.getTime() + val * 60 * 60 * 1000);
             const dateEl = document.getElementById('ui-date-display'), projTimeEl = document.getElementById('ui-proj-time');
-            if (projTimeEl) { const hours = proj.getHours(), mins = String(now.getMinutes()).padStart(2, '0'), ampm = hours >= 12 ? 'PM' : 'AM'; projTimeEl.innerText = `${hours % 12 || 12}:${mins} ${ampm}`; }
+            if (projTimeEl) { const hours = proj.getHours(), mins = String(proj.getMinutes()).padStart(2, '0'), ampm = hours >= 12 ? 'PM' : 'AM'; projTimeEl.innerText = `${hours % 12 || 12}:${mins} ${ampm}`; }
             if (dateEl) dateEl.innerText = `${String(proj.getDate()).padStart(2,'0')}/${proj.getMonth()+1} ${DAYS_OF_WEEK[proj.getDay()]}`;
             const dataIdx = now.getHours() + val;
             
@@ -1672,9 +1775,9 @@
         window.showConfirm = (msg, action) => { const el = document.getElementById('confirm-modal'); const msgEl = document.getElementById('confirm-msg'); if(el && msgEl) { msgEl.innerText = msg; pendingConfirmAction = action; el.classList.remove('hidden'); } };
         window.closeConfirm = (isConfirmed) => { document.getElementById('confirm-modal').classList.add('hidden'); if (isConfirmed && pendingConfirmAction) { pendingConfirmAction(); } pendingConfirmAction = null; };
         window.openEditModal = (id) => { editingId = id; const loc = getAllLocations().find(l => l.id === id); const custom = renamedLocations[id]; document.getElementById('edit-name-en').value = custom ? custom.en : (loc.en || ''); document.getElementById('edit-name-zh').value = custom ? custom.zh : (loc.zh || ''); document.getElementById('edit-modal').classList.remove('hidden'); const el = document.getElementById(`content-${id}`); const actions = el?.parentElement.querySelector('.swipe-actions'); if(el) { el.style.transform = `translateX(0)`; if(actions) setTimeout(() => actions.style.visibility = 'hidden', 200); } swipeCurrentId = null; };
-        window.saveNameEdit = () => { if(!editingId) return; const en = document.getElementById('edit-name-en').value.trim(); const zh = document.getElementById('edit-name-zh').value.trim(); if(en) { renamedLocations[editingId] = { en, zh }; localStorage.setItem(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); saveUserData(); renderList(); } document.getElementById('edit-modal').classList.add('hidden'); editingId = null; };
-        window.deleteLocation = (id) => { if(!hiddenIds.includes(id)) { hiddenIds.push(id); localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); saveUserData(); renderList(); } swipeCurrentId = null; };
-        window.restoreLocation = (id) => { const idx = hiddenIds.indexOf(id); if(idx > -1) { hiddenIds.splice(idx, 1); localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); saveUserData(); if(!document.getElementById('view-recycle').classList.contains('hidden')) { window.renderRecycleView(); } renderList(); fetchLandingWeather(); } };
+        window.saveNameEdit = () => { if(!editingId) return; const en = document.getElementById('edit-name-en').value.trim(); const zh = document.getElementById('edit-name-zh').value.trim(); if(en) { renamedLocations[editingId] = { en, zh }; safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); saveUserData(); renderList(); } document.getElementById('edit-modal').classList.add('hidden'); editingId = null; };
+        window.deleteLocation = (id) => { if(!hiddenIds.includes(id)) { hiddenIds.push(id); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); saveUserData(); renderList(); } swipeCurrentId = null; };
+        window.restoreLocation = (id) => { const idx = hiddenIds.indexOf(id); if(idx > -1) { hiddenIds.splice(idx, 1); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); saveUserData(); if(!document.getElementById('view-recycle').classList.contains('hidden')) { window.renderRecycleView(); } renderList(); fetchLandingWeather(); } };
 
         // --- Search Logic ---
         window.openSearch = () => {
@@ -1731,7 +1834,7 @@
                 const idx = hiddenIds.indexOf(id);
                 if(idx > -1) {
                     hiddenIds.splice(idx, 1);
-                    localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
+                    safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
                 }
             }
 
@@ -1744,7 +1847,7 @@
                 favoriteIds.push(id);
             }
             
-            localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+            safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
             saveUserData();
             renderList();
 
@@ -1767,12 +1870,12 @@
         window.openAddModal = () => { document.getElementById('add-loc-modal').classList.remove('hidden'); window.switchAddTab('manual'); };
         window.switchAddTab = (tab) => { ['manual', 'scan', 'recycle'].forEach(t => { const tabEl = document.getElementById(`tab-${t}`); const viewEl = document.getElementById(`view-${t}`); if(tabEl) tabEl.classList.toggle('active', t === tab); if(viewEl) { viewEl.classList.toggle('hidden', t !== tab); if (t === 'recycle') { viewEl.classList.toggle('flex', t === tab); } else { viewEl.classList.toggle('block', t === tab); } } }); const btn = document.getElementById('btn-save-loc'); if (btn) { if (tab === 'recycle') { btn.style.visibility = 'hidden'; window.renderRecycleView(); } else { btn.style.visibility = 'visible'; } } };
         window.renderRecycleView = () => { const list = document.getElementById('recycle-list-integrated'); if(!list) return; list.innerHTML = ''; const deleted = getAllLocations().filter(l => hiddenIds.includes(l.id)); if(deleted.length === 0) { list.innerHTML = '<div class="p-8 text-center text-xs text-slate-300 font-bold uppercase tracking-widest">Bin is empty</div>'; } else { deleted.forEach(l => { const custom = renamedLocations[l.id]; const en = custom?.en || l.en; const zh = custom?.zh || l.zh; list.innerHTML += `<div class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 bg-slate-50/50"><div class="flex-1 min-w-0 pr-2"><div class="font-bold text-slate-700 text-xs truncate">${en}</div>${zh ? `<div class="text-[10px] text-slate-400 truncate">${zh}</div>` : ''}</div><div class="flex items-center gap-2"><button onclick="window.purgeLocation('${l.id}')" class="text-[9px] font-black text-red-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Purge</button><button onclick="window.restoreLocation('${l.id}')" class="text-[9px] font-black text-blue-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Restore</button></div></div>`; }); } };
-        window.purgeLocation = (id) => { window.showConfirm("Permanently delete this location? This cannot be undone.\n永久删除此地点？无法撤销。", () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); localStorage.setItem(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); localStorage.setItem(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); localStorage.setItem(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
-        window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); if(!en && !zh) { window.showToast("Name Required / 请输入名字", true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast("Invalid Coordinates / 坐标无效", true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast("Location Exists / 地点已存在", true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); localStorage.setItem(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast("Saved! Add another? / 已保存"); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast("Storage Error / 存储错误", true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm("Warning: These coordinates appear to be outside Malaysia.\n警告：此坐标似乎不在马来西亚境内。\n\nContinue adding?", performSave); } else { performSave(); } };
+        window.purgeLocation = (id) => { window.showConfirm("Permanently delete this location? This cannot be undone.\n永久删除此地点？无法撤销。", () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
+        window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); if(!en && !zh) { window.showToast("Name Required / 请输入名字", true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast("Invalid Coordinates / 坐标无效", true); latInput.focus(); return; } if(lat < -90 || lat > 90 || lng < -180 || lng > 180) { window.showToast("Coordinates out of range / 坐标超出范围", true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast("Location Exists / 地点已存在", true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); safeSet(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); safeSet(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast("Saved! Add another? / 已保存"); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast("Storage Error / 存储错误", true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm("Warning: These coordinates appear to be outside Malaysia.\n警告：此坐标似乎不在马来西亚境内。\n\nContinue adding?", performSave); } else { performSave(); } };
         window.handlePhotoScan = async (e) => { const file = e.target.files[0]; if(!file) return; const res = document.getElementById('scan-result'); res.innerText = "Scanning... / 正在扫描..."; const reader = new FileReader(); reader.onload = async function(event) { const base64Data = event.target.result.split(',')[1]; const prompt = "Analyze this image. It might be a photo of a compass app, a GPS device, or a location screenshot. Extract the Latitude and Longitude. Return strictly JSON format: { \"lat\": 3.1234, \"lng\": 101.5678 }. If not found, return { \"error\": \"No coordinates found\" }."; try { 
             const payload = { contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64Data } } ] }], generationConfig: { responseMimeType: "application/json" } };
             const response = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
-            const data = await response.json(); const json = JSON.parse(data.candidates[0].content.parts[0].text); if(json.lat && json.lng) { document.getElementById('add-lat').value = json.lat; document.getElementById('add-lng').value = json.lng; res.innerText = "Coordinates found! / 找到坐标!"; window.switchAddTab('manual'); } else { res.innerText = "No coordinates detected / 未检测到坐标"; } } catch(err) { res.innerText = "Scan failed / 扫描失败"; } }; reader.readAsDataURL(file); };
+            const data = await response.json(); const json = parseAiJson(data.candidates?.[0]?.content?.parts?.[0]?.text, 'object'); if(json && json.lat && json.lng) { document.getElementById('add-lat').value = json.lat; document.getElementById('add-lng').value = json.lng; res.innerText = "Coordinates found! / 找到坐标!"; window.switchAddTab('manual'); } else { res.innerText = "No coordinates detected / 未检测到坐标"; } } catch(err) { res.innerText = "Scan failed / 扫描失败"; } }; reader.readAsDataURL(file); };
 
         const renderList = () => {
             const lw = document.getElementById('list-west'); const le = document.getElementById('list-east'); const sW = lw ? lw.scrollTop : 0; const sE = le ? le.scrollTop : 0;
@@ -1843,7 +1946,7 @@
                 for (let d = 0; d < 10; d++) {
                     const start = d * 24, rh = hourly.relative_humidity_2m ? hourly.relative_humidity_2m.slice(start, start+24) : [];
                     const avgRH = rh.length ? Math.round(rh.reduce((a,b)=>a+b,0)/rh.length) : "--";
-                    const rain = hourly.precipitation_probability ? Math.max(...hourly.precipitation_probability.slice(start, start+24)) : 0;
+                    const rain = safeMax(hourly.precipitation_probability ? hourly.precipitation_probability.slice(start, start+24) : []);
                     summary += `Day ${d+1}: RH ${avgRH}%, Rain ${rain}%. `;
                 }
             }
@@ -2091,9 +2194,9 @@
                 const date = new Date(now.getTime() + i * 86400000).toLocaleDateString();
                 
                 // Existing metrics
-                const ppArr = getArr('precipitation_probability'); const rain = ppArr ? Math.max(...ppArr.slice(s, s+24)) : 0;
-                const windArr = getArr('windspeed_10m'); const wind = windArr ? Math.max(...windArr.slice(s, s+24)) : 0;
-                const tArr = getArr('temperature_2m'); const tempH = tArr ? Math.max(...tArr.slice(s, s+24)) : 0;
+                const ppArr = getArr('precipitation_probability'); const rain = ppArr ? safeMax(ppArr.slice(s, s+24)) : 0;
+                const windArr = getArr('windspeed_10m'); const wind = windArr ? safeMax(windArr.slice(s, s+24)) : 0;
+                const tArr = getArr('temperature_2m'); const tempH = tArr ? safeMax(tArr.slice(s, s+24)) : 0;
                 const rvArr = getArr('precipitation'); const rainMM = rvArr ? rvArr.slice(s, s+24).reduce((a,b)=>a+b,0).toFixed(1) : '0';
                 const etArr = getArr('et0_fao_evapotranspiration'); const et0 = etArr ? etArr.slice(s, s+24).reduce((a,b)=>a+b,0).toFixed(1) : '0';
                 
@@ -2103,11 +2206,11 @@
                 const stArr = getArr('soil_temperature_18cm');
                 const soilT = stArr ? (stArr.slice(s, s+24).reduce((a,b)=>a+b,0) / 24).toFixed(1) : null;
                 const uvArr = getArr('uv_index');
-                const uv = uvArr ? Math.max(...uvArr.slice(s+10, s+15)).toFixed(1) : null;
+                const uv = uvArr ? safeMax(uvArr.slice(s+10, s+15)).toFixed(1) : null;
                 const sunArr = getArr('sunshine_duration');
                 const sunHrs = sunArr ? (sunArr.slice(s, s+24).reduce((a,b)=>a+b,0) / 3600).toFixed(1) : null;
                 const wbArr = getArr('wet_bulb_temperature_2m');
-                const wbMax = wbArr ? Math.max(...wbArr.slice(s+8, s+17)).toFixed(1) : null;
+                const wbMax = wbArr ? safeMax(wbArr.slice(s+8, s+17)).toFixed(1) : null;
                 
                 // Daily-only variables
                 const lwArr = h._daily?.leaf_wetness_probability_mean;
@@ -2169,7 +2272,11 @@
                 if(!res.ok) throw new Error("API Error");
                 const data = await res.json();
                 const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-                const plan = JSON.parse(jsonText);
+                const plan = parseAiJson(jsonText, 'array');
+                if (!plan || plan.length === 0) {
+                    grid.innerHTML = `<div class="text-xs text-slate-500 p-2">AI returned an unexpected response. Try again.</div>`;
+                    return;
+                }
                 
                 grid.innerHTML = plan.map(d => {
                     const sb = d.spray === 'Safe' ? 'badge-safe' : (d.spray === 'Risky' ? 'badge-risk' : 'badge-unsafe');
@@ -2310,8 +2417,11 @@
                  const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
                  if(!res.ok) throw new Error("API Error");
                  const data = await res.json();
-                 const items = JSON.parse(data.candidates?.[0]?.content?.parts?.[0]?.text);
-                 
+                 const items = parseAiJson(data.candidates?.[0]?.content?.parts?.[0]?.text, 'array');
+                 if (!items || items.length === 0) {
+                     list.innerHTML = '<div class="text-xs text-slate-500 p-2">AI returned an unexpected response. Try again.</div>';
+                     return;
+                 }
                  list.innerHTML = items.map(item => `<label class="sop-item"><input type="checkbox" class="sop-check"><span>${item}</span></label>`).join('');
                  
              } catch(e) {
@@ -2610,6 +2720,9 @@
                 'wet_bulb_temperature_2m'
             ];
             const map = {}; vars.forEach(v => map[v] = getHourlyData(id, v, true));
+            // Derive actual hourly array length instead of hardcoded 336 (= 14 × 24).
+            // If forecast_days ever changes, bounds checks adapt automatically.
+            const HOURS_LEN = map.temperature_2m?.length || 336;
             
             const getSkyColor = (idx) => {
                 if (!map.precipitation_probability) return '#e2e8f0';
@@ -2657,7 +2770,7 @@
                         const out = [];
                         for (let h = fromH; h <= toH; h++) {
                             const idx = start + h;
-                            if (idx >= 336) break;
+                            if (idx >= HOURS_LEN) break;
                             if (arr[idx] !== undefined && arr[idx] !== null) out.push(arr[idx]);
                         }
                         return out;
@@ -2689,7 +2802,7 @@
                     let peakWindSpeed = 0;
                     for (let h = 10; h <= 17; h++) {
                         const idx = start + h;
-                        if (idx >= 336) break;
+                        if (idx >= HOURS_LEN) break;
                         const w = map.windspeed_2m?.[idx] ?? map.windspeed_10m?.[idx] ?? 0;
                         if (w > peakWindSpeed) { peakWindSpeed = w; peakWindIdx = idx; }
                     }
@@ -2756,7 +2869,7 @@
                     let maxVisMidday = 0;  // for comparison
                     for (let h = 4; h <= 9; h++) {
                         const idx = start + h;
-                        if (idx >= 336) break;
+                        if (idx >= HOURS_LEN) break;
                         const v = map.visibility?.[idx];
                         const t = map.temperature_2m?.[idx];
                         const dp = map.dew_point_2m?.[idx];
@@ -2768,7 +2881,7 @@
                     // Sample midday visibility (11 AM - 2 PM) for diurnal comparison
                     for (let h = 11; h <= 14; h++) {
                         const idx = start + h;
-                        if (idx >= 336) break;
+                        if (idx >= HOURS_LEN) break;
                         const v = map.visibility?.[idx];
                         if (v !== undefined) maxVisMidday = Math.max(maxVisMidday, v);
                     }
@@ -2793,7 +2906,7 @@
                     // ===== SAFE SPRAY HOUR COUNT (unchanged, already correctly hourly) =====
                     let safe = 0;
                     for(let h=0; h<24; h++){
-                        const idx = start + h; if(idx < 336){
+                        const idx = start + h; if(idx < HOURS_LEN){
                             const w = map.windspeed_2m?.[idx] || map.windspeed_10m?.[idx] || 0, hT = map.temperature_2m?.[idx], hDP = map.dew_point_2m?.[idx];
                             const hDT = (hT!==undefined && hDP!==undefined) ? (hT - hDP) : null;
                             const res = calculateWVET(w, map.vapour_pressure_deficit?.[idx]||0, etS, map.windgusts_10m?.[idx]||0, crop, hDT);
@@ -2801,9 +2914,12 @@
                         }
                     }
                     
+                    // Build forecast date using DST-safe constructor (consistent with line 1967)
+                    const todayD = new Date();
+                    const fcDate = new Date(todayD.getFullYear(), todayD.getMonth(), todayD.getDate() + i);
                     days.push({ 
-                        date: `${new Date(new Date().getTime() + i*86400000).getDate()}/${new Date(new Date().getTime() + i*86400000).getMonth()+1}`,
-                        hi: Math.round(Math.max(...tS)*10)/10, lo: Math.round(Math.min(...tS)*10)/10, dp: Math.round((dpS.reduce((a,b)=>a+b,0)/dpS.length)*10)/10,
+                        date: `${fcDate.getDate()}/${fcDate.getMonth()+1}`,
+                        hi: Math.round(safeMax(tS)*10)/10, lo: Math.round(safeMin(tS)*10)/10, dp: Math.round((dpS.reduce((a,b)=>a+b,0)/dpS.length)*10)/10,
                         dT: dT8 ?? "--", safe, et: Math.round(etS*10)/10, pp: Math.round(dailyPP), rv: Math.round(dailyRV*10)/10,
                         ch: Math.round(dailyCH), cm: Math.round(dailyCM), cl: Math.round(dailyCL),
                         w2m: Math.round(dailyW2m), wd: Math.round(dailyWD), wg: Math.round(dailyWG),
@@ -2901,7 +3017,8 @@
             const svgLeft = (dateRow ? dateRow.offsetLeft - svgT.parentElement.offsetLeft : 0);
             svgT.style.left = svgLeft + 'px'; svgPP.style.left = svgLeft + 'px'; svgVV.style.left = svgLeft + 'px'; if (svgET) svgET.style.left = svgLeft + 'px';
             const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
-            const minT = Math.min(...allT), maxT = Math.max(...allT), rngT = (maxT-minT)||1, getTY = (v) => 40 + (1 - (v - minT) / rngT) * 120;
+            if (allT.length === 0) return;  // Defensive: nothing to draw if days is empty
+            const minT = safeMin(allT, 0), maxT = safeMax(allT, 30), rngT = (maxT-minT)||1, getTY = (v) => 40 + (1 - (v - minT) / rngT) * 120;
             const drawTL = (key, color, dir, dash=false) => {
                 let p = ""; days.forEach((d, i) => {
                     const x = columnCenters[i], val = (key==='dT' && typeof d.dT !== 'number') ? 15 : d[key], y = (key==='dT') ? Math.max(getTY(val)-25, getTY(d.lo)+45) : getTY(val);
@@ -3100,7 +3217,7 @@
                     }
                 }, 100);
             }
-            localStorage.setItem(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+            safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
             await saveUserData();
         };
 
@@ -3367,7 +3484,7 @@
           console.log('[PWA] Install outcome:', outcome);
           deferredInstallPrompt = null;
           if (outcome === 'dismissed') {
-            localStorage.setItem(DISMISS_KEY, String(Date.now()));
+            safeSet(DISMISS_KEY, String(Date.now()));
           }
         });
       }
@@ -3375,7 +3492,7 @@
       if (dismissBtn) {
         dismissBtn.addEventListener('click', () => {
           banner.classList.remove('show');
-          localStorage.setItem(DISMISS_KEY, String(Date.now()));
+          safeSet(DISMISS_KEY, String(Date.now()));
         });
       }
 
