@@ -1476,6 +1476,44 @@
                 rule2: "Green ≥ 1 = spray is possible — open the day's detail to see WHICH hours are safe",
                 rule3: "Green = 0 (shown as red) = no safe spray window today, skip",
                 rule4: "Watch the purple trend line — if it rises toward 2.0+, mornings are drying out (better spray days coming)",
+                wvet: {
+                    title: "WVET — Crop Stress Risk Index",
+                    body: "A combined score of heat, humidity, wind, and soil dryness that estimates how stressed your crop is today. The dot color signals severity.",
+                    low: "Low stress, crop is comfortable",
+                    mod: "Moderate stress, normal field work OK",
+                    high: "High stress, avoid adding more stress (no pruning, harvesting heavy)",
+                    severe: "Severe stress, irrigate if possible, no field stressors",
+                    rule1: "Spray, prune, or harvest on green/yellow days when possible",
+                    rule2: "On orange/red days, give the crop water and shade — don't add chemical or mechanical stress",
+                    rule3: "Several red days in a row = drought-like stress, plan irrigation"
+                },
+                cloud: {
+                    title: "Cloud (%) & CB Risk",
+                    body: "Three rows show cloud cover at three altitudes. The number is percentage, the bars below it show fill level. The amount and altitude matter for spray timing and storm risk.",
+                    rowTop: "Top row (High cloud, above 6km)",
+                    high: "Wispy cirrus. Doesn't block sun much. High clouds + clear lower air = vibrant sunsets.",
+                    rowMid: "Middle row (Mid cloud, 2-6km)",
+                    mid: "Altocumulus/altostratus. Hazy sun. Mid + high cloud together is the storm-builder signal.",
+                    rowBot: "Bottom row (Low cloud, below 2km)",
+                    low: "Cumulus/stratus. Direct shade. High low-cloud = dim, cool, and risk of rain shower.",
+                    cbTitle: "CB RISK badge — Cumulonimbus / Thunderstorm",
+                    cbBody: "Appears only when storm conditions align: high atmospheric instability (CAPE ≥ 1500), rain probability ≥ 70%, AND both mid and high cloud cover ≥ 40%. This is the real storm warning — afternoon thunderstorms likely.",
+                    rule1: "CB Risk day = spray early morning only, finish before noon",
+                    rule2: "Heavy low cloud + high rain prob = field will stay wet, plan around it",
+                    rule3: "All three rows low + high cloud only = good day for full field work"
+                },
+                sky: {
+                    title: "Sky Tint (AM / PM)",
+                    body: "Two squares per day: how the sky will LOOK at sunrise (top) and sunset (bottom). A visual quick-glance forecast — no numbers to read.",
+                    stormy: "Dark slate — Stormy, rain likely",
+                    overcast: "Slate grey — Heavy overcast, dim",
+                    hazy: "Stone grey — Hazy or foggy, low visibility",
+                    golden: "Amber — Clear golden hour, sunny",
+                    glow: "Orange — Nice glow, partly cloudy",
+                    vibrant: "Pink gradient — Vibrant sunrise/sunset (high cirrus + clear lower air)",
+                    rule1: "Pink/orange tints = perfect for outdoor field walks and photo records",
+                    rule2: "Dark slate AM = don't plan early field work; dark slate PM = bring crop in early"
+                },
                 close: "Close"
             },
             zh: {
@@ -1492,6 +1530,44 @@
                 rule2: "绿色 ≥ 1 = 可喷洒 — 打开当日详情查看具体安全时段",
                 rule3: "绿色 = 0（显示红色）= 今日无安全窗口，请跳过",
                 rule4: "观察紫色趋势线 — 若上升接近 2.0+，清晨在变干（接下来几日更适合喷洒）",
+                wvet: {
+                    title: "WVET — 作物压力风险指数",
+                    body: "综合气温、湿度、风力、土壤干燥度的评分，估算今日作物所承受的压力。圆点颜色显示严重程度。",
+                    low: "低压力，作物舒适",
+                    mod: "中等压力，正常田间作业可行",
+                    high: "高压力，避免增加额外压力（不修剪、不重收割）",
+                    severe: "严重压力，可的话立即灌溉，避免任何田间压力源",
+                    rule1: "尽量选择绿色/黄色日喷洒、修剪或收割",
+                    rule2: "橙色/红色日给作物浇水遮阴 — 不要施加化学或机械压力",
+                    rule3: "连续几日红色 = 类似干旱压力，规划灌溉"
+                },
+                cloud: {
+                    title: "云量 (%) 与 CB 风险",
+                    body: "三行显示三个高度的云覆盖率。数字为百分比，下方柱状图显示填充程度。云量和云层高度对喷洒时机和风暴风险都很重要。",
+                    rowTop: "顶部（高云，6 km以上）",
+                    high: "薄卷云。不太遮阳。高云加下方晴朗 = 绚丽夕阳。",
+                    rowMid: "中间（中云，2-6 km）",
+                    mid: "高积云/高层云。日光朦胧。中云加高云同时存在是风暴形成的信号。",
+                    rowBot: "底部（低云，2 km以下）",
+                    low: "积云/层云。直接遮阴。低云多 = 阴暗、凉爽、有阵雨风险。",
+                    cbTitle: "CB RISK 标识 — 积雨云 / 雷暴",
+                    cbBody: "仅当风暴条件齐备时出现：高大气不稳定（CAPE ≥ 1500）、降雨概率 ≥ 70%、且中云和高云覆盖率皆 ≥ 40%。这是真正的风暴警告 — 午后雷暴概率高。",
+                    rule1: "CB 风险日 = 只在清晨喷洒，正午前完成",
+                    rule2: "低云重 + 降雨概率高 = 田地将持续潮湿，需相应规划",
+                    rule3: "三行都低 + 只有高云 = 适合全天田间作业的好日子"
+                },
+                sky: {
+                    title: "天空色彩 (上午/下午)",
+                    body: "每日两方块：日出（上）和日落（下）时天空的视觉预测。无需读数字的快速一瞥预报。",
+                    stormy: "深石板色 — 风暴，可能降雨",
+                    overcast: "石板灰 — 厚重阴天，昏暗",
+                    hazy: "石灰色 — 雾霾，能见度低",
+                    golden: "琥珀色 — 晴朗黄金时刻",
+                    glow: "橙色 — 美丽光辉，部分多云",
+                    vibrant: "粉色渐变 — 绚丽日出/日落（高卷云 + 下方晴朗）",
+                    rule1: "粉色/橙色色调 = 适合户外田间巡视和拍照记录",
+                    rule2: "上午深石板色 = 不宜安排清晨田间工作；下午深石板色 = 早收作物入仓"
+                },
                 close: "关闭"
             },
             ms: {
@@ -1508,6 +1584,44 @@
                 rule2: "Hijau ≥ 1 = semburan boleh — buka butiran hari untuk lihat jam MANA yang selamat",
                 rule3: "Hijau = 0 (ditunjukkan merah) = tiada tetingkap selamat hari ini, langkau",
                 rule4: "Perhatikan garis tren ungu — jika naik ke 2.0+, pagi semakin kering (hari semburan lebih baik akan datang)",
+                wvet: {
+                    title: "WVET — Indeks Risiko Tekanan Tanaman",
+                    body: "Skor gabungan haba, kelembapan, angin, dan kekeringan tanah yang menganggar tekanan tanaman hari ini. Warna titik menunjukkan keterukan.",
+                    low: "Tekanan rendah, tanaman selesa",
+                    mod: "Tekanan sederhana, kerja ladang biasa boleh",
+                    high: "Tekanan tinggi, elakkan menambah tekanan (jangan cantas, jangan tuai berat)",
+                    severe: "Tekanan teruk, airi jika boleh, elakkan semua tekanan ladang",
+                    rule1: "Sembur, cantas, atau tuai pada hari hijau/kuning jika boleh",
+                    rule2: "Pada hari oren/merah, beri tanaman air dan teduh — jangan tambah tekanan kimia atau mekanikal",
+                    rule3: "Beberapa hari merah berturut-turut = tekanan seperti kemarau, rancang pengairan"
+                },
+                cloud: {
+                    title: "Awan (%) & Risiko CB",
+                    body: "Tiga baris menunjukkan litupan awan pada tiga altitud. Nombor itu peratusan, bar di bawah menunjukkan tahap pengisian. Jumlah dan altitud penting untuk masa semburan dan risiko ribut.",
+                    rowTop: "Baris atas (Awan tinggi, atas 6km)",
+                    high: "Sirus nipis. Tidak banyak menghalang matahari. Awan tinggi + langit bawah cerah = matahari terbenam meriah.",
+                    rowMid: "Baris tengah (Awan tengah, 2-6km)",
+                    mid: "Altokumulus/altostratus. Matahari kabur. Awan tengah + tinggi bersama adalah isyarat pembentukan ribut.",
+                    rowBot: "Baris bawah (Awan rendah, bawah 2km)",
+                    low: "Kumulus/stratus. Teduh langsung. Awan rendah tinggi = malap, sejuk, risiko hujan.",
+                    cbTitle: "Lencana CB RISK — Kumulonimbus / Ribut Petir",
+                    cbBody: "Muncul hanya apabila keadaan ribut bersesuaian: ketidakstabilan atmosfera tinggi (CAPE ≥ 1500), kebarangkalian hujan ≥ 70%, DAN kedua-dua awan tengah dan tinggi ≥ 40%. Ini amaran ribut sebenar — ribut petir tengah hari berkemungkinan.",
+                    rule1: "Hari Risiko CB = sembur pagi sahaja, habiskan sebelum tengah hari",
+                    rule2: "Awan rendah tebal + hujan tinggi = ladang akan kekal basah, rancang ikut",
+                    rule3: "Ketiga-tiga baris rendah + awan tinggi sahaja = hari baik untuk kerja ladang penuh"
+                },
+                sky: {
+                    title: "Warna Langit (Pagi / Petang)",
+                    body: "Dua petak setiap hari: rupa langit ketika matahari terbit (atas) dan terbenam (bawah). Ramalan visual sekilas — tiada nombor.",
+                    stormy: "Slate gelap — Ribut, hujan berkemungkinan",
+                    overcast: "Slate kelabu — Mendung tebal, malap",
+                    hazy: "Kelabu batu — Berkabus atau berjerebu, jarak penglihatan rendah",
+                    golden: "Kuning amber — Jam keemasan, cerah",
+                    glow: "Oren — Cahaya cantik, sebahagian berawan",
+                    vibrant: "Gradien merah jambu — Matahari terbit/terbenam meriah (sirus tinggi + langit bawah cerah)",
+                    rule1: "Warna merah jambu/oren = sesuai untuk lawatan ladang dan rekod gambar",
+                    rule2: "Slate gelap AM = jangan rancang kerja awal; slate gelap PM = pulangkan tanaman awal"
+                },
                 close: "Tutup"
             },
             ta: {
@@ -1524,6 +1638,44 @@
                 rule2: "பச்சை ≥ 1 = தெளிக்கலாம் — எந்த மணிநேரங்கள் பாதுகாப்பானவை என்று பார்க்க அன்றைய விவரங்களைத் திறக்கவும்",
                 rule3: "பச்சை = 0 (சிவப்பாகக் காட்டப்படும்) = இன்று பாதுகாப்பான சாளரம் இல்லை, தவிர்க்கவும்",
                 rule4: "ஊதா போக்கு கோட்டைப் பாருங்கள் — அது 2.0+ ஆக உயர்ந்தால், காலைகள் வறண்டு வருகின்றன (சிறந்த தெளிப்பு நாட்கள் வருகின்றன)",
+                wvet: {
+                    title: "WVET — பயிர் அழுத்த ஆபத்து குறியீடு",
+                    body: "வெப்பம், ஈரப்பதம், காற்று, மற்றும் மண் வறட்சியின் ஒருங்கிணைந்த மதிப்பெண் — இன்று உங்கள் பயிர் எவ்வளவு அழுத்தத்தில் உள்ளது என்பதை மதிப்பிடுகிறது.",
+                    low: "குறைந்த அழுத்தம், பயிர் வசதியாக உள்ளது",
+                    mod: "மிதமான அழுத்தம், வழக்கமான வயல் வேலை சரி",
+                    high: "அதிக அழுத்தம், மேலும் அழுத்தம் சேர்க்காதீர்கள் (வெட்டாமல், கனமான அறுவடை இல்லை)",
+                    severe: "கடுமையான அழுத்தம், முடிந்தால் நீர்ப்பாசனம் செய்யுங்கள்",
+                    rule1: "முடிந்தால் பச்சை/மஞ்சள் நாட்களில் தெளிக்க, வெட்ட, அறுவடை செய்யுங்கள்",
+                    rule2: "ஆரஞ்சு/சிவப்பு நாட்களில் பயிருக்கு தண்ணீர் மற்றும் நிழல் கொடுங்கள் — இரசாயன அல்லது இயந்திர அழுத்தம் சேர்க்க வேண்டாம்",
+                    rule3: "தொடர்ச்சியான சில சிவப்பு நாட்கள் = வறட்சி போன்ற அழுத்தம், நீர்ப்பாசனத்தைத் திட்டமிடுங்கள்"
+                },
+                cloud: {
+                    title: "மேகம் (%) & CB ஆபத்து",
+                    body: "மூன்று வரிசைகள் மூன்று உயரங்களில் மேக மூடியைக் காட்டுகின்றன. எண் சதவீதம், கீழே உள்ள பட்டிகள் நிரப்பு அளவைக் காட்டுகின்றன. அளவு மற்றும் உயரம் தெளிப்பு நேரம் மற்றும் புயல் ஆபத்திற்கு முக்கியம்.",
+                    rowTop: "மேல் வரிசை (உயர் மேகம், 6km மேலே)",
+                    high: "மெல்லிய சிரஸ். சூரியனை அதிகம் தடுக்காது. உயர் மேகம் + கீழ் காற்று தெளிவாக = அழகான சூரிய அஸ்தமனம்.",
+                    rowMid: "நடு வரிசை (நடு மேகம், 2-6km)",
+                    mid: "ஆல்டோகுமுலஸ். மங்கிய சூரியன். நடு + உயர் மேகம் சேர்ந்து புயல் உருவாக்கும் சமிக்ஞை.",
+                    rowBot: "கீழ் வரிசை (தாழ் மேகம், 2km கீழே)",
+                    low: "குமுலஸ்/ஸ்ட்ராடஸ். நேரடி நிழல். அதிக தாழ் மேகம் = மங்கல், குளிர், மழை ஆபத்து.",
+                    cbTitle: "CB RISK அடையாளம் — க்யூமுலோனிம்பஸ் / இடி",
+                    cbBody: "புயல் நிலைமைகள் சேரும்போது மட்டுமே தோன்றும்: அதிக வளிமண்டல உறுதியின்மை (CAPE ≥ 1500), மழை வாய்ப்பு ≥ 70%, மற்றும் நடு + உயர் மேகம் இரண்டும் ≥ 40%. இது உண்மையான புயல் எச்சரிக்கை — மதிய இடி வாய்ப்பு.",
+                    rule1: "CB ஆபத்து நாள் = அதிகாலையில் மட்டுமே தெளிக்க, மதியத்திற்கு முன் முடிக்க",
+                    rule2: "கனமான தாழ் மேகம் + அதிக மழை = வயல் ஈரமாக இருக்கும், அதற்கேற்ப திட்டமிடுங்கள்",
+                    rule3: "மூன்று வரிசைகளும் குறைவு + உயர் மேகம் மட்டும் = முழு வயல் வேலைக்கு நல்ல நாள்"
+                },
+                sky: {
+                    title: "வானம் நிறம் (காலை / மாலை)",
+                    body: "ஒவ்வொரு நாளும் இரண்டு சதுரங்கள்: சூரிய உதயம் (மேல்) மற்றும் சூரிய அஸ்தமனம் (கீழ்) போது வானம் எப்படி தெரியும். ஒரு பார்வை வானிலை முன்னறிவிப்பு.",
+                    stormy: "இருண்ட சாம்பல் — புயல், மழை வாய்ப்பு",
+                    overcast: "சாம்பல் சாய்வு — அடர்த்தியான மேகமூட்டம், மங்கல்",
+                    hazy: "கல் சாம்பல் — மூடுபனி, தெரிவு குறைவு",
+                    golden: "தங்க அம்பர் — தெளிவான பொன்னான நேரம்",
+                    glow: "ஆரஞ்சு — அழகான ஒளிர்வு, ஓரளவு மேகமூட்டம்",
+                    vibrant: "இளஞ்சிவப்பு சாய்வு — அழகான உதயம்/அஸ்தமனம் (உயர் சிரஸ் + கீழ் தெளிவு)",
+                    rule1: "இளஞ்சிவப்பு/ஆரஞ்சு நிறம் = வயல் சுற்றுப்பயணம் மற்றும் புகைப்படத்திற்கு சிறந்தது",
+                    rule2: "காலை இருண்ட சாம்பல் = அதிகாலை வேலை திட்டமிட வேண்டாம்; மாலை இருண்ட சாம்பல் = பயிரை விரைவில் உள்ளே கொண்டு வாருங்கள்"
+                },
                 close: "மூடு"
             },
             my: {
@@ -1540,13 +1692,51 @@
                 rule2: "အစိမ်း ≥ ၁ = ဆေးပက်နိုင် — မည်သည့်နာရီများ လုံခြုံသည်ကို ကြည့်ရန် ထိုနေ့၏ အသေးစိတ်ကို ဖွင့်ပါ",
                 rule3: "အစိမ်း = ၀ (အနီအဖြစ်ပြ) = ယနေ့ လုံခြုံသော ဝင်းဒိုးမရှိ၊ ကျော်ပါ",
                 rule4: "ခရမ်းရောင် ဦးတည်ချက်လိုင်းကို ကြည့်ပါ — 2.0+ သို့ တက်လာပါက နံနက်များ ပိုခြောက်လာ (ဆေးပက်ရန် ပိုကောင်းသောနေ့များ လာမည်)",
+                wvet: {
+                    title: "WVET — သီးနှံ ဖိစီးမှု အန္တရာယ်အညွှန်း",
+                    body: "အပူ၊ စိုထိုင်းဆ၊ လေ၊ နှင့် မြေဆီခြောက်သွေ့မှု၏ ပေါင်းစပ်ရမှတ် — ယနေ့ သင်၏သီးနှံ မည်မျှဖိစီးနေသည်ကို ခန့်မှန်းသည်။",
+                    low: "ဖိစီးမှုနည်း၊ သီးနှံ သက်တောင့်သက်သာ",
+                    mod: "အလယ်အလတ်ဖိစီးမှု၊ ပုံမှန်ကွင်းအလုပ် ရနိုင်",
+                    high: "ဖိစီးမှုမြင့်၊ ဖိစီးမှု ထပ်မထည့်ပါနှင့် (ဖြတ်တောက်ခြင်း၊ ဖြတ်တောက်ခြင်း မရှိ)",
+                    severe: "ပြင်းထန်ဖိစီးမှု၊ ရနိုင်လျှင် ရေသွင်းပါ",
+                    rule1: "ဖြစ်နိုင်လျှင် အစိမ်း/အဝါနေ့များတွင် ဆေးပက်၊ ဖြတ်တောက်၊ ရိတ်သိမ်းပါ",
+                    rule2: "လိမ္မော်/အနီနေ့များတွင် သီးနှံကို ရေနှင့်အရိပ်ပေး — ဓာတုသို့ စက်ပစ္စည်းဖိစီးမှု မထည့်ပါနှင့်",
+                    rule3: "အနီနေ့များ တစ်ဆက်တည်း = မိုးခေါင်သလို ဖိစီးမှု၊ ရေသွင်းရန် စီစဉ်ပါ"
+                },
+                cloud: {
+                    title: "တိမ် (%) နှင့် CB အန္တရာယ်",
+                    body: "သုံးတန်းသည် မြင့်ပိုင်းသုံးပိုင်းတွင် တိမ်ဖုံးမှုကို ပြသသည်။ နံပါတ်သည် ရာခိုင်နှုန်း၊ အောက်ရှိ ဘားများ ဖြည့်တင်းမှုကို ပြသည်။",
+                    rowTop: "ထိပ်တန်း (မြင့်တိမ်၊ ၆km အထက်)",
+                    high: "ပါးပါးစီးရပ်စ်။ နေကို သိပ်မပိတ်။ မြင့်တိမ် + အောက်အကြည် = လှပသော ဝင်ချိန်အရိုက်အရှားများ။",
+                    rowMid: "အလယ်တန်း (အလယ်တိမ်၊ ၂-၆km)",
+                    mid: "အယ်လ်တိုကျုမူလပ်စ်။ မှုန်ဝါးနေ။ အလယ် + မြင့်တိမ်အတူ = မုန်တိုင်းဖြစ်နိုင်ခြေ။",
+                    rowBot: "အောက်တန်း (နိမ့်တိမ်၊ ၂km အောက်)",
+                    low: "ကျုမူလပ်စ်/စတရက်တပ်စ်။ တိုက်ရိုက်အရိပ်။ နိမ့်တိမ်များ = မှောင်မှိုင်း၊ အေး၊ မိုးအန္တရာယ်။",
+                    cbTitle: "CB RISK တံဆိပ် — ကျုမူလိုနင်ဘပ်စ် / မိုးကြိုးပြက်",
+                    cbBody: "မုန်တိုင်းအခြေအနေများ ပေါင်းစည်းသည့်အခါသာ ပေါ်လာသည်။ ဤသည် စစ်မှန်သော မုန်တိုင်းသတိပေးချက် — နေ့လယ်မိုးကြိုးပြက်ဖြစ်နိုင်ခြေ မြင့်မား။",
+                    rule1: "CB အန္တရာယ်နေ့ = နံနက်စောစော ဆေးပက်၊ နေ့လယ်မတိုင်မီ ပြီးဆုံးပါ",
+                    rule2: "နိမ့်တိမ်ထူ + မိုးဖြစ်ဖို့ဖြစ်နိုင်ခြေ မြင့် = ကွင်းသည် စိုစွတ်နေဦးမည်",
+                    rule3: "သုံးတန်းလုံး နိမ့် + မြင့်တိမ်သာ = ကွင်းအလုပ် အပြည့်အဝ လုပ်ဆောင်ရန် ကောင်းသောနေ့"
+                },
+                sky: {
+                    title: "မိုးကောင်းကင် အရောင် (နံနက် / ညနေ)",
+                    body: "နေ့စဉ် နှစ်ကွက်: နေထွက်ချိန် (အပေါ်) နှင့် နေဝင်ချိန် (အောက်) တွင် မိုးကောင်းကင်ပုံစံ။ နံပါတ်မဖတ်ရဘဲ အလျင်အမြန် ခန့်မှန်းနိုင်။",
+                    stormy: "မှောင်မိုက်ကြမ်းရှင်း — မုန်တိုင်း၊ မိုးရွာနိုင်",
+                    overcast: "မိုးကြိုးပြက်ကြမ်းရှင်း — အပြည့်အဝတိမ်ထူ၊ မှောင်မှိုင်း",
+                    hazy: "ကျောက်အရောင် — မြူဆိုင်း သို့ မှုန်ဝါး",
+                    golden: "ရွှေဝါအဝါ — ရှင်းသန့်သော ရွှေရောင်အချိန်",
+                    glow: "လိမ္မော် — လှပသောအလင်း၊ တစ်စိတ်တိမ်ထူ",
+                    vibrant: "ပန်းရောင်ပျိုးထောင် — အလှဆုံးနေထွက်/နေဝင် (မြင့်တိမ် + အောက်အကြည်)",
+                    rule1: "ပန်း/လိမ္မော်ရောင် = ကွင်းလမ်းလျှောက်နှင့် ဓာတ်ပုံမှတ်တမ်းအတွက် ကောင်း",
+                    rule2: "နံနက် မှောင်မိုက် = နံနက်စောစော အလုပ်မလုပ်ပါနှင့်; ညနေ မှောင်မိုက် = သီးနှံကို စောစော ပြန်သွင်းပါ"
+                },
                 close: "ပိတ်"
             }
         };
         
-        window.toggleHelpCard = (id) => {
-            const card = document.getElementById(`help-card-temp-${id}`);
-            const icon = document.getElementById(`help-icon-temp-${id}`);
+        window.toggleHelpCard = (id, rowType = 'temp') => {
+            const card = document.getElementById(`help-card-${rowType}-${id}`);
+            const icon = document.getElementById(`help-icon-${rowType}-${id}`);
             if (!card) return;
             const isOpen = card.classList.contains('open');
             if (isOpen) {
@@ -1559,39 +1749,109 @@
             const t = HELP_CARD_CONTENT[lang] || HELP_CARD_CONTENT.en;
             // Small colored dot to anchor each explanation visually to what's on the chart.
             const dot = (c) => `<span style="display:inline-block;width:8px;height:8px;border-radius:50%;background:${c};vertical-align:middle;margin-right:5px;"></span>`;
-            card.innerHTML = `
-                <span class="help-card-close" onclick="window.toggleHelpCard('${id}')" aria-label="${t.close}">×</span>
-                
-                <div class="help-card-section">
-                    <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.whatYouSee}</div>
-                    
-                    <div style="margin-bottom:8px;">
-                        <div style="font-weight:700; color:#7e22ce; margin-bottom:2px;">${dot('#7e22ce')}${t.trendLineLabel}</div>
-                        <div style="color:#475569; padding-left:13px;">${t.trendLineBody}</div>
+            // Color swatch (square) for sky tint card
+            const sq = (c) => `<span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:${c};vertical-align:middle;margin-right:5px; border:1px solid rgba(0,0,0,0.1);"></span>`;
+            
+            let bodyHTML = '';
+            
+            if (rowType === 'temp') {
+                bodyHTML = `
+                    <div class="help-card-section">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.whatYouSee}</div>
+                        <div style="margin-bottom:8px;">
+                            <div style="font-weight:700; color:#7e22ce; margin-bottom:2px;">${dot('#7e22ce')}${t.trendLineLabel}</div>
+                            <div style="color:#475569; padding-left:13px;">${t.trendLineBody}</div>
+                        </div>
+                        <div style="margin-bottom:8px;">
+                            <div style="font-weight:700; color:#ef4444; margin-bottom:2px;">${dot('#ef4444')}${t.redNumLabel}</div>
+                            <div style="color:#475569; padding-left:13px;">${t.redNumBody}</div>
+                        </div>
+                        <div style="margin-bottom:0;">
+                            <div style="font-weight:700; color:#166534; margin-bottom:2px;">${dot('#166534')}${t.greenNumLabel}</div>
+                            <div style="color:#475569; padding-left:13px;">${t.greenNumBody}</div>
+                            <div style="color:#475569; padding-left:13px; margin-top:2px; font-style:italic;">${t.greenNumRed}</div>
+                        </div>
                     </div>
-                    
-                    <div style="margin-bottom:8px;">
-                        <div style="font-weight:700; color:#ef4444; margin-bottom:2px;">${dot('#ef4444')}${t.redNumLabel}</div>
-                        <div style="color:#475569; padding-left:13px;">${t.redNumBody}</div>
+                    <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                            <div style="margin-bottom:4px;">• ${t.rule1}</div>
+                            <div style="margin-bottom:4px;">• ${t.rule2}</div>
+                            <div style="margin-bottom:4px;">• ${t.rule3}</div>
+                            <div>• ${t.rule4}</div>
+                        </div>
                     </div>
-                    
-                    <div style="margin-bottom:0;">
-                        <div style="font-weight:700; color:#166534; margin-bottom:2px;">${dot('#166534')}${t.greenNumLabel}</div>
-                        <div style="color:#475569; padding-left:13px;">${t.greenNumBody}</div>
-                        <div style="color:#475569; padding-left:13px; margin-top:2px; font-style:italic;">${t.greenNumRed}</div>
+                `;
+            } else if (rowType === 'wvet') {
+                bodyHTML = `
+                    <div class="help-card-section">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.wvet.title}</div>
+                        <div style="color:#475569; margin-bottom:8px;">${t.wvet.body}</div>
+                        <div style="font-size:11.5px; line-height:1.7;">
+                            <div>${dot('#16a34a')}<b>0 – 0.40</b> — ${t.wvet.low}</div>
+                            <div>${dot('#eab308')}<b>0.41 – 0.60</b> — ${t.wvet.mod}</div>
+                            <div>${dot('#f97316')}<b>0.61 – 0.65</b> — ${t.wvet.high}</div>
+                            <div>${dot('#dc2626')}<b>≥ 0.75</b> — ${t.wvet.severe}</div>
+                        </div>
                     </div>
-                </div>
-                
-                <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
-                    <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
-                    <div style="font-size:11.5px; line-height:1.65; color:#475569;">
-                        <div style="margin-bottom:4px;">• ${t.rule1}</div>
-                        <div style="margin-bottom:4px;">• ${t.rule2}</div>
-                        <div style="margin-bottom:4px;">• ${t.rule3}</div>
-                        <div>• ${t.rule4}</div>
+                    <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                            <div style="margin-bottom:4px;">• ${t.wvet.rule1}</div>
+                            <div style="margin-bottom:4px;">• ${t.wvet.rule2}</div>
+                            <div>• ${t.wvet.rule3}</div>
+                        </div>
                     </div>
-                </div>
-            `;
+                `;
+            } else if (rowType === 'cloud') {
+                bodyHTML = `
+                    <div class="help-card-section">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.cloud.title}</div>
+                        <div style="color:#475569; margin-bottom:8px;">${t.cloud.body}</div>
+                        <div style="font-size:11.5px; line-height:1.7;">
+                            <div><b>${t.cloud.rowTop}</b> — ${t.cloud.high}</div>
+                            <div><b>${t.cloud.rowMid}</b> — ${t.cloud.mid}</div>
+                            <div><b>${t.cloud.rowBot}</b> — ${t.cloud.low}</div>
+                        </div>
+                    </div>
+                    <div class="help-card-section">
+                        <div style="font-weight:700; color:#dc2626; margin-bottom:4px;">${dot('#dc2626')}${t.cloud.cbTitle}</div>
+                        <div style="color:#475569;">${t.cloud.cbBody}</div>
+                    </div>
+                    <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                            <div style="margin-bottom:4px;">• ${t.cloud.rule1}</div>
+                            <div style="margin-bottom:4px;">• ${t.cloud.rule2}</div>
+                            <div>• ${t.cloud.rule3}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (rowType === 'sky') {
+                bodyHTML = `
+                    <div class="help-card-section">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.sky.title}</div>
+                        <div style="color:#475569; margin-bottom:8px;">${t.sky.body}</div>
+                        <div style="font-size:11.5px; line-height:1.85;">
+                            <div>${sq('#475569')}${t.sky.stormy}</div>
+                            <div>${sq('#94a3b8')}${t.sky.overcast}</div>
+                            <div>${sq('#d6d3d1')}${t.sky.hazy}</div>
+                            <div>${sq('#fbbf24')}${t.sky.golden}</div>
+                            <div>${sq('#f97316')}${t.sky.glow}</div>
+                            <div><span style="display:inline-block;width:12px;height:12px;border-radius:2px;background:linear-gradient(135deg,#be123c,#fb7185);vertical-align:middle;margin-right:5px;border:1px solid rgba(0,0,0,0.1);"></span>${t.sky.vibrant}</div>
+                        </div>
+                    </div>
+                    <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
+                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                            <div style="margin-bottom:4px;">• ${t.sky.rule1}</div>
+                            <div>• ${t.sky.rule2}</div>
+                        </div>
+                    </div>
+                `;
+            }
+            
+            card.innerHTML = `<span class="help-card-close" onclick="window.toggleHelpCard('${id}', '${rowType}')" aria-label="${t.close}">×</span>${bodyHTML}`;
             requestAnimationFrame(() => {
                 card.classList.add('open');
                 icon.classList.add('active');
@@ -2951,11 +3211,11 @@
                 </div>
 
                 <div class="info-row" id="row-dates-top-${id}"></div>
-                <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)</div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 24px;"></div></div>
-                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hours</span><span class="help-icon-btn" id="help-icon-temp-${id}" onclick="window.toggleHelpCard('${id}')" title="What is DeltaT and Safe Hours?">?</span></div><div id="help-card-temp-${id}" class="help-card"></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
+                <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)<span class="help-icon-btn" id="help-icon-wvet-${id}" onclick="window.toggleHelpCard('${id}', 'wvet')" title="What is WVET?">?</span></div><div id="help-card-wvet-${id}" class="help-card"></div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 24px;"></div></div>
+                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hours</span><span class="help-icon-btn" id="help-icon-temp-${id}" onclick="window.toggleHelpCard('${id}', 'temp')" title="What is DeltaT and Safe Hours?">?</span></div><div id="help-card-temp-${id}" class="help-card"></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
                 <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
-                <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
-                <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
+                <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk<span class="help-icon-btn" id="help-icon-cloud-${id}" onclick="window.toggleHelpCard('${id}', 'cloud')" title="What is Cloud % and CB Risk?">?</span></div><div id="help-card-cloud-${id}" class="help-card"></div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
+                <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)<span class="help-icon-btn" id="help-icon-sky-${id}" onclick="window.toggleHelpCard('${id}', 'sky')" title="What is Sky Tint?">?</span></div><div id="help-card-sky-${id}" class="help-card"></div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:70px;padding-top:18px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="70"></svg></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay" style="color:#1e3a8a">Rainfall (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:52px;padding-top:18px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="52"></svg></div>
                 <div class="relative"><div class="row-label-overlay" style="color:#059669">ET0 (mm)</div><div class="info-row" id="row-et-${id}" style="min-height:42px;padding-top:20px;"></div><svg id="trend-layer-et-${id}" class="trend-layer" height="42"></svg></div>
