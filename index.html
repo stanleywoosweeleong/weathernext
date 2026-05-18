@@ -1422,9 +1422,48 @@
              });
              const fetchOne = async (id) => {
                  const s = getAllLocations().find(l => l.id === id); if(!s) return;
-                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lng}&hourly=temperature_2m,dew_point_2m,relative_humidity_2m,precipitation_probability,precipitation,cloudcover_low,cloudcover_mid,cloudcover_high,et0_fao_evapotranspiration,windspeed_10m,windspeed_2m,winddirection_10m,windgusts_10m,vapour_pressure_deficit,cape,convective_inhibition,visibility&models=${activeModel}&timezone=auto&forecast_days=14`;
+                 // Hourly variables: temperature, humidity, precipitation, clouds, wind, ET0, CAPE, visibility
+                 // NEW v1.0.52: soil moisture (5 depths), soil temperature (4 depths), UV index, sunshine duration,
+                 //              shortwave radiation, wet bulb temperature — all for richer agronomy analysis
+                 const hourlyVars = [
+                     'temperature_2m','dew_point_2m','relative_humidity_2m',
+                     'precipitation_probability','precipitation',
+                     'cloudcover_low','cloudcover_mid','cloudcover_high',
+                     'et0_fao_evapotranspiration',
+                     'windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m',
+                     'vapour_pressure_deficit','cape','convective_inhibition','visibility',
+                     // NEW: soil
+                     'soil_moisture_0_to_1cm','soil_moisture_1_to_3cm','soil_moisture_3_to_9cm','soil_moisture_9_to_27cm','soil_moisture_27_to_81cm',
+                     'soil_temperature_0cm','soil_temperature_6cm','soil_temperature_18cm','soil_temperature_54cm',
+                     // NEW: solar / radiation
+                     'uv_index','uv_index_clear_sky','sunshine_duration','shortwave_radiation',
+                     // NEW: heat stress
+                     'wet_bulb_temperature_2m'
+                 ].join(',');
+                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lng}&hourly=${hourlyVars}&models=${activeModel}&timezone=auto&forecast_days=14`;
                  const res = await fetch(url); const data = await res.json();
-                 if(data?.hourly) detailData[id] = data.hourly;
+                 
+                 // OPTIONAL: fetch daily-only variables (leaf wetness, growing degree days).
+                 // Wrapped in try/catch because not all models support these — if it fails, the app continues without them.
+                 try {
+                     const dailyUrl = `https://api.open-meteo.com/v1/forecast?latitude=${s.lat}&longitude=${s.lng}&daily=leaf_wetness_probability_mean,growing_degree_days_base_0_limit_50&models=${activeModel}&timezone=auto&forecast_days=14`;
+                     const dailyRes = await fetch(dailyUrl);
+                     if (dailyRes.ok) {
+                         const dailyData = await dailyRes.json();
+                         if (dailyData && dailyData.daily && !dailyData.error) {
+                             data.daily = dailyData.daily;
+                             data.daily_units = dailyData.daily_units;
+                         }
+                     }
+                 } catch (e) {
+                     // Silently skip if daily endpoint fails — app still works with hourly data
+                     console.warn('Daily variables unavailable for this model:', e?.message);
+                 }
+                 if(data?.hourly) {
+                     detailData[id] = data.hourly;
+                     // Attach daily data (leaf wetness, growing degree days) onto detailData so AI prompts can use it
+                     if (data.daily) detailData[id]._daily = data.daily;
+                 }
              };
              try { await Promise.all(locIds.map(fetchOne)); renderReports(locIds); setStatus("Ready", true); } catch (e) { setStatus("Sync Error", 'error'); }
         }
@@ -2035,13 +2074,53 @@
             const h = detailData[id];
             if (!h) return "No data.";
             let ctx = ""; const now = new Date();
+            
+            // Helper: safely read hourly array with model suffix support
+            const getArr = (key) => {
+                return h[`${key}_${activeModel}`] || h[key] || null;
+            };
+            
             for (let i = 0; i < days; i++) {
                 const s = i * 24;
                 const date = new Date(now.getTime() + i * 86400000).toLocaleDateString();
-                const rain = Math.max(...(h.precipitation_probability.slice(s, s+24) || [0]));
-                const wind = Math.max(...(h.windspeed_10m.slice(s, s+24) || [0]));
-                const tempH = Math.max(...(h.temperature_2m.slice(s, s+24) || [0]));
-                ctx += `[${date}: Rain ${rain}%, Wind ${wind}km/h, MaxTemp ${tempH}C] `;
+                
+                // Existing metrics
+                const ppArr = getArr('precipitation_probability'); const rain = ppArr ? Math.max(...ppArr.slice(s, s+24)) : 0;
+                const windArr = getArr('windspeed_10m'); const wind = windArr ? Math.max(...windArr.slice(s, s+24)) : 0;
+                const tArr = getArr('temperature_2m'); const tempH = tArr ? Math.max(...tArr.slice(s, s+24)) : 0;
+                const rvArr = getArr('precipitation'); const rainMM = rvArr ? rvArr.slice(s, s+24).reduce((a,b)=>a+b,0).toFixed(1) : '0';
+                const etArr = getArr('et0_fao_evapotranspiration'); const et0 = etArr ? etArr.slice(s, s+24).reduce((a,b)=>a+b,0).toFixed(1) : '0';
+                
+                // NEW v1.0.52: agronomic context
+                const smArr = getArr('soil_moisture_9_to_27cm'); 
+                const soilM = smArr ? (smArr.slice(s, s+24).reduce((a,b)=>a+b,0) / 24).toFixed(2) : null;
+                const stArr = getArr('soil_temperature_18cm');
+                const soilT = stArr ? (stArr.slice(s, s+24).reduce((a,b)=>a+b,0) / 24).toFixed(1) : null;
+                const uvArr = getArr('uv_index');
+                const uv = uvArr ? Math.max(...uvArr.slice(s+10, s+15)).toFixed(1) : null;
+                const sunArr = getArr('sunshine_duration');
+                const sunHrs = sunArr ? (sunArr.slice(s, s+24).reduce((a,b)=>a+b,0) / 3600).toFixed(1) : null;
+                const wbArr = getArr('wet_bulb_temperature_2m');
+                const wbMax = wbArr ? Math.max(...wbArr.slice(s+8, s+17)).toFixed(1) : null;
+                
+                // Daily-only variables
+                const lwArr = h._daily?.leaf_wetness_probability_mean;
+                const leafWet = lwArr ? Math.round(lwArr[i]) : null;
+                const gddArr = h._daily?.growing_degree_days_base_0_limit_50;
+                const gdd = gddArr ? gddArr[i]?.toFixed(1) : null;
+                
+                // Build compact context line
+                let line = `[${date}: Rain ${rain}%/${rainMM}mm, Wind ${wind}km/h, MaxT ${tempH}C, ET0 ${et0}mm`;
+                if (soilM) line += `, SoilMoist(9-27cm) ${soilM}m3/m3`;
+                if (soilT) line += `, SoilT(18cm) ${soilT}C`;
+                if (uv) line += `, UV ${uv}`;
+                if (sunHrs) line += `, Sun ${sunHrs}h`;
+                if (wbMax) line += `, WetBulb ${wbMax}C`;
+                if (leafWet !== null) line += `, LeafWet ${leafWet}%`;
+                if (gdd !== null) line += `, GDD ${gdd}`;
+                line += `] `;
+                
+                ctx += line;
             }
             return ctx;
         }
@@ -2511,7 +2590,18 @@
 
         function populateReportData(id) {
             const data = detailData[id]; if (!data) return;
-            const days = [], crop = locationCrops[id] || 'durian', vars = ['temperature_2m','dew_point_2m','precipitation_probability','precipitation','cloudcover_high','cloudcover_mid','cloudcover_low','et0_fao_evapotranspiration','windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m','vapour_pressure_deficit','cape','visibility'];
+            const days = [], crop = locationCrops[id] || 'durian', vars = [
+                'temperature_2m','dew_point_2m','precipitation_probability','precipitation',
+                'cloudcover_high','cloudcover_mid','cloudcover_low',
+                'et0_fao_evapotranspiration',
+                'windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m',
+                'vapour_pressure_deficit','cape','visibility',
+                // NEW v1.0.52 agronomic variables
+                'soil_moisture_0_to_1cm','soil_moisture_1_to_3cm','soil_moisture_3_to_9cm','soil_moisture_9_to_27cm','soil_moisture_27_to_81cm',
+                'soil_temperature_0cm','soil_temperature_6cm','soil_temperature_18cm','soil_temperature_54cm',
+                'uv_index','uv_index_clear_sky','sunshine_duration','shortwave_radiation',
+                'wet_bulb_temperature_2m'
+            ];
             const map = {}; vars.forEach(v => map[v] = getHourlyData(id, v, true));
             
             const getSkyColor = (idx) => {
@@ -2604,6 +2694,45 @@
                     // VPD: peak afternoon (12-16) is when atmospheric demand is highest — used for WVET
                     const dailyVPD = max0(win('vapour_pressure_deficit', 12, 16));
                     
+                    // ===== NEW AGRONOMIC AGGREGATIONS (v1.0.52) =====
+                    // Soil moisture: mean over the full day at each depth (root-zone water availability is a slow signal)
+                    // Units: m³/m³ (volumetric water content). Typical ranges:
+                    //   Dry sand: 0.05-0.10, Moist loam: 0.20-0.30, Saturated clay: 0.40+
+                    const soilM_0_1   = avg(win('soil_moisture_0_to_1cm',   0, 23));
+                    const soilM_1_3   = avg(win('soil_moisture_1_to_3cm',   0, 23));
+                    const soilM_3_9   = avg(win('soil_moisture_3_to_9cm',   0, 23));
+                    const soilM_9_27  = avg(win('soil_moisture_9_to_27cm',  0, 23));
+                    const soilM_27_81 = avg(win('soil_moisture_27_to_81cm', 0, 23));
+                    
+                    // Soil temperature: representative daytime values (6 AM - 6 PM)
+                    const soilT_0  = avg(win('soil_temperature_0cm',  6, 18));
+                    const soilT_6  = avg(win('soil_temperature_6cm',  6, 18));
+                    const soilT_18 = avg(win('soil_temperature_18cm', 6, 18));
+                    const soilT_54 = avg(win('soil_temperature_54cm', 6, 18));
+                    
+                    // UV Index: MAX of midday hours (10-15) — worker safety / fruit sunburn risk
+                    const dailyUV = max0(win('uv_index', 10, 15));
+                    
+                    // Sunshine duration: SUM of hourly seconds → total minutes of sun per day
+                    // Useful for: cocoa/coffee drying, pepper drying, rice harvest decisions
+                    const sunshineSec = win('sunshine_duration', 0, 23).reduce((s,v) => s + v, 0);
+                    const sunshineMin = Math.round(sunshineSec / 60);
+                    
+                    // Shortwave radiation: SUM during daylight (6-18) in MJ/m² (W/m² × 3600s ÷ 1e6)
+                    // Useful for greenhouse / photosynthesis modeling
+                    const radiationSum = win('shortwave_radiation', 6, 18).reduce((s,v) => s + v, 0);
+                    const radiationMJ = Math.round((radiationSum * 3600 / 1e6) * 10) / 10;
+                    
+                    // Wet bulb temperature: MAX during work hours (8-17) for worker heat-stress assessment
+                    // Critical Malaysian threshold: WB > 28°C = heat stress, WB > 30°C = dangerous
+                    const dailyWB = max0(win('wet_bulb_temperature_2m', 8, 17));
+                    
+                    // Daily-only variables (from separate fetch — may be null if model doesn't support)
+                    const dailyData = detailData[id]?._daily;
+                    const leafWetness = dailyData?.leaf_wetness_probability_mean?.[i] ?? null;
+                    const gdd = dailyData?.growing_degree_days_base_0_limit_50?.[i] ?? null;
+                    // ===== END NEW AGGREGATIONS =====
+                    
                     // WVET: representative daily stress level using peak afternoon conditions
                     // (worst stress hour matters more than mean for crop-stress assessment)
                     const wvetWind = avg(win('windspeed_2m', 12, 16)) || avg(win('windspeed_10m', 12, 16));
@@ -2651,6 +2780,15 @@
                         wvet, cape: Math.round(dailyCAPE),
                         vis: map.visibility?.[start] ?? 10000,
                         visibilityFlag,
+                        // NEW v1.0.52 agronomic fields
+                        soilM: { d1: soilM_0_1, d2: soilM_1_3, d3: soilM_3_9, d4: soilM_9_27, d5: soilM_27_81 },
+                        soilT: { d0: soilT_0, d1: soilT_6, d2: soilT_18, d3: soilT_54 },
+                        uv: Math.round(dailyUV * 10) / 10,
+                        sunMin: sunshineMin,
+                        radMJ: radiationMJ,
+                        wbMax: Math.round(dailyWB * 10) / 10,
+                        leafWet: leafWetness !== null ? Math.round(leafWetness) : null,
+                        gdd: gdd !== null ? Math.round(gdd * 10) / 10 : null,
                         skyAM, skyPM
                     });
                 }
