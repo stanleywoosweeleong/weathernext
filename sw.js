@@ -3,7 +3,7 @@
 // Version 1.0.0 — bump CACHE_VERSION on each release
 // ============================================================
 
-const CACHE_VERSION = 'wnext-v1.0.70';
+const CACHE_VERSION = 'wnext-v1.0.71';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const WEATHER_CACHE = `${CACHE_VERSION}-weather`;
@@ -28,13 +28,21 @@ self.addEventListener('install', (event) => {
   event.waitUntil(
     caches.open(SHELL_CACHE)
       .then((cache) => {
-        // Use addAll with a fallback per-item to survive a single failure
+        // Use addAll with a fallback per-item to survive a single failure.
+        // Cross-origin CDN assets (cdn.tailwindcss.com, cdnjs) often lack CORS headers
+        // for fetch() pre-caching. Use 'no-cors' mode for them — produces an opaque
+        // response which is cacheable but not introspectable (fine for static assets).
         return Promise.allSettled(
-          SHELL_ASSETS.map((url) =>
-            cache.add(new Request(url, { cache: 'reload' })).catch((err) => {
-              console.warn('[SW] Failed to pre-cache:', url, err);
-            })
-          )
+          SHELL_ASSETS.map((url) => {
+            const isCrossOrigin = url.startsWith('http') && !url.startsWith(self.location.origin);
+            const reqInit = isCrossOrigin
+              ? { cache: 'reload', mode: 'no-cors', credentials: 'omit' }
+              : { cache: 'reload' };
+            return cache.add(new Request(url, reqInit)).catch((err) => {
+              // Quiet failure — pre-cache is opportunistic, runtime fetch will still work
+              console.warn('[SW] Pre-cache skipped for', url, '(will fetch on demand)');
+            });
+          })
         );
       })
       .then(() => self.skipWaiting())
@@ -140,21 +148,23 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. CDN scripts (html2canvas) — cache-first (rarely changes)
-  if (url.hostname.includes('cdnjs.cloudflare.com')) {
+  // 4. CDN scripts (Tailwind, html2canvas) — cache-first (rarely changes).
+  // Cross-origin CDNs without CORS headers need no-cors mode to be cacheable.
+  if (url.hostname.includes('cdnjs.cloudflare.com') || url.hostname.includes('cdn.tailwindcss.com')) {
     event.respondWith(
       caches.match(request).then((cached) => {
         if (cached) {
-          // Refresh in background
-          fetch(request).then((response) => {
-            if (response.ok) {
+          // Refresh in background (no-cors to handle CORS-restricted CDNs)
+          fetch(request, { mode: 'no-cors' }).then((response) => {
+            // Opaque responses have status 0 but are still cacheable
+            if (response && (response.ok || response.type === 'opaque')) {
               caches.open(SHELL_CACHE).then((cache) => cache.put(request, response));
             }
           }).catch(() => {});
           return cached;
         }
-        return fetch(request).then((response) => {
-          if (response.ok) {
+        return fetch(request, { mode: 'no-cors' }).then((response) => {
+          if (response && (response.ok || response.type === 'opaque')) {
             const clone = response.clone();
             caches.open(SHELL_CACHE).then((cache) => cache.put(request, clone));
           }
