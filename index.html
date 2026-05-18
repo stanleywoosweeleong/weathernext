@@ -2553,19 +2553,64 @@
                     const dT8 = (current8AmT!==undefined && current8AmDP!==undefined) ? Math.round((current8AmT - current8AmDP)*10)/10 : null;
                     const etS = map.et0_fao_evapotranspiration?.slice(start, start+24).reduce((a,b)=>a+b,0) || 0;
                     
-                    // Daily rain probability: MAX of the 24 hourly values
-                    // (worst-case hour represents the day's rain risk, matching how most weather apps report it)
-                    const ppArr = map.precipitation_probability?.slice(start, start+24) || [];
-                    const dailyPP = ppArr.length > 0 ? Math.max(...ppArr) : 0;
+                    // ===== HELPER FUNCTIONS =====
+                    // Get a sub-window of hourly values from the day (e.g. 6 AM - 6 PM)
+                    const win = (key, fromH, toH) => {
+                        const arr = map[key]; if (!arr) return [];
+                        const out = [];
+                        for (let h = fromH; h <= toH; h++) {
+                            const idx = start + h;
+                            if (idx >= 336) break;
+                            if (arr[idx] !== undefined && arr[idx] !== null) out.push(arr[idx]);
+                        }
+                        return out;
+                    };
+                    const avg = a => a.length ? a.reduce((s,v)=>s+v,0)/a.length : 0;
+                    const max0 = a => a.length ? Math.max(...a) : 0;
                     
-                    // Daily rainfall volume: SUM of the 24 hourly mm values
-                    // (Open-Meteo's hourly `precipitation` field is in mm per hour, so summing gives mm/day)
-                    const rvArr = map.precipitation?.slice(start, start+24) || [];
-                    const dailyRV = rvArr.reduce((a,b) => a + (b || 0), 0);
+                    // ===== AGGREGATIONS =====
+                    // Rain probability: MAX of 24h (worst-case hour represents day's rain risk)
+                    const dailyPP = max0(win('precipitation_probability', 0, 23));
+                    // Rainfall volume: SUM of 24h hourly mm values
+                    const dailyRV = win('precipitation', 0, 23).reduce((s,v) => s + v, 0);
                     
-                    // ===== FOG / HAZE DETECTION =====
-                    // Sample 4 AM - 9 AM window when fog actually forms in Malaysia.
-                    // Decide between FOG (high humidity + low vis + calm) vs HAZE (low vis without humidity).
+                    // Cloud cover: daytime average (6 AM - 6 PM) since nighttime cloud is irrelevant agronomically
+                    const dailyCH = avg(win('cloudcover_high', 6, 18));
+                    const dailyCM = avg(win('cloudcover_mid', 6, 18));
+                    const dailyCL = avg(win('cloudcover_low', 6, 18));
+                    
+                    // Wind: daytime average for speed (6 AM - 6 PM, the work hours / spraying window)
+                    //       MAX of 24h for gusts (worst gust event matters for tree damage / spray drift)
+                    const w2m_arr = win('windspeed_2m', 6, 18);
+                    const w10m_arr = win('windspeed_10m', 6, 18);
+                    const dailyW2m = w2m_arr.length ? avg(w2m_arr) : avg(w10m_arr);
+                    const dailyWG = max0(win('windgusts_10m', 0, 23));
+                    
+                    // Wind direction: use direction at the hour of peak afternoon wind
+                    // (prevailing wind, not nighttime calm direction)
+                    let peakWindIdx = start + 14; // default to 2 PM
+                    let peakWindSpeed = 0;
+                    for (let h = 10; h <= 17; h++) {
+                        const idx = start + h;
+                        if (idx >= 336) break;
+                        const w = map.windspeed_2m?.[idx] ?? map.windspeed_10m?.[idx] ?? 0;
+                        if (w > peakWindSpeed) { peakWindSpeed = w; peakWindIdx = idx; }
+                    }
+                    const dailyWD = map.winddirection_10m?.[peakWindIdx] || 0;
+                    
+                    // CAPE: MAX during afternoon (12-18) since convective storms develop in afternoon heat
+                    const dailyCAPE = max0(win('cape', 12, 18));
+                    
+                    // VPD: peak afternoon (12-16) is when atmospheric demand is highest — used for WVET
+                    const dailyVPD = max0(win('vapour_pressure_deficit', 12, 16));
+                    
+                    // WVET: representative daily stress level using peak afternoon conditions
+                    // (worst stress hour matters more than mean for crop-stress assessment)
+                    const wvetWind = avg(win('windspeed_2m', 12, 16)) || avg(win('windspeed_10m', 12, 16));
+                    const wvetGust = max0(win('windgusts_10m', 12, 16));
+                    const wvet = calculateWVET(wvetWind, dailyVPD, etS, wvetGust, crop, dT8);
+                    
+                    // ===== FOG / HAZE DETECTION (already implemented in v1.0.49) =====
                     let visibilityFlag = null;
                     let minVisDawn = Infinity, minSpreadDawn = Infinity, sumWindDawn = 0, dawnSampleCount = 0;
                     for (let h = 4; h <= 9; h++) {
@@ -2581,17 +2626,12 @@
                     }
                     const avgWindDawn = dawnSampleCount > 0 ? sumWindDawn / dawnSampleCount : 999;
                     if (minVisDawn < Infinity) {
-                        if (minVisDawn < 2000 && minSpreadDawn < 3 && avgWindDawn < 12) {
-                            visibilityFlag = 'FOG';
-                        } else if (minVisDawn < 5000 && minSpreadDawn >= 3) {
-                            visibilityFlag = 'HAZE';
-                        } else if (minVisDawn < 2000 && minSpreadDawn < 3) {
-                            // Low vis + humid but windy — still likely fog/mist
-                            visibilityFlag = 'FOG';
-                        }
+                        if (minVisDawn < 2000 && minSpreadDawn < 3 && avgWindDawn < 12) visibilityFlag = 'FOG';
+                        else if (minVisDawn < 5000 && minSpreadDawn >= 3) visibilityFlag = 'HAZE';
+                        else if (minVisDawn < 2000 && minSpreadDawn < 3) visibilityFlag = 'FOG';
                     }
-                    // ===== END FOG / HAZE =====
                     
+                    // ===== SAFE SPRAY HOUR COUNT (unchanged, already correctly hourly) =====
                     let safe = 0;
                     for(let h=0; h<24; h++){
                         const idx = start + h; if(idx < 336){
@@ -2601,15 +2641,16 @@
                             if(res.canSpray) safe++;
                         }
                     }
+                    
                     days.push({ 
                         date: `${new Date(new Date().getTime() + i*86400000).getDate()}/${new Date(new Date().getTime() + i*86400000).getMonth()+1}`,
                         hi: Math.round(Math.max(...tS)*10)/10, lo: Math.round(Math.min(...tS)*10)/10, dp: Math.round((dpS.reduce((a,b)=>a+b,0)/dpS.length)*10)/10,
                         dT: dT8 ?? "--", safe, et: Math.round(etS*10)/10, pp: Math.round(dailyPP), rv: Math.round(dailyRV*10)/10,
-                        ch: map.cloudcover_high?.[start]||0, cm: map.cloudcover_mid?.[start]||0, cl: map.cloudcover_low?.[start]||0,
-                        w2m: Math.round((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0)), wd: Math.round(map.winddirection_10m?.[start]||0), wg: Math.round(map.windgusts_10m?.[start]||0),
-                        wvet: calculateWVET((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0), map.vapour_pressure_deficit?.[start]||0, etS, map.windgusts_10m?.[start]||0, crop, dT8), cape: map.cape?.[start]||0,
+                        ch: Math.round(dailyCH), cm: Math.round(dailyCM), cl: Math.round(dailyCL),
+                        w2m: Math.round(dailyW2m), wd: Math.round(dailyWD), wg: Math.round(dailyWG),
+                        wvet, cape: Math.round(dailyCAPE),
                         vis: map.visibility?.[start] ?? 10000,
-                        visibilityFlag,  // 'FOG', 'HAZE', or null
+                        visibilityFlag,
                         skyAM, skyPM
                     });
                 }
