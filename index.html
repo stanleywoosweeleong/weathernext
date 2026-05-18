@@ -1043,29 +1043,63 @@
             let key = apiKey || localStorage.getItem('wnext_v41_api_key') || "";
             // Ensure URL doesn't end with & or ?
             const sep = urlNoKey.includes('?') ? '&' : '?';
+            const fullUrl = (k) => `${urlNoKey}${sep}key=${k}`;
+            const init = (k) => ({
+                method: 'POST', headers: {'Content-Type': 'application/json'},
+                body: JSON.stringify(payload)
+            });
+            
+            // === RETRY POLICY (v1.0.63) ===
+            // Gemini API frequently returns transient 503 (overloaded), 429 (rate-limited),
+            // or 5xx errors. These are NOT user-actionable — retry with exponential backoff.
+            // Retry codes: 429, 500, 502, 503, 504. Auth codes (400/401/403) prompt for new key.
+            const TRANSIENT_CODES = [429, 500, 502, 503, 504];
+            const MAX_RETRIES = 3;        // total attempts up to 4 (initial + 3 retries)
+            const BASE_DELAY_MS = 1200;   // first retry waits ~1.2s, then ~2.4s, ~4.8s
+            
+            const sleep = (ms) => new Promise(r => setTimeout(r, ms));
             
             try {
-                let res = await fetch(`${urlNoKey}${sep}key=${key}`, {
-                    method: 'POST', headers: {'Content-Type': 'application/json'},
-                    body: JSON.stringify(payload)
-                });
-
-                // If auth failed (400, 401, 403), request key via modal
-                if (!res.ok && (res.status === 400 || res.status === 401 || res.status === 403)) {
-                     const newKey = await window.requestApiKey();
-                     if(newKey) {
-                         // Retry once with new key
-                         res = await fetch(`${urlNoKey}${sep}key=${newKey}`, {
-                            method: 'POST', headers: {'Content-Type': 'application/json'},
-                            body: JSON.stringify(payload)
-                        });
-                     }
+                let res;
+                let lastStatus = 0;
+                
+                for (let attempt = 0; attempt <= MAX_RETRIES; attempt++) {
+                    res = await fetch(fullUrl(key), init(key));
+                    lastStatus = res.status;
+                    
+                    if (res.ok) break;
+                    
+                    // Auth error → ask for new key (no point retrying)
+                    if (res.status === 400 || res.status === 401 || res.status === 403) {
+                        const newKey = await window.requestApiKey();
+                        if (!newKey) break;
+                        key = newKey;
+                        // Retry once with the new key
+                        res = await fetch(fullUrl(key), init(key));
+                        if (res.ok) break;
+                        // If still failing after key change, treat as final
+                        if (!TRANSIENT_CODES.includes(res.status)) break;
+                    }
+                    
+                    // Transient error → backoff and retry
+                    if (TRANSIENT_CODES.includes(res.status) && attempt < MAX_RETRIES) {
+                        // Exponential backoff with jitter: 1.2s, 2.4s, 4.8s ± 30%
+                        const delay = BASE_DELAY_MS * Math.pow(2, attempt) * (0.7 + Math.random() * 0.6);
+                        console.warn(`[Gemini] HTTP ${res.status} on attempt ${attempt+1} — retrying in ${Math.round(delay)}ms`);
+                        if (window.setStatus) setStatus(`Retrying... (${attempt+1})`, 'normal');
+                        await sleep(delay);
+                        continue;
+                    }
+                    
+                    // Non-transient, non-auth error → give up
+                    break;
                 }
-                // v1.0.63: Better diagnostic logging on any non-OK response
+                
+                // Better diagnostic logging on final failure
                 if (!res.ok) {
                     let errBody = '';
                     try { errBody = await res.clone().text(); } catch(e) { errBody = '(unreadable)'; }
-                    console.error(`[Gemini] HTTP ${res.status} ${res.statusText} — ${errBody.slice(0, 500)}`);
+                    console.error(`[Gemini] FINAL HTTP ${res.status} ${res.statusText} — ${errBody.slice(0, 500)}`);
                 }
                 return res;
             } catch(e) {
@@ -1966,12 +2000,18 @@
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 // Use fetchGemini to handle Auth errors gracefully
                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
-                if(!res.ok) throw new Error(`API Error ${res.status}`);
+                if(!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json(); 
                 const text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Analysis unavailable.";
                 // Added .trim() to remove leading newlines that cause "middle" alignment
                 content.innerText = text.trim(); 
-            } catch (e) { content.innerText = `Connection failed: ${e.message}`; console.error(e); } finally { btn.disabled = false; btn.innerText = labels.pest; }
+            } catch (e) { 
+                const isOverload = /503|429|500|502|504/.test(e.message);
+                content.innerText = isOverload 
+                    ? "AI server is busy. Please try again in a moment.\nAI 服务器繁忙，请稍后再试。" 
+                    : `Connection failed: ${e.message}`; 
+                console.error(e); 
+            } finally { btn.disabled = false; btn.innerText = labels.pest; }
         };
 
         window.executeSmartBrief = async (id) => {
@@ -2167,7 +2207,7 @@
                 const payload = { contents: [{ parts: [{ text: prompt }] }] };
                 // Use fetchGemini to handle Auth errors gracefully
                 const res = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
-                if(!res.ok) throw new Error(`API Error ${res.status}`);
+                if(!res.ok) throw new Error(`HTTP ${res.status}`);
                 const data = await res.json(); 
                 let text = data.candidates?.[0]?.content?.parts?.[0]?.text || "Unavailable.";
                 
@@ -2182,7 +2222,13 @@
                            .trim();
 
                 content.innerText = text;
-            } catch (e) { content.innerText = `Network Error: ${e.message}`; console.error(e); } finally { btn.disabled = false; spin.style.display = "none"; }
+            } catch (e) { 
+                const isOverload = /503|429|500|502|504/.test(e.message);
+                content.innerText = isOverload
+                    ? "AI server is busy. Please try again in a moment.\nAI 服务器繁忙，请稍后再试。"
+                    : `Network Error: ${e.message}`; 
+                console.error(e); 
+            } finally { btn.disabled = false; spin.style.display = "none"; }
         };
 
         window.getShortWeatherContext = (id, days) => {
