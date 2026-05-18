@@ -309,36 +309,43 @@
             height: 12px;
         }
         
-        /* Help icon next to the temp row label — clickable explainer trigger */
+        /* Help icon next to a row label — clickable explainer trigger.
+           Sized at 11px to fit within the 12px-tall row-label-overlay without
+           making the label container expand. */
         .help-icon-btn {
             display: inline-flex; align-items: center; justify-content: center;
-            width: 13px; height: 13px; border-radius: 50%;
+            width: 11px; height: 11px; border-radius: 50%;
             background: #e2e8f0; color: #475569;
-            font-size: 9px; font-weight: 900; line-height: 1;
+            font-size: 8px; font-weight: 900; line-height: 1;
             margin-left: 4px; cursor: pointer;
             pointer-events: auto; /* override parent's pointer-events:none */
             transition: background 0.15s, color 0.15s;
-            vertical-align: top; user-select: none;
+            vertical-align: middle; user-select: none;
+            position: relative; top: -1px;  /* nudge up to optical center with label text */
         }
         .help-icon-btn:hover { background: #7e22ce; color: white; }
         .help-icon-btn.active { background: #7e22ce; color: white; }
         
-        /* Help card — appears inline above the chart when icon is tapped */
+        /* Help card — appears inline above the chart when icon is tapped.
+           When closed (no .open class), the card must take ZERO vertical space —
+           no margins, no padding, no border, no max-height. Otherwise even a
+           closed card adds spacing between the row label and its data, making
+           the chart look stretched. */
         .help-card {
             position: relative; z-index: 30;
-            margin: 16px 8px 8px; padding: 12px;
             background: #faf5ff; border: 1px solid #d8b4fe;
             border-radius: 8px;
             font-size: 12px; line-height: 1.5;
             color: #475569;
-            max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0; margin-top: 0;
+            max-height: 0; overflow: hidden;
+            padding: 0; margin: 0;
             border-width: 0;
-            transition: max-height 0.25s ease, padding 0.25s ease, margin-top 0.25s ease, border-width 0.1s;
+            transition: max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease, border-width 0.1s;
         }
         .help-card.open {
             max-height: 500px;
-            padding-top: 12px; padding-bottom: 12px;
-            margin-top: 16px;
+            padding: 12px;
+            margin: 12px 8px;
             border-width: 1px;
         }
         .help-card-section { margin-bottom: 10px; }
