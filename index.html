@@ -2570,8 +2570,8 @@
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:48px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:32px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:32px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 50px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:100px;padding-top:20px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="100"></svg></div>
-                <div class="relative bg-slate-50/10"><div class="row-label-overlay" style="color:#1e3a8a">Rainfall Volume (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:70px;padding-top:20px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="70"></svg></div>
-                <div class="relative"><div class="row-label-overlay" style="color:#059669">ET0 / Evapotranspiration (mm)</div><div class="info-row" id="row-et-${id}" style="min-height:50px;padding-top:20px;"></div><svg id="trend-layer-et-${id}" class="trend-layer" height="50"></svg></div>
+                <div class="relative bg-slate-50/10"><div class="row-label-overlay" style="color:#1e3a8a">Rainfall (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:70px;padding-top:20px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="70"></svg></div>
+                <div class="relative"><div class="row-label-overlay" style="color:#059669">ET0 (mm)</div><div class="info-row" id="row-et-${id}" style="min-height:60px;padding-top:24px;"></div><svg id="trend-layer-et-${id}" class="trend-layer" height="60"></svg></div>
                 <div class="info-row" id="row-dates-bottom-${id}"></div>
              </div>`;
         }
@@ -2741,18 +2741,13 @@
                     const wvet = calculateWVET(wvetWind, dailyVPD, etS, wvetGust, crop, dT8);
                     
                     // ===== FOG / HAZE DETECTION =====
-                    // Sample 4-9 AM when fog actually forms in Malaysia.
-                    // Tropical climate has chronically high pre-dawn humidity (spread < 3°C is normal,
-                    // not fog-specific) and low visibility from low cloud — so thresholds must be
-                    // tightened or FOG fires every single day.
-                    //
-                    // Real meteorological fog: visibility < 1000m (WMO standard).
-                    // Mist: visibility 1000-5000m with high humidity.
-                    // We use:
-                    //   FOG: vis < 1000m AND spread < 1.5°C AND calm wind  (real fog, infrequent)
-                    //   HAZE: vis < 5000m AND spread >= 4°C                  (dry-air low vis, e.g. forest fire smoke)
+                    // Tropical Malaysia has chronically high humidity and often-reduced visibility.
+                    // An absolute threshold approach over-fires. Better approach: detect a 
+                    // VISIBILITY DROP — pre-dawn visibility should be notably worse than midday.
+                    // True fog events show a clear diurnal cycle: low vis 4-9 AM, recovers by noon.
                     let visibilityFlag = null;
                     let minVisDawn = Infinity, minSpreadDawn = Infinity, sumWindDawn = 0, dawnSampleCount = 0;
+                    let maxVisMidday = 0;  // for comparison
                     for (let h = 4; h <= 9; h++) {
                         const idx = start + h;
                         if (idx >= 336) break;
@@ -2764,14 +2759,27 @@
                         if (t !== undefined && dp !== undefined) minSpreadDawn = Math.min(minSpreadDawn, t - dp);
                         if (w !== undefined) { sumWindDawn += w; dawnSampleCount++; }
                     }
+                    // Sample midday visibility (11 AM - 2 PM) for diurnal comparison
+                    for (let h = 11; h <= 14; h++) {
+                        const idx = start + h;
+                        if (idx >= 336) break;
+                        const v = map.visibility?.[idx];
+                        if (v !== undefined) maxVisMidday = Math.max(maxVisMidday, v);
+                    }
                     const avgWindDawn = dawnSampleCount > 0 ? sumWindDawn / dawnSampleCount : 999;
-                    if (minVisDawn < Infinity) {
-                        // FOG: tight thresholds — actual fog event, not just humid pre-dawn
-                        if (minVisDawn < 1000 && minSpreadDawn < 1.5 && avgWindDawn < 10) {
+                    
+                    if (minVisDawn < Infinity && maxVisMidday > 0) {
+                        // FOG: requires a real diurnal drop AND saturation AND calm
+                        // - dawn vis must be < 1000m (WMO fog definition)
+                        // - dawn vis must be substantially worse than midday (drop > 5000m, indicating event)
+                        // - air must be near-saturated (spread < 1.5°C)
+                        // - wind must be calm
+                        const visDrop = maxVisMidday - minVisDawn;
+                        if (minVisDawn < 1000 && visDrop > 5000 && minSpreadDawn < 1.5 && avgWindDawn < 10) {
                             visibilityFlag = 'FOG';
-                        } 
-                        // HAZE: low vis with notably dry air (forest fire smoke, dust)
-                        else if (minVisDawn < 5000 && minSpreadDawn >= 4) {
+                        }
+                        // HAZE: low vis with dry air, no diurnal recovery (sustained haze, e.g. fire smoke)
+                        else if (minVisDawn < 5000 && maxVisMidday < 8000 && minSpreadDawn >= 4) {
                             visibilityFlag = 'HAZE';
                         }
                     }
@@ -2815,7 +2823,7 @@
             document.getElementById(`row-temp-combined-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
             document.getElementById(`row-wind-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="text-[10px] font-black">${d.w2m}</div><div style="transform:rotate(${d.wd+180}deg);margin:3px 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-slate-400"><path d="M12 2L19 21L12 17L5 21L12 2Z"/></svg></div><div class="text-[9px] font-black ${d.wg>=25?'text-orange-600':'text-slate-400'}">${d.wg}</div></div>`).join('');
             document.getElementById(`row-wvet-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="wvet-traffic-light ${d.wvet.color}"></div><span class="text-[9px] font-black text-slate-500 mt-1">${d.wvet.val}</span></div>`).join('');
-            const ren = (r, k) => { document.getElementById(r).innerHTML = days.map(d => `<div class="info-data-cell">${r.includes('row-cl-')?`<div class="flex flex-col items-center"><span>${d[k]}</span><div class="pictogram-stack">${[1,2,3,4].map(b=>`<div class="pictogram-block ${b<=Math.round(d[k]/25)?'active':''}"></div>`).join('')}</div>${d.cape>=400 && d.pp>=40?`<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>`:''}${(k==='cl' && d.visibilityFlag)?`<div class="fog-badge ${d.visibilityFlag==='HAZE'?'haze-badge':''}">${d.visibilityFlag}</div>`:''}</div>` : ''}</div>`).join(''); };
+            const ren = (r, k) => { document.getElementById(r).innerHTML = days.map(d => `<div class="info-data-cell">${r.includes('row-cl-')?`<div class="flex flex-col items-center"><span>${d[k]}</span><div class="pictogram-stack">${[1,2,3,4].map(b=>`<div class="pictogram-block ${b<=Math.round(d[k]/25)?'active':''}"></div>`).join('')}</div>${d.cape>=1500 && d.pp>=70?`<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>`:''}${(k==='cl' && d.visibilityFlag)?`<div class="fog-badge ${d.visibilityFlag==='HAZE'?'haze-badge':''}">${d.visibilityFlag}</div>`:''}</div>` : ''}</div>`).join(''); };
             ren(`row-cl-high-${id}`, 'ch'); ren(`row-cl-mid-${id}`, 'cm'); ren(`row-cl-low-${id}`, 'cl');
             
             // New Sky Tint Row Rendering
@@ -2914,11 +2922,11 @@
                 }
             });
             
-            // ET0 (separate row, height=50). Line plot with labels above each point.
-            // Skip first column to leave space for the row-label-overlay.
+            // ET0 (separate row, height=60). Line plot — y range stays below the row label.
+            // Row label occupies y=4 to ~y=20. So ET0 plot uses y=28 (top) to y=55 (bottom).
             if (svgET) {
                 const maxET = Math.max(...days.map(d => d.et), 1);
-                const ET_BASELINE = 45, ET_MAX_HEIGHT = 28;  // line from y=45 up to y=17
+                const ET_BASELINE = 55, ET_MAX_HEIGHT = 27;  // line from y=55 up to y=28
                 let etP = "";
                 days.forEach((d, i) => {
                     const x = columnCenters[i];
