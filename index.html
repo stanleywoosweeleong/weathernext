@@ -2866,34 +2866,22 @@
                     const w10m_arr = win('windspeed_10m', 6, 18);
                     const dailyW2m = w2m_arr.length ? avg(w2m_arr) : avg(w10m_arr);
                     
-                    // === GUST HANDLING (v1.0.69) ===
-                    // Open-Meteo accepts both legacy 'windgusts_10m' and current 'wind_gusts_10m' as
-                    // variable names — but they're returned as separate keys in the response. We try
-                    // both and take whichever has real data.
-                    // Diagnostic log fires once per location on first day so DevTools console shows
-                    // exactly what came back from the API for the user-selected model.
+                    // === GUST HANDLING ===
+                    // Open-Meteo accepts both legacy 'windgusts_10m' and current 'wind_gusts_10m'.
+                    // We try both and take whichever has real data. If neither provides gusts
+                    // (common with ECMWF IFS for our region), we estimate using the WMO-standard
+                    // 1.7× gust factor and flag the value as estimated (rendered with ~ prefix).
                     const apiGustsLegacy = win('windgusts_10m', 0, 23);
                     const apiGustsNew = win('wind_gusts_10m', 0, 23);
-                    const apiGustMaxLegacy = max0(apiGustsLegacy);
-                    const apiGustMaxNew = max0(apiGustsNew);
-                    // Prefer whichever returned real data
-                    const apiGustMax = Math.max(apiGustMaxLegacy, apiGustMaxNew);
+                    const apiGustMax = Math.max(max0(apiGustsLegacy), max0(apiGustsNew));
                     const w10mPeak = max0(win('windspeed_10m', 0, 23));
                     let dailyWG, gustIsEstimated;
                     if (apiGustMax > 0) {
                         dailyWG = apiGustMax;
                         gustIsEstimated = false;
                     } else {
-                        // No real gust data → estimate using gust factor
                         dailyWG = Math.max(w10mPeak * 1.7, w10mPeak + 3);
                         gustIsEstimated = true;
-                    }
-                    // Diagnostic: log on the first day of forecast so console shows what API returned
-                    if (i === 0) {
-                        console.log(`[Gust Diag] loc=${id} model=${activeModel} ` +
-                            `legacy_max=${apiGustMaxLegacy} new_max=${apiGustMaxNew} ` +
-                            `wind10peak=${w10mPeak} resolved=${dailyWG.toFixed(1)} estimated=${gustIsEstimated} ` +
-                            `legacy_sample=[${apiGustsLegacy.slice(0,6).join(',')}] new_sample=[${apiGustsNew.slice(0,6).join(',')}]`);
                     }
                     
                     // Wind direction: use direction at the hour of peak afternoon wind
