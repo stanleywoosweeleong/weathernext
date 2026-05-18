@@ -584,7 +584,7 @@
                 <!-- Added flex-wrap to prevent items being cut off -->
                 <div class="flex flex-wrap items-center gap-1 mt-2">
                     <span id="pill-seamless" onclick="window.setModel('best_match')" class="model-pill">AI Model</span>
-                    <span id="pill-ecmwf" onclick="window.setModel('ecmwf_ifs025')" class="model-pill active">ECMWF</span>
+                    <span id="pill-ecmwf" onclick="window.setModel('ecmwf_ifs')" class="model-pill active">ECMWF</span>
                     
                     <div class="flex items-center ml-0.5">
                         <div id="ui-term-countdown" class="text-xs font-black text-slate-400 uppercase tracking-tighter">--</div>
@@ -1007,7 +1007,7 @@
         const db = getFirestore(app);
 
         let user = null, weatherData = {}, detailData = {}, favoriteIds = [], hiddenIds = [], renamedLocations = {}, customLocations = [], purgedIds = [];
-        let activeModel = 'ecmwf_ifs025', currentDisplayedIds = [];
+        let activeModel = 'ecmwf_ifs', currentDisplayedIds = [];
         let locationCrops = {}; 
         let landingAbortController = null;
         
@@ -1172,7 +1172,12 @@
                 }
 
                 if (cachedPurged) try { purgedIds = JSON.parse(cachedPurged) || []; } catch(e) { purgedIds = []; }
-                if (cachedModel) activeModel = cachedModel;
+                if (cachedModel) {
+                    // v1.0.68 migration: old ecmwf_ifs025 model deprecated in favor of higher-resolution ecmwf_ifs (HRES 9km)
+                    activeModel = (cachedModel === 'ecmwf_ifs025') ? 'ecmwf_ifs' : cachedModel;
+                    // Persist migration so cloud sync sees the new value too
+                    if (cachedModel === 'ecmwf_ifs025') safeSet(PREF_MODEL_KEY, activeModel);
+                }
                 if (cachedCrops) try { locationCrops = JSON.parse(cachedCrops); } catch(e) { locationCrops = {}; }
                 
                 // Load and normalize Lang prefs
@@ -1243,9 +1248,11 @@
                     const mergedFavs = new Set([...favoriteIds, ...cloudFavs]);
                     favoriteIds = Array.from(mergedFavs);
                     
-                    if (d.model && (d.model === 'best_match' || d.model === 'ecmwf_ifs025')) {
-                         if (activeModel !== d.model) {
-                             activeModel = d.model;
+                    if (d.model && (d.model === 'best_match' || d.model === 'ecmwf_ifs' || d.model === 'ecmwf_ifs025')) {
+                         // v1.0.68 migration: silently upgrade old ecmwf_ifs025 to ecmwf_ifs
+                         const cloudModel = (d.model === 'ecmwf_ifs025') ? 'ecmwf_ifs' : d.model;
+                         if (activeModel !== cloudModel) {
+                             activeModel = cloudModel;
                              safeSet(PREF_MODEL_KEY, activeModel);
                              updateModelUI();
                              if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); 
@@ -1385,7 +1392,7 @@
         };
 
         window.toggleModel = () => {
-            activeModel = activeModel === 'best_match' ? 'ecmwf_ifs025' : 'best_match';
+            activeModel = activeModel === 'best_match' ? 'ecmwf_ifs' : 'best_match';
             safeSet(PREF_MODEL_KEY, activeModel); updateModelUI();
             saveUserData();
             if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); else fetchLandingWeather();
@@ -2854,7 +2861,26 @@
                     const w2m_arr = win('windspeed_2m', 6, 18);
                     const w10m_arr = win('windspeed_10m', 6, 18);
                     const dailyW2m = w2m_arr.length ? avg(w2m_arr) : avg(w10m_arr);
-                    const dailyWG = max0(win('windgusts_10m', 0, 23));
+                    
+                    // === GUST HANDLING (v1.0.66 fix) ===
+                    // ECMWF IFS 0.25° often returns null/0 for windgusts_10m. When that happens,
+                    // estimate using a gust factor based on sustained 10m wind. Inland Malaysia
+                    // typical gust factor is ~1.5-1.8x (lower over flat terrain, higher in hills).
+                    // We use 1.7 as a reasonable middle ground per WMO recommendations.
+                    // The flag tells the UI to render estimated values differently.
+                    const apiGusts = win('windgusts_10m', 0, 23);
+                    const apiGustMax = max0(apiGusts);
+                    const w10mPeak = max0(win('windspeed_10m', 0, 23));
+                    let dailyWG, gustIsEstimated;
+                    if (apiGustMax > 0) {
+                        dailyWG = apiGustMax;
+                        gustIsEstimated = false;
+                    } else {
+                        // API gave no gust data — estimate from peak 10m wind speed.
+                        // Floor at sustained wind + 3 km/h since gusts should always exceed sustained.
+                        dailyWG = Math.max(w10mPeak * 1.7, w10mPeak + 3);
+                        gustIsEstimated = true;
+                    }
                     
                     // Wind direction: use direction at the hour of peak afternoon wind
                     // (prevailing wind, not nighttime calm direction)
@@ -2916,7 +2942,9 @@
                     // WVET: representative daily stress level using peak afternoon conditions
                     // (worst stress hour matters more than mean for crop-stress assessment)
                     const wvetWind = avg(win('windspeed_2m', 12, 16)) || avg(win('windspeed_10m', 12, 16));
-                    const wvetGust = max0(win('windgusts_10m', 12, 16));
+                    // Use same gust fallback strategy as the main wind row
+                    const wvetGustApi = max0(win('windgusts_10m', 12, 16));
+                    const wvetGust = wvetGustApi > 0 ? wvetGustApi : Math.max(wvetWind * 1.7, wvetWind + 3);
                     const wvet = calculateWVET(wvetWind, dailyVPD, etS, wvetGust, crop, dT8);
                     
                     // ===== FOG / HAZE DETECTION =====
@@ -2983,6 +3011,7 @@
                         dT: dT8 ?? "--", safe, et: Math.round(etS*10)/10, pp: Math.round(dailyPP), rv: Math.round(dailyRV*10)/10,
                         ch: Math.round(dailyCH), cm: Math.round(dailyCM), cl: Math.round(dailyCL),
                         w2m: Math.round(dailyW2m), wd: Math.round(dailyWD), wg: Math.round(dailyWG),
+                        wgEst: gustIsEstimated,
                         wvet, cape: Math.round(dailyCAPE),
                         vis: map.visibility?.[start] ?? 10000,
                         visibilityFlag,
@@ -3003,7 +3032,44 @@
             const dateH = days.map(d => `<div class="info-data-cell date-cell-special">${d.date}</div>`).join('');
             document.getElementById(`row-dates-top-${id}`).innerHTML = dateH; document.getElementById(`row-dates-bottom-${id}`).innerHTML = dateH;
             document.getElementById(`row-temp-combined-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
-            document.getElementById(`row-wind-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="text-[10px] font-black">${d.w2m}</div><div style="transform:rotate(${d.wd+180}deg);margin:3px 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-slate-400"><path d="M12 2L19 21L12 17L5 21L12 2Z"/></svg></div><div class="text-[9px] font-black ${d.wg>=25?'text-orange-600':'text-slate-400'}">${d.wg}</div></div>`).join('');
+            // === WIND ROW with AGRONOMIC COLOR CODING (v1.0.65) ===
+            // Color codes wind speed based on spray-safety thresholds from:
+            //   UK Code of Practice, NSW DPI, Agriculture Victoria, Beaufort scale
+            //
+            //   Sustained wind (w2m, km/h):
+            //     0-2   YELLOW    Calm — dangerous (temperature inversion risk, drift)
+            //     3-10  GREEN     Ideal for spraying (light breeze)
+            //     11-15 AMBER     Spray with care (use low-drift nozzles)
+            //     16-19 ORANGE    Inadvisable
+            //     20+   RED       Do not spray (drift extreme)
+            //
+            //   Gusts (more conservative — peak not average):
+            //     <15   slate     Safe
+            //     15-24 amber     Watch (could exceed safe spray window)
+            //     25+   red       Stop spraying (gust drift)
+            //
+            // Direction arrow stays neutral slate (direction itself is not a safety signal).
+            const windColor = (w) => {
+                if (w <= 2)  return '#d97706'; // amber-600  — calm, inversion risk
+                if (w <= 10) return '#059669'; // emerald-600 — ideal
+                if (w <= 15) return '#ca8a04'; // yellow-600  — care
+                if (w <= 19) return '#ea580c'; // orange-600  — inadvisable
+                return '#dc2626';              // red-600     — stop
+            };
+            const gustColor = (g) => {
+                if (g < 15) return '#94a3b8'; // slate-400 — safe
+                if (g < 25) return '#d97706'; // amber-600 — watch
+                return '#dc2626';              // red-600   — stop
+            };
+            document.getElementById(`row-wind-${id}`).innerHTML = days.map(d => {
+                // Gust display: show "~" prefix when estimated (API didn't provide real gust data).
+                // Estimated gusts use a lighter color tone so farmers can tell at a glance.
+                const gustText = d.wgEst ? `~${d.wg}` : `${d.wg}`;
+                const gustColorVal = d.wgEst 
+                    ? (d.wg >= 25 ? '#fca5a5' : d.wg >= 15 ? '#fcd34d' : '#cbd5e1')  // lighter tones when estimated
+                    : gustColor(d.wg);
+                return `<div class="info-data-cell"><div class="text-[10px] font-black" style="color:${windColor(d.w2m)}">${d.w2m}</div><div style="transform:rotate(${d.wd+180}deg);margin:3px 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-slate-400"><path d="M12 2L19 21L12 17L5 21L12 2Z"/></svg></div><div class="text-[9px] font-black" style="color:${gustColorVal}" title="${d.wgEst ? 'Estimated gust (model did not provide real data)' : 'Forecast gust'}">${gustText}</div></div>`;
+            }).join('');
             document.getElementById(`row-wvet-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="wvet-traffic-light ${d.wvet.color}"></div><span class="text-[9px] font-black text-slate-500 mt-1">${d.wvet.val}</span></div>`).join('');
             // CB RISK rendering rules (v1.0.61):
             // Cumulonimbus clouds are HIGH-altitude (tower from low up to 12km+). They are NOT a 
