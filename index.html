@@ -2752,7 +2752,7 @@
 
                 <div class="info-row" id="row-dates-top-${id}"></div>
                 <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)</div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 24px;"></div></div>
-                <div class="relative"><div class="row-label-overlay">Temp / Dew Pt <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color: #7e22ce;">DeltaT (8AM) / Safe Hours (H)</span></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
+                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hrs</span></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
                 <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
@@ -3147,25 +3147,98 @@
             // to match dateRow's left edge (in case svgParent has different left).
             const svgLeft = (dateRow ? dateRow.offsetLeft - svgT.parentElement.offsetLeft : 0);
             svgT.style.left = svgLeft + 'px'; svgPP.style.left = svgLeft + 'px'; svgVV.style.left = svgLeft + 'px'; if (svgET) svgET.style.left = svgLeft + 'px';
-            const allT = days.flatMap(d => [d.lo, d.hi, d.dp, typeof d.dT === 'number' ? d.dT : 15]);
+            // Y-axis range covers only the three actual temperature lines (Hi, Lo, DewPt).
+            // DeltaT/SafeHours are numeric annotations anchored below the Lo line — not on
+            // the temp scale — so they don't enter the range calculation.
+            const allT = days.flatMap(d => [d.lo, d.hi, d.dp]);
             if (allT.length === 0) return;  // Defensive: nothing to draw if days is empty
             const minT = safeMin(allT, 0), maxT = safeMax(allT, 30), rngT = (maxT-minT)||1, getTY = (v) => 40 + (1 - (v - minT) / rngT) * 120;
+            // drawTL draws a temperature trend line with circles and value labels.
+            // dir: 'up' = label above point, 'down' = label below, 'none' = no value labels
+            // dash: true for dashed style (used for dew point)
             const drawTL = (key, color, dir, dash=false) => {
                 let p = ""; days.forEach((d, i) => {
-                    const x = columnCenters[i], val = (key==='dT' && typeof d.dT !== 'number') ? 15 : d[key], y = (key==='dT') ? Math.max(getTY(val)-25, getTY(d.lo)+45) : getTY(val);
+                    const x = columnCenters[i], y = getTY(d[key]);
                     p += (i===0 ? "M " : " L ") + x + " " + y;
-                    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", color); svgT.appendChild(c);
-                    if (key === 'dT') {
-                        const isSafeDeltaT = typeof d.dT === 'number' && d.dT >= 2.0 && d.dT <= 8.0; const dTColor = isSafeDeltaT ? "#7e22ce" : "#ef4444"; const safeHoursColor = d.safe > 0 ? "#166534" : "#ef4444";
-                        const tD = document.createElementNS("http://www.w3.org/2000/svg", "text"); tD.setAttribute("x", x); tD.setAttribute("y", y - 10); tD.setAttribute("text-anchor", "middle"); tD.setAttribute("font-size", "11"); tD.setAttribute("font-weight", "950"); tD.setAttribute("fill", dTColor); tD.textContent = d.dT; svgT.appendChild(tD);
-                        const tH = document.createElementNS("http://www.w3.org/2000/svg", "text"); tH.setAttribute("x", x); tH.setAttribute("y", y + 18); tH.setAttribute("text-anchor", "middle"); tH.setAttribute("font-size", "10.5"); tH.setAttribute("font-weight", "950"); tH.setAttribute("fill", safeHoursColor); tH.textContent = d.safe; svgT.appendChild(tH);
-                    } else if (dir !== 'none') {
-                        const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y + (dir==='up'?-10:16)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "11"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", color); t.textContent = d[key]; svgT.appendChild(t);
+                    const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); 
+                    c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); 
+                    c.setAttribute("fill", color); svgT.appendChild(c);
+                    if (dir !== 'none') {
+                        const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                        t.setAttribute("x", x); 
+                        t.setAttribute("y", y + (dir==='up'?-10:16)); 
+                        t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "11"); 
+                        t.setAttribute("font-weight", "950"); t.setAttribute("fill", color); 
+                        t.textContent = d[key]; svgT.appendChild(t);
                     }
                 });
-                const l = document.createElementNS("http://www.w3.org/2000/svg", "path"); l.setAttribute("d", p); l.setAttribute("stroke", color); l.setAttribute("stroke-width", "3"); l.setAttribute("fill", "none"); l.setAttribute("opacity", dash?"0.5":"0.6"); if(dash) l.setAttribute("stroke-dasharray","4,2"); svgT.appendChild(l);
+                const l = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
+                l.setAttribute("d", p); l.setAttribute("stroke", color); 
+                l.setAttribute("stroke-width", "3"); l.setAttribute("fill", "none"); 
+                l.setAttribute("opacity", dash?"0.5":"0.6"); 
+                if(dash) l.setAttribute("stroke-dasharray","4,2"); 
+                svgT.appendChild(l);
             };
-            drawTL('hi', '#f97316', 'up'); drawTL('lo', '#2563eb', 'down'); drawTL('dp', '#06b6d4', 'none', true); drawTL('dT', '#7e22ce', 'none');
+            // Draw the three temperature trend lines.
+            // - Hi (orange, solid) with labels ABOVE
+            // - Lo (blue, solid) with labels BELOW
+            // - DewPt (cyan, dashed) — labels handled separately below to avoid colliding with Lo labels
+            drawTL('hi', '#f97316', 'up');
+            drawTL('lo', '#2563eb', 'down');
+            drawTL('dp', '#06b6d4', 'none', true);
+            
+            // Dew point value labels: render with smaller font, placed close to the dashed line.
+            // In tropical climate dew point ≈ Lo temp, so labels could collide. We place dew point
+            // labels slightly OFFSET from the line (above when dp > lo, otherwise below).
+            // This way users can read both values even when lines are close.
+            days.forEach((d, i) => {
+                const x = columnCenters[i];
+                const yDP = getTY(d.dp);
+                const yLo = getTY(d.lo);
+                // If dp is above lo (lower y), place label above line; otherwise below
+                const dpLabelY = yDP < yLo ? yDP - 7 : yDP + 12;
+                const tdp = document.createElementNS("http://www.w3.org/2000/svg", "text");
+                tdp.setAttribute("x", x);
+                tdp.setAttribute("y", dpLabelY);
+                tdp.setAttribute("text-anchor", "middle");
+                tdp.setAttribute("font-size", "9.5");
+                tdp.setAttribute("font-weight", "800");
+                tdp.setAttribute("fill", "#06b6d4");
+                tdp.setAttribute("opacity", "0.95");
+                tdp.textContent = d.dp;
+                svgT.appendChild(tdp);
+            });
+            
+            // DeltaT (8AM) + Safe Hours: NOT a temperature line — these are separate metrics
+            // shown as numbers anchored BELOW the Lo line. The Lo line itself acts as a visual
+            // anchor; we don't draw a redundant DeltaT line on top (which previously confused
+            // users into thinking it was another temperature curve).
+            // Color rules:
+            //   DeltaT: purple if 2.0-8.0 (safe spray window), red otherwise
+            //   Safe Hours: green if >0 safe hours, red if zero
+            days.forEach((d, i) => {
+                const x = columnCenters[i];
+                // Anchor below the Lo line. We match the visual position the original purple-line
+                // version had: DeltaT number at Lo+35px, Safe Hours at Lo+53px.
+                const loY = getTY(d.lo);
+                const isSafeDeltaT = typeof d.dT === 'number' && d.dT >= 2.0 && d.dT <= 8.0;
+                const dTColor = isSafeDeltaT ? "#7e22ce" : "#ef4444";
+                const safeHoursColor = d.safe > 0 ? "#166534" : "#ef4444";
+                
+                const tD = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                tD.setAttribute("x", x); tD.setAttribute("y", loY + 35); 
+                tD.setAttribute("text-anchor", "middle"); tD.setAttribute("font-size", "11"); 
+                tD.setAttribute("font-weight", "950"); tD.setAttribute("fill", dTColor); 
+                tD.textContent = (typeof d.dT === 'number') ? d.dT : '--'; 
+                svgT.appendChild(tD);
+                
+                const tH = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                tH.setAttribute("x", x); tH.setAttribute("y", loY + 53); 
+                tH.setAttribute("text-anchor", "middle"); tH.setAttribute("font-size", "10.5"); 
+                tH.setAttribute("font-weight", "950"); tH.setAttribute("fill", safeHoursColor); 
+                tH.textContent = d.safe; 
+                svgT.appendChild(tH);
+            });
             let ppP = ""; days.forEach((d, i) => {
                 // Rain Prob: y range from 20 (top, 100% line) to 62 (bottom, 0%) — fits 70px row
                 const x = columnCenters[i], y = 20 + (1 - d.pp/100)*42; ppP += (i===0?"M ":" L ")+x+" "+y;
