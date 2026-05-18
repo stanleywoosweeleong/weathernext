@@ -2829,7 +2829,23 @@
             document.getElementById(`row-temp-combined-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
             document.getElementById(`row-wind-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="text-[10px] font-black">${d.w2m}</div><div style="transform:rotate(${d.wd+180}deg);margin:3px 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-slate-400"><path d="M12 2L19 21L12 17L5 21L12 2Z"/></svg></div><div class="text-[9px] font-black ${d.wg>=25?'text-orange-600':'text-slate-400'}">${d.wg}</div></div>`).join('');
             document.getElementById(`row-wvet-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="wvet-traffic-light ${d.wvet.color}"></div><span class="text-[9px] font-black text-slate-500 mt-1">${d.wvet.val}</span></div>`).join('');
-            const ren = (r, k) => { document.getElementById(r).innerHTML = days.map(d => `<div class="info-data-cell">${r.includes('row-cl-')?`<div class="flex flex-col items-center"><span>${d[k]}</span><div class="pictogram-stack">${[1,2,3,4].map(b=>`<div class="pictogram-block ${b<=Math.round(d[k]/25)?'active':''}"></div>`).join('')}</div>${d.cape>=1500 && d.pp>=70?`<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>`:''}${(k==='cl' && d.visibilityFlag)?`<div class="fog-badge ${d.visibilityFlag==='HAZE'?'haze-badge':''}">${d.visibilityFlag}</div>`:''}</div>` : ''}</div>`).join(''); };
+            // CB RISK rendering rules (v1.0.61):
+            // Cumulonimbus clouds are HIGH-altitude (tower from low up to 12km+). They are NOT a 
+            // low-cloud phenomenon. Show the badge ONLY in the high-cloud row, and require
+            // actual mid+high cloud presence in addition to CAPE and rain probability.
+            const ren = (r, k) => { 
+                document.getElementById(r).innerHTML = days.map(d => {
+                    if (!r.includes('row-cl-')) return `<div class="info-data-cell"></div>`;
+                    const value = d[k];
+                    const blocks = [1,2,3,4].map(b => `<div class="pictogram-block ${b<=Math.round(value/25)?'active':''}"></div>`).join('');
+                    // CB Risk only on HIGH cloud row, AND requires both mid and high clouds present
+                    const showCB = (k === 'ch') && d.cape >= 1500 && d.pp >= 70 && d.cm >= 40 && d.ch >= 40;
+                    const cbBadge = showCB ? `<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>` : '';
+                    // FOG/HAZE only on low cloud row (already correct)
+                    const fogBadge = (k === 'cl' && d.visibilityFlag) ? `<div class="fog-badge ${d.visibilityFlag==='HAZE'?'haze-badge':''}">${d.visibilityFlag}</div>` : '';
+                    return `<div class="info-data-cell"><div class="flex flex-col items-center"><span>${value}</span><div class="pictogram-stack">${blocks}</div>${cbBadge}${fogBadge}</div></div>`;
+                }).join('');
+            };
             ren(`row-cl-high-${id}`, 'ch'); ren(`row-cl-mid-${id}`, 'cm'); ren(`row-cl-low-${id}`, 'cl');
             
             // New Sky Tint Row Rendering
