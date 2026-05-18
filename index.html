@@ -2900,7 +2900,10 @@
                 // Rain Prob: y range from 22 (top, 100% line) to 70 (bottom, 0%) — fits 80px row
                 const x = columnCenters[i], y = 22 + (1 - d.pp/100)*48; ppP += (i===0?"M ":" L ")+x+" "+y;
                 const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", "#1e3a8a"); svgPP.appendChild(c);
-                const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?14:-8)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
+                // Skip first 2 column labels (behind the "Rain Prob (%)" row label overlay)
+                if (i >= 2) {
+                    const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?14:-8)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
+                }
             });
             const ppl = document.createElementNS("http://www.w3.org/2000/svg", "path"); ppl.setAttribute("d", ppP); ppl.setAttribute("stroke", "#1e3a8a"); ppl.setAttribute("stroke-width", "3"); ppl.setAttribute("fill", "none"); ppl.setAttribute("opacity", "0.6"); svgPP.appendChild(ppl);
             // RAINFALL (separate row, height=60). Bars anchored to bottom.
@@ -2913,7 +2916,7 @@
                 r.setAttribute("width", 10); r.setAttribute("height", h); 
                 r.setAttribute("fill", "#1e3a8a"); r.setAttribute("rx", "2"); 
                 svgVV.appendChild(r);
-                if (d.rv > 0) {
+                if (d.rv > 0 && i >= 1) {
                     const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
                     txt.setAttribute("x", x+5); 
                     txt.setAttribute("y", RV_BASELINE - h - 2);
@@ -2925,6 +2928,8 @@
             
             // ET0 (separate row, height=50). Line plot — y range stays below the row label.
             // Row label occupies y=4 to ~y=20. So ET0 plot uses y=24 (top) to y=46 (bottom).
+            // Skip numeric labels for the first 2 columns since they sit behind the row label.
+            // The line itself still draws through all 14 points so the trend is visible.
             if (svgET) {
                 const maxET = Math.max(...days.map(d => d.et), 1);
                 const ET_BASELINE = 46, ET_MAX_HEIGHT = 22;  // line from y=46 up to y=24
@@ -2934,7 +2939,9 @@
                     const y = ET_BASELINE - (d.et / maxET) * ET_MAX_HEIGHT;
                     etP += (i===0 ? "M " : " L ") + x + " " + y;
                     
-                    if (d.et > 0) {
+                    // Only draw numeric label if column is NOT behind the row label overlay
+                    // (the label is at left:0 and ~70px wide, so columns 0-1 should skip labels)
+                    if (d.et > 0 && i >= 2) {
                         const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
                         txt.setAttribute("x", x); 
                         txt.setAttribute("y", y - 4);
