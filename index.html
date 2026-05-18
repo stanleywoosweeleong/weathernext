@@ -309,6 +309,63 @@
             height: 12px;
         }
         
+        /* Help icon next to the temp row label — clickable explainer trigger */
+        .help-icon-btn {
+            display: inline-flex; align-items: center; justify-content: center;
+            width: 13px; height: 13px; border-radius: 50%;
+            background: #e2e8f0; color: #475569;
+            font-size: 9px; font-weight: 900; line-height: 1;
+            margin-left: 4px; cursor: pointer;
+            pointer-events: auto; /* override parent's pointer-events:none */
+            transition: background 0.15s, color 0.15s;
+            vertical-align: top; user-select: none;
+        }
+        .help-icon-btn:hover { background: #7e22ce; color: white; }
+        .help-icon-btn.active { background: #7e22ce; color: white; }
+        
+        /* Help card — appears inline above the chart when icon is tapped */
+        .help-card {
+            position: relative; z-index: 30;
+            margin: 16px 8px 8px; padding: 12px;
+            background: #faf5ff; border: 1px solid #d8b4fe;
+            border-radius: 8px;
+            font-size: 12px; line-height: 1.5;
+            color: #475569;
+            max-height: 0; overflow: hidden; padding-top: 0; padding-bottom: 0; margin-top: 0;
+            border-width: 0;
+            transition: max-height 0.25s ease, padding 0.25s ease, margin-top 0.25s ease, border-width 0.1s;
+        }
+        .help-card.open {
+            max-height: 500px;
+            padding-top: 12px; padding-bottom: 12px;
+            margin-top: 16px;
+            border-width: 1px;
+        }
+        .help-card-section { margin-bottom: 10px; }
+        .help-card-section:last-child { margin-bottom: 0; }
+        .help-card-title {
+            font-size: 12px; font-weight: 800; margin-bottom: 4px;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .help-card-title-dot {
+            display: inline-block; width: 8px; height: 8px; border-radius: 50%;
+        }
+        .help-card-pills { display: flex; gap: 6px; margin-top: 6px; }
+        .help-card-pill {
+            flex: 1; padding: 6px 8px; border-radius: 6px;
+            font-size: 11px; text-align: center;
+        }
+        .help-card-pill.safe { background: #f3e8ff; color: #6b21a8; }
+        .help-card-pill.risk { background: #fee2e2; color: #991b1b; }
+        .help-card-pill.green { background: #dcfce7; color: #14532d; }
+        .help-card-close {
+            position: absolute; top: 6px; right: 8px;
+            font-size: 16px; font-weight: 700; color: #94a3b8;
+            cursor: pointer; line-height: 1; padding: 4px;
+            user-select: none;
+        }
+        .help-card-close:hover { color: #475569; }
+        
         .pictogram-stack { display: flex; flex-direction: column; gap: 1.5px; width: 12px; margin-top: 2px; }
         .pictogram-block { height: 1.8px; border-radius: 1px; background: #f1f5f9; }
         .pictogram-block.active { background: #1e3a8a; }
@@ -1396,6 +1453,114 @@
             safeSet(PREF_MODEL_KEY, activeModel); updateModelUI();
             saveUserData();
             if (currentDisplayedIds.length > 0) fetchMultiDetailWeather(currentDisplayedIds); else fetchLandingWeather();
+        };
+
+        // ===== HELP CARD: DeltaT & Safe Hours explainer =====
+        // Tapping the "?" icon next to the temp row label expands an inline
+        // explainer card. Content is multilingual based on the location's lang.
+        const HELP_CARD_CONTENT = {
+            en: {
+                deltatTitle: "DeltaT (8AM)",
+                deltatBody: "Morning air temperature minus dew point. Tells you whether spray droplets will evaporate before reaching the leaf surface.",
+                deltatSafe: "2.0 – 8.0  Safe",
+                deltatRisk: "< 2.0 or > 8.0  Risky",
+                safeTitle: "Safe Hours",
+                safeBody: "Hours that day when ALL spray conditions (wind, humidity, DeltaT, crop stress) are within safe range. The actual sprayable window.",
+                safeGreen: "≥ 1 hr  Plan a spray",
+                safeRed: "0 hrs  Skip today",
+                close: "Close"
+            },
+            zh: {
+                deltatTitle: "温湿差 DeltaT (8时)",
+                deltatBody: "清晨气温减去露点温度。判断喷洒药水是否会在到达叶面前蒸发流失。",
+                deltatSafe: "2.0 – 8.0  安全",
+                deltatRisk: "< 2.0 或 > 8.0  风险",
+                safeTitle: "安全时数 Safe Hours",
+                safeBody: "当日所有喷洒条件（风、湿度、温湿差、作物压力）都在安全范围内的小时数。这是真正可喷洒的窗口。",
+                safeGreen: "≥ 1 小时  可安排喷洒",
+                safeRed: "0 小时  今日不宜",
+                close: "关闭"
+            },
+            ms: {
+                deltatTitle: "DeltaT (8 pagi)",
+                deltatBody: "Suhu udara pagi tolak titik embun. Menunjukkan sama ada titisan semburan akan menguap sebelum sampai ke daun.",
+                deltatSafe: "2.0 – 8.0  Selamat",
+                deltatRisk: "< 2.0 atau > 8.0  Berisiko",
+                safeTitle: "Jam Selamat (Safe Hours)",
+                safeBody: "Jumlah jam dalam sehari apabila SEMUA syarat semburan (angin, kelembapan, DeltaT, tekanan tanaman) berada dalam julat selamat.",
+                safeGreen: "≥ 1 jam  Boleh sembur",
+                safeRed: "0 jam  Elakkan hari ini",
+                close: "Tutup"
+            },
+            ta: {
+                deltatTitle: "DeltaT (காலை 8 மணி)",
+                deltatBody: "காலை வெப்பநிலை கழித்து பனிப்புள்ளி. தெளிப்பு துளிகள் இலையை அடைவதற்கு முன் ஆவியாகுமா என்பதைக் காட்டுகிறது.",
+                deltatSafe: "2.0 – 8.0  பாதுகாப்பானது",
+                deltatRisk: "< 2.0 அல்லது > 8.0  ஆபத்து",
+                safeTitle: "பாதுகாப்பான மணிநேரங்கள்",
+                safeBody: "ஒரு நாளில் அனைத்து தெளிப்பு நிலைமைகளும் (காற்று, ஈரப்பதம், DeltaT, பயிர் அழுத்தம்) பாதுகாப்பான வரம்பில் இருக்கும் மணிநேரங்கள்.",
+                safeGreen: "≥ 1 மணி  தெளிப்பு திட்டமிடலாம்",
+                safeRed: "0 மணி  இன்று தவிர்க்கவும்",
+                close: "மூடு"
+            },
+            my: {
+                deltatTitle: "DeltaT (နံနက် ၈ နာရီ)",
+                deltatBody: "နံနက်ပိုင်း လေထုအပူချိန်ကို ဆီးနှင်းကိုက်အပူချိန်နှင့် နှုတ်ထားသည်။ ဆေးပက်ဖျန်းချိန် ဆေးအစက်များ အရွက်ပေါ်မရောက်ခင် အငွေ့ပျံသွားမည်ဟုတ်/မဟုတ် ပြသသည်။",
+                deltatSafe: "2.0 – 8.0  လုံခြုံ",
+                deltatRisk: "< 2.0 သို့ > 8.0  အန္တရာယ်ရှိ",
+                safeTitle: "လုံခြုံသော နာရီများ",
+                safeBody: "ဆေးပက်ဖျန်းခြင်းအတွက် အခြေအနေအားလုံး (လေ၊ စိုထိုင်းဆ၊ DeltaT၊ သီးနှံဖိစီးမှု) လုံခြုံသော အပိုင်းအခြားအတွင်း ရှိနေသည့် တစ်ရက်အတွင်း နာရီများ။",
+                safeGreen: "≥ ၁ နာရီ  ဆေးပက်နိုင်",
+                safeRed: "၀ နာရီ  ယနေ့ ရှောင်ပါ",
+                close: "ပိတ်"
+            }
+        };
+        
+        window.toggleHelpCard = (id) => {
+            const card = document.getElementById(`help-card-temp-${id}`);
+            const icon = document.getElementById(`help-icon-temp-${id}`);
+            if (!card) return;
+            const isOpen = card.classList.contains('open');
+            if (isOpen) {
+                card.classList.remove('open');
+                icon.classList.remove('active');
+                // Clear inner content after the closing animation to free DOM
+                setTimeout(() => { if (!card.classList.contains('open')) card.innerHTML = ''; }, 250);
+                return;
+            }
+            // Populate with localized content
+            const lang = getLang(id);
+            const t = HELP_CARD_CONTENT[lang] || HELP_CARD_CONTENT.en;
+            card.innerHTML = `
+                <span class="help-card-close" onclick="window.toggleHelpCard('${id}')" aria-label="${t.close}">×</span>
+                <div class="help-card-section">
+                    <div class="help-card-title">
+                        <span class="help-card-title-dot" style="background:#7e22ce;"></span>
+                        <span style="color:#7e22ce;">${t.deltatTitle}</span>
+                    </div>
+                    <div style="margin-bottom:6px;">${t.deltatBody}</div>
+                    <div class="help-card-pills">
+                        <div class="help-card-pill safe">${t.deltatSafe}</div>
+                        <div class="help-card-pill risk">${t.deltatRisk}</div>
+                    </div>
+                </div>
+                <div class="help-card-section">
+                    <div class="help-card-title">
+                        <span class="help-card-title-dot" style="background:#166534;"></span>
+                        <span style="color:#166534;">${t.safeTitle}</span>
+                    </div>
+                    <div style="margin-bottom:6px;">${t.safeBody}</div>
+                    <div class="help-card-pills">
+                        <div class="help-card-pill green">${t.safeGreen}</div>
+                        <div class="help-card-pill risk">${t.safeRed}</div>
+                    </div>
+                </div>
+            `;
+            // Open with next animation frame so transition runs
+            requestAnimationFrame(() => {
+                card.classList.add('open');
+                icon.classList.add('active');
+            });
         };
 
         // Helper to get localized crop name
@@ -2752,7 +2917,7 @@
 
                 <div class="info-row" id="row-dates-top-${id}"></div>
                 <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)</div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 24px;"></div></div>
-                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hrs</span></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
+                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hours</span><span class="help-icon-btn" id="help-icon-temp-${id}" onclick="window.toggleHelpCard('${id}')" title="What is DeltaT and Safe Hours?">?</span></div><div id="help-card-temp-${id}" class="help-card"></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
                 <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
