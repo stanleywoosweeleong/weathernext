@@ -3207,13 +3207,15 @@
                     svgT.appendChild(l);
                 }
             };
-            // Draw three visible temp lines: Hi (orange, labels up), Lo (blue, labels down),
-            // DewPt (cyan dashed, no labels — trend line only).
-            // Plus an INVISIBLE Delta T "line" that drives the DeltaT/SafeHours number positioning.
+            // Draw all four trend lines:
+            //   Hi (orange, solid, labels above)
+            //   Lo (blue, solid, labels below)
+            //   DewPt (cyan dashed, no labels — trend only)
+            //   DeltaT (purple solid) — line is drawn AND positioning anchors DeltaT/SafeHours numbers
             drawTL('hi', '#f97316', 'up'); 
             drawTL('lo', '#2563eb', 'down'); 
             drawTL('dp', '#06b6d4', 'none', true); 
-            drawTL('dT', '#7e22ce', 'none', false, true);  // hideLine=true: positioning only
+            drawTL('dT', '#7e22ce', 'none');  // visible purple Delta T trend line
             let ppP = ""; days.forEach((d, i) => {
                 // Rain Prob: y range from 20 (top, 100% line) to 62 (bottom, 0%) — fits 70px row
                 const x = columnCenters[i], y = 20 + (1 - d.pp/100)*42; ppP += (i===0?"M ":" L ")+x+" "+y;
