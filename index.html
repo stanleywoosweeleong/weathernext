@@ -2752,8 +2752,8 @@
 
                 <div class="info-row" id="row-dates-top-${id}"></div>
                 <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)</div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 24px;"></div></div>
-                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hrs</span></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
-                <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
+                <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hrs</span></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 150px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="150"></svg></div>
+                <div class="relative bg-slate-50/10"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk</div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)</div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:70px;padding-top:18px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="70"></svg></div>
@@ -3148,11 +3148,12 @@
             const svgLeft = (dateRow ? dateRow.offsetLeft - svgT.parentElement.offsetLeft : 0);
             svgT.style.left = svgLeft + 'px'; svgPP.style.left = svgLeft + 'px'; svgVV.style.left = svgLeft + 'px'; if (svgET) svgET.style.left = svgLeft + 'px';
             // Y-axis range covers only the three actual temperature lines (Hi, Lo, DewPt).
-            // The temp lines occupy a constrained vertical band (y=35 to y=140), leaving the
-            // bottom of the 200px SVG (y=150-200) clear for DeltaT and SafeHours annotations.
+            // The temp lines occupy a constrained vertical band (y=28 to y=98), leaving
+            // y=105-150 clear for DeltaT (y=120) and SafeHours (y=138) annotation rows.
+            // Total row height 150px — compact layout matching the rest of the chart.
             const allT = days.flatMap(d => [d.lo, d.hi, d.dp]);
             if (allT.length === 0) return;  // Defensive: nothing to draw if days is empty
-            const minT = safeMin(allT, 0), maxT = safeMax(allT, 30), rngT = (maxT-minT)||1, getTY = (v) => 35 + (1 - (v - minT) / rngT) * 105;
+            const minT = safeMin(allT, 0), maxT = safeMax(allT, 30), rngT = (maxT-minT)||1, getTY = (v) => 28 + (1 - (v - minT) / rngT) * 70;
             // drawTL draws a temperature trend line with circles and value labels.
             // dir: 'up' = label above point, 'down' = label below, 'none' = no value labels
             // dash: true for dashed style (used for dew point)
@@ -3193,17 +3194,11 @@
             // sufficient to show dew point patterns without cluttering the chart.
             // The legend at the top of the row identifies the line by color.
             
-            // DeltaT (8AM) + Safe Hours: NOT a temperature line — these are separate metrics
-            // shown as numbers in a dedicated annotation strip at the bottom of the SVG.
-            // The Hi/Lo/DewPt lines occupy y=40 to y=160 (set by getTY's mapping).
-            // We use FIXED pixel positions for the annotations so they stay inside the 200px SVG
-            // regardless of how the temperature lines scale — preventing the row from spilling
-            // into the wind row below it.
-            // Color rules:
-            //   DeltaT: purple if 2.0-8.0 (safe spray window), red otherwise
-            //   Safe Hours: green if >0 safe hours, red if zero
-            const DT_Y = 175;       // Fixed y position for Delta T number row
-            const SAFE_Y = 193;     // Fixed y position for Safe Hours number row
+            // DeltaT (8AM) + Safe Hours: annotation rows in the bottom strip of the SVG.
+            // Fixed pixel positions ensure they stay inside the 150px row regardless of
+            // how the temperature lines scale day to day.
+            const DT_Y = 120;       // Fixed y position for Delta T number row
+            const SAFE_Y = 138;     // Fixed y position for Safe Hours number row
             days.forEach((d, i) => {
                 const x = columnCenters[i];
                 const isSafeDeltaT = typeof d.dT === 'number' && d.dT >= 2.0 && d.dT <= 8.0;
