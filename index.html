@@ -1594,7 +1594,11 @@
                      'precipitation_probability','precipitation',
                      'cloudcover_low','cloudcover_mid','cloudcover_high',
                      'et0_fao_evapotranspiration',
-                     'windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m',
+                     // Wind: request BOTH gust naming conventions for safety. Open-Meteo currently
+                     // documents wind_gusts_10m as canonical (with underscore), but older clients use
+                     // windgusts_10m (no underscore). Both should be accepted by /v1/forecast.
+                     // Requesting both ensures gust data populates regardless of which form ECMWF model uses.
+                     'windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m','wind_gusts_10m',
                      'vapour_pressure_deficit','cape','convective_inhibition','visibility',
                      // NEW: soil
                      'soil_moisture_0_to_1cm','soil_moisture_1_to_3cm','soil_moisture_3_to_9cm','soil_moisture_9_to_27cm','soil_moisture_27_to_81cm',
@@ -2778,7 +2782,7 @@
                 'temperature_2m','dew_point_2m','precipitation_probability','precipitation',
                 'cloudcover_high','cloudcover_mid','cloudcover_low',
                 'et0_fao_evapotranspiration',
-                'windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m',
+                'windspeed_10m','windspeed_2m','winddirection_10m','windgusts_10m','wind_gusts_10m',
                 'vapour_pressure_deficit','cape','visibility',
                 // NEW v1.0.52 agronomic variables
                 'soil_moisture_0_to_1cm','soil_moisture_1_to_3cm','soil_moisture_3_to_9cm','soil_moisture_9_to_27cm','soil_moisture_27_to_81cm',
@@ -2862,24 +2866,34 @@
                     const w10m_arr = win('windspeed_10m', 6, 18);
                     const dailyW2m = w2m_arr.length ? avg(w2m_arr) : avg(w10m_arr);
                     
-                    // === GUST HANDLING (v1.0.66 fix) ===
-                    // ECMWF IFS 0.25° often returns null/0 for windgusts_10m. When that happens,
-                    // estimate using a gust factor based on sustained 10m wind. Inland Malaysia
-                    // typical gust factor is ~1.5-1.8x (lower over flat terrain, higher in hills).
-                    // We use 1.7 as a reasonable middle ground per WMO recommendations.
-                    // The flag tells the UI to render estimated values differently.
-                    const apiGusts = win('windgusts_10m', 0, 23);
-                    const apiGustMax = max0(apiGusts);
+                    // === GUST HANDLING (v1.0.69) ===
+                    // Open-Meteo accepts both legacy 'windgusts_10m' and current 'wind_gusts_10m' as
+                    // variable names — but they're returned as separate keys in the response. We try
+                    // both and take whichever has real data.
+                    // Diagnostic log fires once per location on first day so DevTools console shows
+                    // exactly what came back from the API for the user-selected model.
+                    const apiGustsLegacy = win('windgusts_10m', 0, 23);
+                    const apiGustsNew = win('wind_gusts_10m', 0, 23);
+                    const apiGustMaxLegacy = max0(apiGustsLegacy);
+                    const apiGustMaxNew = max0(apiGustsNew);
+                    // Prefer whichever returned real data
+                    const apiGustMax = Math.max(apiGustMaxLegacy, apiGustMaxNew);
                     const w10mPeak = max0(win('windspeed_10m', 0, 23));
                     let dailyWG, gustIsEstimated;
                     if (apiGustMax > 0) {
                         dailyWG = apiGustMax;
                         gustIsEstimated = false;
                     } else {
-                        // API gave no gust data — estimate from peak 10m wind speed.
-                        // Floor at sustained wind + 3 km/h since gusts should always exceed sustained.
+                        // No real gust data → estimate using gust factor
                         dailyWG = Math.max(w10mPeak * 1.7, w10mPeak + 3);
                         gustIsEstimated = true;
+                    }
+                    // Diagnostic: log on the first day of forecast so console shows what API returned
+                    if (i === 0) {
+                        console.log(`[Gust Diag] loc=${id} model=${activeModel} ` +
+                            `legacy_max=${apiGustMaxLegacy} new_max=${apiGustMaxNew} ` +
+                            `wind10peak=${w10mPeak} resolved=${dailyWG.toFixed(1)} estimated=${gustIsEstimated} ` +
+                            `legacy_sample=[${apiGustsLegacy.slice(0,6).join(',')}] new_sample=[${apiGustsNew.slice(0,6).join(',')}]`);
                     }
                     
                     // Wind direction: use direction at the hour of peak afternoon wind
@@ -2942,8 +2956,11 @@
                     // WVET: representative daily stress level using peak afternoon conditions
                     // (worst stress hour matters more than mean for crop-stress assessment)
                     const wvetWind = avg(win('windspeed_2m', 12, 16)) || avg(win('windspeed_10m', 12, 16));
-                    // Use same gust fallback strategy as the main wind row
-                    const wvetGustApi = max0(win('windgusts_10m', 12, 16));
+                    // Use same dual-name strategy as the main wind row
+                    const wvetGustApi = Math.max(
+                        max0(win('windgusts_10m', 12, 16)),
+                        max0(win('wind_gusts_10m', 12, 16))
+                    );
                     const wvetGust = wvetGustApi > 0 ? wvetGustApi : Math.max(wvetWind * 1.7, wvetWind + 3);
                     const wvet = calculateWVET(wvetWind, dailyVPD, etS, wvetGust, crop, dT8);
                     
