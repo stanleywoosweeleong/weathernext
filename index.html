@@ -1798,6 +1798,19 @@
                 card.classList.remove('open');
                 icon.classList.remove('active');
                 card.innerHTML = '';  // free DOM immediately since no animation
+                // Temp chart special: restore the chart's info-row, SVG, and wind row.
+                // When the help card opened, we hid the info-row + SVG (they would be a
+                // phantom 200px gap below the help card) and removed the wind row's
+                // -38px overlap margin (it's only useful when overlapping the chart's
+                // unused tail space; with the chart hidden, it would overlap the help card).
+                if (rowType === 'temp') {
+                    const svg = document.getElementById(`trend-layer-temp-${id}`);
+                    const infoRow = document.getElementById(`row-temp-combined-${id}`);
+                    const windContainer = document.getElementById(`wind-row-container-${id}`);
+                    if (svg) svg.style.display = '';
+                    if (infoRow) infoRow.style.display = '';
+                    if (windContainer) windContainer.style.marginTop = '';
+                }
                 return;
             }
             const lang = getLang(id);
@@ -1931,6 +1944,16 @@
             card.innerHTML = `<span class="help-card-close" onclick="window.toggleHelpCard('${id}', '${rowType}')" aria-label="${t.close}">×</span>${bodyHTML}`;
             card.classList.add('open');
             icon.classList.add('active');
+            // Temp chart special: hide the chart's info-row + SVG, AND remove the wind
+            // row's -38px overlap margin (see explanatory comment in the close branch).
+            if (rowType === 'temp') {
+                const svg = document.getElementById(`trend-layer-temp-${id}`);
+                const infoRow = document.getElementById(`row-temp-combined-${id}`);
+                const windContainer = document.getElementById(`wind-row-container-${id}`);
+                if (svg) svg.style.display = 'none';
+                if (infoRow) infoRow.style.display = 'none';
+                if (windContainer) windContainer.style.marginTop = '0';
+            }
         };
 
         // Helper to get localized crop name
@@ -3288,7 +3311,7 @@
                 <div class="info-row" id="row-dates-top-${id}"></div>
                 <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color: #b45309;">WVET Crop Stress (Risk)<span class="help-icon-btn" id="help-icon-wvet-${id}" onclick="window.toggleHelpCard('${id}', 'wvet')" title="What is WVET?">?</span></div><div id="help-card-wvet-${id}" class="help-card"></div><div class="info-row" id="row-wvet-${id}" style="min-height: 60px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hours</span><span class="help-icon-btn" id="help-icon-temp-${id}" onclick="window.toggleHelpCard('${id}', 'temp')" title="What is DeltaT and Safe Hours?">?</span></div><div id="help-card-temp-${id}" class="help-card"></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
-                <div class="relative bg-slate-50/10" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
+                <div class="relative bg-slate-50/10" id="wind-row-container-${id}" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk<span class="help-icon-btn" id="help-icon-cloud-${id}" onclick="window.toggleHelpCard('${id}', 'cloud')" title="What is Cloud % and CB Risk?">?</span></div><div id="help-card-cloud-${id}" class="help-card"></div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)<span class="help-icon-btn" id="help-icon-sky-${id}" onclick="window.toggleHelpCard('${id}', 'sky')" title="What is Sky Tint?">?</span></div><div id="help-card-sky-${id}" class="help-card"></div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:70px;padding-top:18px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="70"></svg></div>
