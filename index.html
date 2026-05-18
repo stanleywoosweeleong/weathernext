@@ -305,6 +305,7 @@
         @keyframes cb-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 
         .fog-badge { background: #cbd5e1; color: #475569; font-size: 7px; font-weight: 900; padding: 1px 3px; border-radius: 3px; margin-top: 1px; border: 1px solid #94a3b8; display: inline-block; }
+        .haze-badge { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
 
         .trend-layer { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 20; width: 100%; }
 
@@ -2551,6 +2552,36 @@
                     const current8AmT = map.temperature_2m?.[k8], current8AmDP = map.dew_point_2m?.[k8];
                     const dT8 = (current8AmT!==undefined && current8AmDP!==undefined) ? Math.round((current8AmT - current8AmDP)*10)/10 : null;
                     const etS = map.et0_fao_evapotranspiration?.slice(start, start+24).reduce((a,b)=>a+b,0) || 0;
+                    
+                    // ===== FOG / HAZE DETECTION =====
+                    // Sample 4 AM - 9 AM window when fog actually forms in Malaysia.
+                    // Decide between FOG (high humidity + low vis + calm) vs HAZE (low vis without humidity).
+                    let visibilityFlag = null;
+                    let minVisDawn = Infinity, minSpreadDawn = Infinity, sumWindDawn = 0, dawnSampleCount = 0;
+                    for (let h = 4; h <= 9; h++) {
+                        const idx = start + h;
+                        if (idx >= 336) break;
+                        const v = map.visibility?.[idx];
+                        const t = map.temperature_2m?.[idx];
+                        const dp = map.dew_point_2m?.[idx];
+                        const w = map.windspeed_2m?.[idx] ?? map.windspeed_10m?.[idx];
+                        if (v !== undefined) minVisDawn = Math.min(minVisDawn, v);
+                        if (t !== undefined && dp !== undefined) minSpreadDawn = Math.min(minSpreadDawn, t - dp);
+                        if (w !== undefined) { sumWindDawn += w; dawnSampleCount++; }
+                    }
+                    const avgWindDawn = dawnSampleCount > 0 ? sumWindDawn / dawnSampleCount : 999;
+                    if (minVisDawn < Infinity) {
+                        if (minVisDawn < 2000 && minSpreadDawn < 3 && avgWindDawn < 12) {
+                            visibilityFlag = 'FOG';
+                        } else if (minVisDawn < 5000 && minSpreadDawn >= 3) {
+                            visibilityFlag = 'HAZE';
+                        } else if (minVisDawn < 2000 && minSpreadDawn < 3) {
+                            // Low vis + humid but windy — still likely fog/mist
+                            visibilityFlag = 'FOG';
+                        }
+                    }
+                    // ===== END FOG / HAZE =====
+                    
                     let safe = 0;
                     for(let h=0; h<24; h++){
                         const idx = start + h; if(idx < 336){
@@ -2568,6 +2599,7 @@
                         w2m: Math.round((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0)), wd: Math.round(map.winddirection_10m?.[start]||0), wg: Math.round(map.windgusts_10m?.[start]||0),
                         wvet: calculateWVET((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0), map.vapour_pressure_deficit?.[start]||0, etS, map.windgusts_10m?.[start]||0, crop, dT8), cape: map.cape?.[start]||0,
                         vis: map.visibility?.[start] ?? 10000,
+                        visibilityFlag,  // 'FOG', 'HAZE', or null
                         skyAM, skyPM
                     });
                 }
@@ -2578,7 +2610,7 @@
             document.getElementById(`row-temp-combined-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
             document.getElementById(`row-wind-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="text-[10px] font-black">${d.w2m}</div><div style="transform:rotate(${d.wd+180}deg);margin:3px 0"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor" class="text-slate-400"><path d="M12 2L19 21L12 17L5 21L12 2Z"/></svg></div><div class="text-[9px] font-black ${d.wg>=25?'text-orange-600':'text-slate-400'}">${d.wg}</div></div>`).join('');
             document.getElementById(`row-wvet-${id}`).innerHTML = days.map(d => `<div class="info-data-cell"><div class="wvet-traffic-light ${d.wvet.color}"></div><span class="text-[9px] font-black text-slate-500 mt-1">${d.wvet.val}</span></div>`).join('');
-            const ren = (r, k) => { document.getElementById(r).innerHTML = days.map(d => `<div class="info-data-cell">${r.includes('row-cl-')?`<div class="flex flex-col items-center"><span>${d[k]}</span><div class="pictogram-stack">${[1,2,3,4].map(b=>`<div class="pictogram-block ${b<=Math.round(d[k]/25)?'active':''}"></div>`).join('')}</div>${d.cape>=400 && d.pp>=40?`<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>`:''}${(k==='cl' && d.vis<2000 && d.w2m<12)?`<div class="fog-badge">FOG</div>`:''}</div>` : ''}</div>`).join(''); };
+            const ren = (r, k) => { document.getElementById(r).innerHTML = days.map(d => `<div class="info-data-cell">${r.includes('row-cl-')?`<div class="flex flex-col items-center"><span>${d[k]}</span><div class="pictogram-stack">${[1,2,3,4].map(b=>`<div class="pictogram-block ${b<=Math.round(d[k]/25)?'active':''}"></div>`).join('')}</div>${d.cape>=400 && d.pp>=40?`<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>`:''}${(k==='cl' && d.visibilityFlag)?`<div class="fog-badge ${d.visibilityFlag==='HAZE'?'haze-badge':''}">${d.visibilityFlag}</div>`:''}</div>` : ''}</div>`).join(''); };
             ren(`row-cl-high-${id}`, 'ch'); ren(`row-cl-mid-${id}`, 'cm'); ren(`row-cl-low-${id}`, 'cl');
             
             // New Sky Tint Row Rendering
