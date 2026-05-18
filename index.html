@@ -37,13 +37,16 @@
             display: flex;
             align-items: center;
             gap: 14px;
-            box-shadow: 0 12px 32px rgba(29, 78, 216, 0.4);
+            /* Shadow moved to .show state — was leaking color tint into viewport (v1.0.59 fix) */
             z-index: 9000;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
             max-width: 92%;
             border: 1px solid rgba(255, 255, 255, 0.15);
         }
-        #pwa-install-banner.show { transform: translateX(-50%) translateY(0); }
+        #pwa-install-banner.show { 
+            transform: translateX(-50%) translateY(0);
+            box-shadow: 0 12px 32px rgba(29, 78, 216, 0.4);
+        }
         #pwa-install-banner .pwa-icon {
             width: 36px; height: 36px;
             background: white; border-radius: 9px;
@@ -87,14 +90,17 @@
             padding: 8px 8px 8px 16px;
             border-radius: 99px;
             display: flex; align-items: center; gap: 10px;
-            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+            /* Shadow moved to .show state — was leaking green tint into viewport even when banner was off-screen (v1.0.59 fix) */
             z-index: 9001;
             font-size: 12px; font-weight: 800;
-            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.4s ease;
             white-space: nowrap;
             max-width: calc(100vw - 32px);
         }
-        #pwa-update-banner.show { transform: translateX(-50%) translateY(0); }
+        #pwa-update-banner.show { 
+            transform: translateX(-50%) translateY(0);
+            box-shadow: 0 6px 20px rgba(5, 150, 105, 0.4);
+        }
         #pwa-update-banner button {
             background: white; color: #059669;
             font-weight: 900; font-size: 11px;
