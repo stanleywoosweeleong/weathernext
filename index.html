@@ -3974,11 +3974,18 @@
                 const files = []; for (const lid of currentDisplayedIds) {
                     const card = document.getElementById(`report-card-${lid}`); if (!card) continue;
                     
-                    // Enhanced html2canvas config
+                    // Enhanced html2canvas config.
+                    // Capture 16px wider than the card so the rightmost data (e.g. "1/6" date
+                    // text, last rainfall bar) has breathing room. The card stays its real width;
+                    // the extra 16px just becomes white space at the right edge of the image.
+                    // This avoids the iOS Safari/PWA edge case where html2canvas crops exactly
+                    // at offsetWidth and chops sub-pixel text overflow.
+                    const captureWidth = card.offsetWidth + 16;
                     const canvas = await html2canvas(card, { 
                         scale: 2, 
                         useCORS: true, 
                         backgroundColor: "#ffffff",
+                        width: captureWidth,
                         onclone: (clonedDoc) => {
                             // 0. HELP CARD CLEANUP (clone-only)
                             // Strip the .open class from every help card in the CLONE so the
