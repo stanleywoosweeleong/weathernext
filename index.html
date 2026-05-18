@@ -346,7 +346,7 @@
             background: #faf5ff; border: 1px solid #d8b4fe;
             border-radius: 8px;
             font-size: 12px; line-height: 1.5;
-            color: #475569;
+            color: #1e293b;  /* slate-800 for strong daylight readability */
             padding: 22px 12px 12px;  /* extra top room for the absolute close button */
             /* margin-top: 18px clears the absolutely-positioned row label
                (sits at top:2px, 12px tall = 14px occupied) plus 4px breathing room.
@@ -1825,24 +1825,24 @@
             if (rowType === 'temp') {
                 bodyHTML = `
                     <div class="help-card-section">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.whatYouSee}</div>
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.whatYouSee}</div>
                         <div style="margin-bottom:8px;">
                             <div style="font-weight:700; color:#7e22ce; margin-bottom:2px;">${dot('#7e22ce')}${t.trendLineLabel}</div>
-                            <div style="color:#475569; padding-left:13px;">${t.trendLineBody}</div>
+                            <div style="color:#1e293b; padding-left:13px;">${t.trendLineBody}</div>
                         </div>
                         <div style="margin-bottom:8px;">
                             <div style="font-weight:700; color:#ef4444; margin-bottom:2px;">${dot('#ef4444')}${t.redNumLabel}</div>
-                            <div style="color:#475569; padding-left:13px;">${t.redNumBody}</div>
+                            <div style="color:#1e293b; padding-left:13px;">${t.redNumBody}</div>
                         </div>
                         <div style="margin-bottom:0;">
                             <div style="font-weight:700; color:#166534; margin-bottom:2px;">${dot('#166534')}${t.greenNumLabel}</div>
-                            <div style="color:#475569; padding-left:13px;">${t.greenNumBody}</div>
-                            <div style="color:#475569; padding-left:13px; margin-top:2px; font-style:italic;">${t.greenNumRed}</div>
+                            <div style="color:#1e293b; padding-left:13px;">${t.greenNumBody}</div>
+                            <div style="color:#1e293b; padding-left:13px; margin-top:2px; font-style:italic;">${t.greenNumRed}</div>
                         </div>
                     </div>
                     <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
-                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#1e293b;">
                             <div style="margin-bottom:4px;">• ${t.rule1}</div>
                             <div style="margin-bottom:4px;">• ${t.rule2}</div>
                             <div style="margin-bottom:4px;">• ${t.rule3}</div>
@@ -1853,8 +1853,8 @@
             } else if (rowType === 'wvet') {
                 bodyHTML = `
                     <div class="help-card-section">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.wvet.title}</div>
-                        <div style="color:#475569; margin-bottom:8px;">${t.wvet.body}</div>
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.wvet.title}</div>
+                        <div style="color:#1e293b; margin-bottom:8px;">${t.wvet.body}</div>
                         <div style="font-size:11.5px; line-height:1.7;">
                             <div>${dot('#16a34a')}<b>0 – 0.40</b> — ${t.wvet.low}</div>
                             <div>${dot('#eab308')}<b>0.41 – 0.60</b> — ${t.wvet.mod}</div>
@@ -1863,8 +1863,8 @@
                         </div>
                     </div>
                     <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
-                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#1e293b;">
                             <div style="margin-bottom:4px;">• ${t.wvet.rule1}</div>
                             <div style="margin-bottom:4px;">• ${t.wvet.rule2}</div>
                             <div>• ${t.wvet.rule3}</div>
@@ -1884,8 +1884,8 @@
                 };
                 bodyHTML = `
                     <div class="help-card-section">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.cloud.title}</div>
-                        <div style="color:#475569; margin-bottom:8px;">${t.cloud.body}</div>
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.cloud.title}</div>
+                        <div style="color:#1e293b; margin-bottom:8px;">${t.cloud.body}</div>
                         <div style="font-size:11.5px; line-height:1.7;">
                             <div><b>${t.cloud.rowTop}</b> — ${t.cloud.high}</div>
                             <div><b>${t.cloud.rowMid}</b> — ${t.cloud.mid}</div>
@@ -1893,9 +1893,9 @@
                         </div>
                     </div>
                     <div class="help-card-section">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.cloud.readChart}</div>
-                        <div style="color:#475569; margin-bottom:8px;">${t.cloud.skyMetaphor}</div>
-                        <div style="color:#475569; margin-bottom:6px;">${t.cloud.barsExplain}</div>
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.cloud.readChart}</div>
+                        <div style="color:#1e293b; margin-bottom:8px;">${t.cloud.skyMetaphor}</div>
+                        <div style="color:#1e293b; margin-bottom:6px;">${t.cloud.barsExplain}</div>
                         <div style="font-size:11px; line-height:1.4; background:#fff; border:1px solid #e2e8f0; border-radius:6px; padding:8px;">
                             <div style="display:flex; align-items:center; margin-bottom:3px;">${pictoDemo(0)}<span>${t.cloud.bar0}</span></div>
                             <div style="display:flex; align-items:center; margin-bottom:3px;">${pictoDemo(1)}<span>${t.cloud.bar1}</span></div>
@@ -1906,11 +1906,11 @@
                     </div>
                     <div class="help-card-section">
                         <div style="font-weight:700; color:#dc2626; margin-bottom:4px;">${dot('#dc2626')}${t.cloud.cbTitle}</div>
-                        <div style="color:#475569;">${t.cloud.cbBody}</div>
+                        <div style="color:#1e293b;">${t.cloud.cbBody}</div>
                     </div>
                     <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
-                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#1e293b;">
                             <div style="margin-bottom:4px;">• ${t.cloud.rule1}</div>
                             <div style="margin-bottom:4px;">• ${t.cloud.rule2}</div>
                             <div>• ${t.cloud.rule3}</div>
@@ -1920,8 +1920,8 @@
             } else if (rowType === 'sky') {
                 bodyHTML = `
                     <div class="help-card-section">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.sky.title}</div>
-                        <div style="color:#475569; margin-bottom:8px;">${t.sky.body}</div>
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.sky.title}</div>
+                        <div style="color:#1e293b; margin-bottom:8px;">${t.sky.body}</div>
                         <div style="font-size:11.5px; line-height:1.85;">
                             <div>${sq('#475569')}${t.sky.stormy}</div>
                             <div>${sq('#94a3b8')}${t.sky.overcast}</div>
@@ -1932,8 +1932,8 @@
                         </div>
                     </div>
                     <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
-                        <div style="font-size:11.5px; font-weight:800; color:#475569; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
-                        <div style="font-size:11.5px; line-height:1.65; color:#475569;">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#1e293b;">
                             <div style="margin-bottom:4px;">• ${t.sky.rule1}</div>
                             <div>• ${t.sky.rule2}</div>
                         </div>
@@ -3969,8 +3969,21 @@
         window.closeModal = () => { currentDisplayedIds = []; document.getElementById('modal').classList.add('hidden'); fetchLandingWeather(); };
         window.downloadInfographic = async (e) => {
             if(e) e.preventDefault(); const btn = document.getElementById('dl-btn'); if(btn.disabled) return;
+            // Track help cards that were open before download — we close them for capture,
+            // then re-open them in finally. Declared outside try so finally can see it.
+            const openedHelpCards = [];
             try {
                 btn.disabled = true; btn.style.opacity = "0.5"; const oS = scale, oX = posX, oY = posY; resetZoom(); await new Promise(r => setTimeout(r, 400));
+                // Close any open help cards before capture — open cards can widen the
+                // report-card layout and cause html2canvas to clip the rightmost date column.
+                document.querySelectorAll('.help-card.open').forEach(c => {
+                    const m = c.id.match(/^help-card-(\w+)-(.+)$/);
+                    if (m) {
+                        openedHelpCards.push({ rowType: m[1], id: m[2] });
+                        window.toggleHelpCard(m[2], m[1]);
+                    }
+                });
+                if (openedHelpCards.length > 0) await new Promise(r => setTimeout(r, 200));
                 const files = []; for (const lid of currentDisplayedIds) {
                     const card = document.getElementById(`report-card-${lid}`); if (!card) continue;
                     
@@ -4111,7 +4124,11 @@
                         }); 
                     }
                 }
-            } catch (err) { console.error(err); } finally { btn.disabled = false; btn.style.opacity = "1"; }
+            } catch (err) { console.error(err); } finally { 
+                btn.disabled = false; btn.style.opacity = "1"; 
+                // Re-open help cards that were open before download started.
+                openedHelpCards.forEach(({ rowType, id }) => window.toggleHelpCard(id, rowType));
+            }
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
