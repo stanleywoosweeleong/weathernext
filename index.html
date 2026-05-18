@@ -2553,6 +2553,16 @@
                     const dT8 = (current8AmT!==undefined && current8AmDP!==undefined) ? Math.round((current8AmT - current8AmDP)*10)/10 : null;
                     const etS = map.et0_fao_evapotranspiration?.slice(start, start+24).reduce((a,b)=>a+b,0) || 0;
                     
+                    // Daily rain probability: MAX of the 24 hourly values
+                    // (worst-case hour represents the day's rain risk, matching how most weather apps report it)
+                    const ppArr = map.precipitation_probability?.slice(start, start+24) || [];
+                    const dailyPP = ppArr.length > 0 ? Math.max(...ppArr) : 0;
+                    
+                    // Daily rainfall volume: SUM of the 24 hourly mm values
+                    // (Open-Meteo's hourly `precipitation` field is in mm per hour, so summing gives mm/day)
+                    const rvArr = map.precipitation?.slice(start, start+24) || [];
+                    const dailyRV = rvArr.reduce((a,b) => a + (b || 0), 0);
+                    
                     // ===== FOG / HAZE DETECTION =====
                     // Sample 4 AM - 9 AM window when fog actually forms in Malaysia.
                     // Decide between FOG (high humidity + low vis + calm) vs HAZE (low vis without humidity).
@@ -2594,7 +2604,7 @@
                     days.push({ 
                         date: `${new Date(new Date().getTime() + i*86400000).getDate()}/${new Date(new Date().getTime() + i*86400000).getMonth()+1}`,
                         hi: Math.round(Math.max(...tS)*10)/10, lo: Math.round(Math.min(...tS)*10)/10, dp: Math.round((dpS.reduce((a,b)=>a+b,0)/dpS.length)*10)/10,
-                        dT: dT8 ?? "--", safe, et: Math.round(etS*10)/10, pp: Math.round(map.precipitation_probability?.[start]||0), rv: Math.round((map.precipitation?.[start]||0)*10)/10,
+                        dT: dT8 ?? "--", safe, et: Math.round(etS*10)/10, pp: Math.round(dailyPP), rv: Math.round(dailyRV*10)/10,
                         ch: map.cloudcover_high?.[start]||0, cm: map.cloudcover_mid?.[start]||0, cl: map.cloudcover_low?.[start]||0,
                         w2m: Math.round((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0)), wd: Math.round(map.winddirection_10m?.[start]||0), wg: Math.round(map.windgusts_10m?.[start]||0),
                         wvet: calculateWVET((map.windspeed_2m?.[start]||map.windspeed_10m?.[start]||0), map.vapour_pressure_deficit?.[start]||0, etS, map.windgusts_10m?.[start]||0, crop, dT8), cape: map.cape?.[start]||0,
