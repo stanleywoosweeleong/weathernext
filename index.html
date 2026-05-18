@@ -2879,17 +2879,17 @@
             // FIXED v1.0.53: Separate scales and non-overlapping vertical bands.
             // Previously rainfall (RV) and ET0 shared the same y-axis range, causing labels to collide
             // and the green ET0 line to cross through blue rainfall bars on similar-magnitude days.
-            // Now: rainfall occupies the BOTTOM half (y=42 to y=75), ET0 occupies the TOP half (y=8 to y=38).
-            // A faint divider line at y=40 visually separates them.
+            // v1.0.54: ET0 band shifted down to clear the row-label overlay in the top-left corner.
+            // Layout: label overlay occupies y=0-18, ET0 band is y=22-42, rainfall band is y=46-75.
             const maxRV = Math.max(...days.map(d => d.rv), 1);   // independent rainfall scale
             const maxET = Math.max(...days.map(d => d.et), 1);   // independent ET0 scale
-            const RV_BASELINE = 75, RV_MAX_HEIGHT = 33;  // bars from y=75 up to y=42
-            const ET_BASELINE = 38, ET_MAX_HEIGHT = 30;  // line from y=38 up to y=8
+            const RV_BASELINE = 75, RV_MAX_HEIGHT = 29;  // rainfall bars from y=75 up to y=46
+            const ET_BASELINE = 42, ET_MAX_HEIGHT = 20;  // ET0 line from y=42 up to y=22
             
-            // Faint horizontal divider so users can see the two bands are different scales
+            // Faint horizontal divider between the two bands
             const divider = document.createElementNS("http://www.w3.org/2000/svg", "line");
             divider.setAttribute("x1", 0); divider.setAttribute("x2", columnCenters[columnCenters.length-1] + 20);
-            divider.setAttribute("y1", 40); divider.setAttribute("y2", 40);
+            divider.setAttribute("y1", 44); divider.setAttribute("y2", 44);
             divider.setAttribute("stroke", "#e2e8f0"); divider.setAttribute("stroke-width", "1"); 
             divider.setAttribute("stroke-dasharray", "2,3");
             svgVV.appendChild(divider);
@@ -2905,14 +2905,14 @@
                 if (d.rv > 0) {
                     const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
                     txt.setAttribute("x", x+5); 
-                    txt.setAttribute("y", RV_BASELINE - h - 2);  // close to bar top, won't reach divider
+                    txt.setAttribute("y", RV_BASELINE - h - 2);
                     txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); 
                     txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#1e3a8a"); 
                     txt.textContent = d.rv; svgVV.appendChild(txt);
                 }
             });
             
-            // Draw ET0 line (top band, green)
+            // Draw ET0 line (top band, green) — band is positioned below the row label overlay
             let etP = "";
             days.forEach((d, i) => {
                 const x = columnCenters[i];
@@ -2922,7 +2922,7 @@
                 if (d.et > 0) {
                     const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
                     txt.setAttribute("x", x); 
-                    txt.setAttribute("y", y - 3);  // just above the line point
+                    txt.setAttribute("y", y - 3);
                     txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "7.5"); 
                     txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); 
                     txt.textContent = d.et; svgVV.appendChild(txt);
