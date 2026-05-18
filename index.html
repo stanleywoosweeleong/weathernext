@@ -2876,17 +2876,62 @@
                 const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?16:-10)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
             });
             const ppl = document.createElementNS("http://www.w3.org/2000/svg", "path"); ppl.setAttribute("d", ppP); ppl.setAttribute("stroke", "#1e3a8a"); ppl.setAttribute("stroke-width", "3"); ppl.setAttribute("fill", "none"); ppl.setAttribute("opacity", "0.6"); svgPP.appendChild(ppl);
-            const maxW = Math.max(...days.flatMap(d => [d.rv, d.et])) || 1;
+            // FIXED v1.0.53: Separate scales and non-overlapping vertical bands.
+            // Previously rainfall (RV) and ET0 shared the same y-axis range, causing labels to collide
+            // and the green ET0 line to cross through blue rainfall bars on similar-magnitude days.
+            // Now: rainfall occupies the BOTTOM half (y=42 to y=75), ET0 occupies the TOP half (y=8 to y=38).
+            // A faint divider line at y=40 visually separates them.
+            const maxRV = Math.max(...days.map(d => d.rv), 1);   // independent rainfall scale
+            const maxET = Math.max(...days.map(d => d.et), 1);   // independent ET0 scale
+            const RV_BASELINE = 75, RV_MAX_HEIGHT = 33;  // bars from y=75 up to y=42
+            const ET_BASELINE = 38, ET_MAX_HEIGHT = 30;  // line from y=38 up to y=8
+            
+            // Faint horizontal divider so users can see the two bands are different scales
+            const divider = document.createElementNS("http://www.w3.org/2000/svg", "line");
+            divider.setAttribute("x1", 0); divider.setAttribute("x2", columnCenters[columnCenters.length-1] + 20);
+            divider.setAttribute("y1", 40); divider.setAttribute("y2", 40);
+            divider.setAttribute("stroke", "#e2e8f0"); divider.setAttribute("stroke-width", "1"); 
+            divider.setAttribute("stroke-dasharray", "2,3");
+            svgVV.appendChild(divider);
+            
+            // Draw rainfall bars (bottom band, blue)
             days.forEach((d, i) => {
-                const x = columnCenters[i] - 5, h = (d.rv/maxW)*40, r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
-                r.setAttribute("x", x); r.setAttribute("y", 75-h); r.setAttribute("width", 10); r.setAttribute("height", h); r.setAttribute("fill", "#1e3a8a"); r.setAttribute("rx", "2"); svgVV.appendChild(r);
-                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", x+5); txt.setAttribute("y", 75-h-6); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#1e3a8a"); txt.textContent = d.rv; svgVV.appendChild(txt);
+                const x = columnCenters[i] - 5, h = (d.rv / maxRV) * RV_MAX_HEIGHT;
+                const r = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+                r.setAttribute("x", x); r.setAttribute("y", RV_BASELINE - h); 
+                r.setAttribute("width", 10); r.setAttribute("height", h); 
+                r.setAttribute("fill", "#1e3a8a"); r.setAttribute("rx", "2"); 
+                svgVV.appendChild(r);
+                if (d.rv > 0) {
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                    txt.setAttribute("x", x+5); 
+                    txt.setAttribute("y", RV_BASELINE - h - 2);  // close to bar top, won't reach divider
+                    txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); 
+                    txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#1e3a8a"); 
+                    txt.textContent = d.rv; svgVV.appendChild(txt);
+                }
             });
-            let etP = ""; days.forEach((d, i) => {
-                const x = columnCenters[i], y = 75 - (d.et/maxW)*40; etP += (i===0?"M ":" L ")+x+" "+y;
-                if (d.et>0) { const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); txt.setAttribute("x", x); txt.setAttribute("y", y-8); txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "7.5"); txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); txt.textContent = d.et; svgVV.appendChild(txt); }
+            
+            // Draw ET0 line (top band, green)
+            let etP = "";
+            days.forEach((d, i) => {
+                const x = columnCenters[i];
+                const y = ET_BASELINE - (d.et / maxET) * ET_MAX_HEIGHT;
+                etP += (i===0 ? "M " : " L ") + x + " " + y;
+                
+                if (d.et > 0) {
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                    txt.setAttribute("x", x); 
+                    txt.setAttribute("y", y - 3);  // just above the line point
+                    txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "7.5"); 
+                    txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); 
+                    txt.textContent = d.et; svgVV.appendChild(txt);
+                }
             });
-            const etl = document.createElementNS("http://www.w3.org/2000/svg", "path"); etl.setAttribute("d", etP); etl.setAttribute("stroke", "#059669"); etl.setAttribute("stroke-width", "2"); etl.setAttribute("fill", "none"); etl.setAttribute("opacity", "0.6"); svgVV.appendChild(etl);
+            const etl = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
+            etl.setAttribute("d", etP); etl.setAttribute("stroke", "#059669"); 
+            etl.setAttribute("stroke-width", "2"); etl.setAttribute("fill", "none"); 
+            etl.setAttribute("opacity", "0.6"); svgVV.appendChild(etl);
         }
 
         function initGestures() {
