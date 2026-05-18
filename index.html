@@ -294,11 +294,19 @@
             border-right: 1px solid rgba(226, 232, 240, 0.6); min-height: 40px; tabular-nums; color: #0f172a;
         }
 
+        /* v1.0.65: Row labels now live in their own dedicated header strip ABOVE the chart,
+           not overlaying it. This guarantees no data values get hidden behind the label.
+           The label sits in the top ~16px of the row container; chart content uses padding-top
+           to start below the label. The wrapping div is `position: relative` so label can be
+           absolutely positioned at top-left, but it no longer eclipses chart columns. */
         .row-label-overlay {
-            position: absolute; left: 0; top: 4px; font-size: 8px; font-weight: 900; 
+            position: absolute; left: 4px; top: 2px; font-size: 8px; font-weight: 900; 
             text-transform: uppercase; color: #475569; letter-spacing: 0.08em; pointer-events: none;
-            z-index: 40; background: rgba(255,255,255,0.95); padding: 2px 6px; border-radius: 4px;
-            box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+            z-index: 40; 
+            /* No background or shadow — label is now in its own visual lane above the chart */
+            padding: 0 4px;
+            line-height: 12px;
+            height: 12px;
         }
         
         .pictogram-stack { display: flex; flex-direction: column; gap: 1.5px; width: 12px; margin-top: 2px; }
@@ -3091,13 +3099,17 @@
                 // Rain Prob: y range from 20 (top, 100% line) to 62 (bottom, 0%) — fits 70px row
                 const x = columnCenters[i], y = 20 + (1 - d.pp/100)*42; ppP += (i===0?"M ":" L ")+x+" "+y;
                 const c = document.createElementNS("http://www.w3.org/2000/svg", "circle"); c.setAttribute("cx", x); c.setAttribute("cy", y); c.setAttribute("r", "2.5"); c.setAttribute("fill", "#1e3a8a"); svgPP.appendChild(c);
-                // Skip first 2 column labels (behind the "Rain Prob (%)" row label overlay)
-                if (i >= 2) {
-                    const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?13:-8)); t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); t.textContent = `${d.pp}%`; svgPP.appendChild(t);
-                }
+                // v1.0.65: Show ALL values — farmers need today's data, no skipping
+                const t = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                t.setAttribute("x", x); t.setAttribute("y", y+(d.pp>55?13:-8)); 
+                t.setAttribute("text-anchor", "middle"); t.setAttribute("font-size", "10"); 
+                t.setAttribute("font-weight", "950"); t.setAttribute("fill", "#1e3a8a"); 
+                t.textContent = `${d.pp}%`; svgPP.appendChild(t);
             });
             const ppl = document.createElementNS("http://www.w3.org/2000/svg", "path"); ppl.setAttribute("d", ppP); ppl.setAttribute("stroke", "#1e3a8a"); ppl.setAttribute("stroke-width", "3"); ppl.setAttribute("fill", "none"); ppl.setAttribute("opacity", "0.6"); svgPP.appendChild(ppl);
             // RAINFALL (separate row, height=52). Bars anchored to bottom.
+            // v1.0.65: Show value labels for ALL days — even 0mm. Dry days are critical info
+            // for farmers planning fertilizer application, spraying, harvesting.
             const maxRV = Math.max(...days.map(d => d.rv), 1);
             const RV_BASELINE = 48, RV_MAX_HEIGHT = 24;  // bars from y=48 up to y=24
             days.forEach((d, i) => {
@@ -3107,19 +3119,20 @@
                 r.setAttribute("width", 10); r.setAttribute("height", h); 
                 r.setAttribute("fill", "#1e3a8a"); r.setAttribute("rx", "2"); 
                 svgVV.appendChild(r);
-                if (d.rv > 0 && i >= 1) {
-                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
-                    txt.setAttribute("x", x+5); 
-                    txt.setAttribute("y", RV_BASELINE - h - 2);
-                    txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); 
-                    txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#1e3a8a"); 
-                    txt.textContent = d.rv; svgVV.appendChild(txt);
-                }
+                // Always label, even when rv=0 (label shows "0")
+                const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                txt.setAttribute("x", x+5); 
+                // For 0mm days, position label at baseline (no bar to sit on top of)
+                txt.setAttribute("y", d.rv > 0 ? RV_BASELINE - h - 2 : RV_BASELINE - 2);
+                txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); 
+                txt.setAttribute("font-weight", "950"); 
+                // Dim color for 0mm to indicate "no rain" without losing the info
+                txt.setAttribute("fill", d.rv > 0 ? "#1e3a8a" : "#94a3b8"); 
+                txt.textContent = d.rv; svgVV.appendChild(txt);
             });
             
             // ET0 (separate row, height=42). Line plot — y range stays below the row label.
-            // Row label occupies y=4 to ~y=20. So ET0 plot uses y=22 (top) to y=38 (bottom).
-            // Skip numeric labels for the first 2 columns since they sit behind the row label.
+            // v1.0.65: Show ALL value labels — every day's ET0 is meaningful agronomically.
             if (svgET) {
                 const maxET = Math.max(...days.map(d => d.et), 1);
                 const ET_BASELINE = 38, ET_MAX_HEIGHT = 16;  // line from y=38 up to y=22
@@ -3129,14 +3142,15 @@
                     const y = ET_BASELINE - (d.et / maxET) * ET_MAX_HEIGHT;
                     etP += (i===0 ? "M " : " L ") + x + " " + y;
                     
-                    if (d.et > 0 && i >= 2) {
-                        const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
-                        txt.setAttribute("x", x); 
-                        txt.setAttribute("y", y - 4);
-                        txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); 
-                        txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); 
-                        txt.textContent = d.et; svgET.appendChild(txt);
-                    }
+                    // Show every ET0 value, position label below the line when point is too high
+                    // (otherwise label would clash with the row-label header strip)
+                    const txt = document.createElementNS("http://www.w3.org/2000/svg", "text"); 
+                    txt.setAttribute("x", x); 
+                    // If point is in top half (y < 30), place label BELOW. Otherwise ABOVE.
+                    txt.setAttribute("y", y < 30 ? y + 9 : y - 4);
+                    txt.setAttribute("text-anchor", "middle"); txt.setAttribute("font-size", "9"); 
+                    txt.setAttribute("font-weight", "950"); txt.setAttribute("fill", "#059669"); 
+                    txt.textContent = d.et; svgET.appendChild(txt);
                 });
                 const etl = document.createElementNS("http://www.w3.org/2000/svg", "path"); 
                 etl.setAttribute("d", etP); etl.setAttribute("stroke", "#059669"); 
