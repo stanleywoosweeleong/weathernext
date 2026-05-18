@@ -327,26 +327,21 @@
         .help-icon-btn.active { background: #7e22ce; color: white; }
         
         /* Help card — appears inline above the chart when icon is tapped.
-           When closed (no .open class), the card must take ZERO vertical space —
-           no margins, no padding, no border, no max-height. Otherwise even a
-           closed card adds spacing between the row label and its data, making
-           the chart look stretched. */
+           When closed, `display: none` removes it from layout entirely (no ghost height
+           from line-height inheritance, no margin collapsing surprises).
+           Transition only runs on open via the .open class swap. */
         .help-card {
+            display: none;
             position: relative; z-index: 30;
             background: #faf5ff; border: 1px solid #d8b4fe;
             border-radius: 8px;
             font-size: 12px; line-height: 1.5;
             color: #475569;
-            max-height: 0; overflow: hidden;
-            padding: 0; margin: 0;
-            border-width: 0;
-            transition: max-height 0.25s ease, padding 0.25s ease, margin 0.25s ease, border-width 0.1s;
-        }
-        .help-card.open {
-            max-height: 500px;
             padding: 12px;
             margin: 12px 8px;
-            border-width: 1px;
+        }
+        .help-card.open {
+            display: block;
         }
         .help-card-section { margin-bottom: 10px; }
         .help-card-section:last-child { margin-bottom: 0; }
@@ -1749,7 +1744,7 @@
             if (isOpen) {
                 card.classList.remove('open');
                 icon.classList.remove('active');
-                setTimeout(() => { if (!card.classList.contains('open')) card.innerHTML = ''; }, 250);
+                card.innerHTML = '';  // free DOM immediately since no animation
                 return;
             }
             const lang = getLang(id);
@@ -1859,10 +1854,8 @@
             }
             
             card.innerHTML = `<span class="help-card-close" onclick="window.toggleHelpCard('${id}', '${rowType}')" aria-label="${t.close}">×</span>${bodyHTML}`;
-            requestAnimationFrame(() => {
-                card.classList.add('open');
-                icon.classList.add('active');
-            });
+            card.classList.add('open');
+            icon.classList.add('active');
         };
 
         // Helper to get localized crop name
