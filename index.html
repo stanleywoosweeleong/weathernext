@@ -310,26 +310,36 @@
         }
         
         /* Help icon next to a row label — clickable explainer trigger.
-           Sized at 11px to fit within the 12px-tall row-label-overlay without
-           making the label container expand. */
+           Rendered as a fixed 13px circle. Using `display: inline-block` with
+           explicit width/height + line-height equals to the box height ensures
+           a true round circle. The "?" character is centered via text-align.
+           NOTE: inline-flex was distorting the shape because the row-label-overlay
+           has `line-height: 12px` which clipped the icon's box and the flex centering
+           inherited odd vertical metrics. Plain inline-block avoids that. */
         .help-icon-btn {
-            display: inline-flex; align-items: center; justify-content: center;
-            width: 11px; height: 11px; border-radius: 50%;
+            display: inline-block;
+            box-sizing: border-box;
+            width: 13px; height: 13px;
+            border-radius: 50%;
             background: #e2e8f0; color: #475569;
-            font-size: 8px; font-weight: 900; line-height: 1;
-            margin-left: 4px; cursor: pointer;
+            font-size: 9px; font-weight: 900;
+            line-height: 13px;  /* equal to height for vertical centering */
+            text-align: center;
+            margin-left: 5px; cursor: pointer;
             pointer-events: auto; /* override parent's pointer-events:none */
             transition: background 0.15s, color 0.15s;
             vertical-align: middle; user-select: none;
             position: relative; top: -1px;  /* nudge up to optical center with label text */
+            overflow: hidden;  /* clip any character overflow that could distort shape */
         }
         .help-icon-btn:hover { background: #7e22ce; color: white; }
         .help-icon-btn.active { background: #7e22ce; color: white; }
         
-        /* Help card — appears inline above the chart when icon is tapped.
-           When closed, `display: none` removes it from layout entirely (no ghost height
-           from line-height inheritance, no margin collapsing surprises).
-           Transition only runs on open via the .open class swap. */
+        /* Help card — appears inline below the row label when icon is tapped.
+           When closed, `display: none` removes it from layout entirely.
+           Reduced margin to 6px for a tighter visual connection between the row label
+           and its explainer. padding-top is 22px to clear the absolutely-positioned
+           close button (×) so the heading inside doesn't visually run under it. */
         .help-card {
             display: none;
             position: relative; z-index: 30;
@@ -337,8 +347,11 @@
             border-radius: 8px;
             font-size: 12px; line-height: 1.5;
             color: #475569;
-            padding: 12px;
-            margin: 12px 8px;
+            padding: 22px 12px 12px;  /* extra top room for the absolute close button */
+            /* margin-top: 18px clears the absolutely-positioned row label
+               (sits at top:2px, 12px tall = 14px occupied) plus 4px breathing room.
+               margin-bottom: 6px keeps the card visually connected to the row below. */
+            margin: 18px 8px 6px;
         }
         .help-card.open {
             display: block;
@@ -361,9 +374,9 @@
         .help-card-pill.risk { background: #fee2e2; color: #991b1b; }
         .help-card-pill.green { background: #dcfce7; color: #14532d; }
         .help-card-close {
-            position: absolute; top: 6px; right: 8px;
-            font-size: 16px; font-weight: 700; color: #94a3b8;
-            cursor: pointer; line-height: 1; padding: 4px;
+            position: absolute; top: 4px; right: 6px;
+            font-size: 18px; font-weight: 700; color: #94a3b8;
+            cursor: pointer; line-height: 1; padding: 2px 6px;
             user-select: none;
         }
         .help-card-close:hover { color: #475569; }
