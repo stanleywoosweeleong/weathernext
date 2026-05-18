@@ -3969,21 +3969,8 @@
         window.closeModal = () => { currentDisplayedIds = []; document.getElementById('modal').classList.add('hidden'); fetchLandingWeather(); };
         window.downloadInfographic = async (e) => {
             if(e) e.preventDefault(); const btn = document.getElementById('dl-btn'); if(btn.disabled) return;
-            // Track help cards that were open before download — we close them for capture,
-            // then re-open them in finally. Declared outside try so finally can see it.
-            const openedHelpCards = [];
             try {
                 btn.disabled = true; btn.style.opacity = "0.5"; const oS = scale, oX = posX, oY = posY; resetZoom(); await new Promise(r => setTimeout(r, 400));
-                // Close any open help cards before capture — open cards can widen the
-                // report-card layout and cause html2canvas to clip the rightmost date column.
-                document.querySelectorAll('.help-card.open').forEach(c => {
-                    const m = c.id.match(/^help-card-(\w+)-(.+)$/);
-                    if (m) {
-                        openedHelpCards.push({ rowType: m[1], id: m[2] });
-                        window.toggleHelpCard(m[2], m[1]);
-                    }
-                });
-                if (openedHelpCards.length > 0) await new Promise(r => setTimeout(r, 200));
                 const files = []; for (const lid of currentDisplayedIds) {
                     const card = document.getElementById(`report-card-${lid}`); if (!card) continue;
                     
@@ -3993,6 +3980,31 @@
                         useCORS: true, 
                         backgroundColor: "#ffffff",
                         onclone: (clonedDoc) => {
+                            // 0. HELP CARD CLEANUP (clone-only)
+                            // Strip the .open class from every help card in the CLONE so the
+                            // captured image shows the chart in its base layout, with no help
+                            // explainers expanded. This avoids the rightmost date column being
+                            // clipped because of widened layout from open cards. The user's
+                            // LIVE view stays exactly as it was — cards they had open remain open.
+                            clonedDoc.querySelectorAll('.help-card.open').forEach(c => {
+                                c.classList.remove('open');
+                                c.innerHTML = '';
+                            });
+                            clonedDoc.querySelectorAll('.help-icon-btn').forEach(i => {
+                                i.classList.remove('active');
+                            });
+                            // The temp help card, when open, also hides the temperature SVG
+                            // and info-row via inline `display: none`, and zeros the wind row's
+                            // overlap margin. Those inline styles get copied to the clone, so
+                            // we need to restore them here too — otherwise the captured image
+                            // is missing the temp chart entirely.
+                            clonedDoc.querySelectorAll('[id^="trend-layer-temp-"], [id^="row-temp-combined-"]').forEach(el => {
+                                el.style.display = '';
+                            });
+                            clonedDoc.querySelectorAll('[id^="wind-row-container-"]').forEach(el => {
+                                el.style.marginTop = '';
+                            });
+                            
                             // 1. CONTAINER CLEANUP
                             const reportContainer = clonedDoc.getElementById('infographic-report');
                             if(reportContainer) {
@@ -4124,11 +4136,7 @@
                         }); 
                     }
                 }
-            } catch (err) { console.error(err); } finally { 
-                btn.disabled = false; btn.style.opacity = "1"; 
-                // Re-open help cards that were open before download started.
-                openedHelpCards.forEach(({ rowType, id }) => window.toggleHelpCard(id, rowType));
-            }
+            } catch (err) { console.error(err); } finally { btn.disabled = false; btn.style.opacity = "1"; }
         };
 
         document.addEventListener('DOMContentLoaded', async () => {
