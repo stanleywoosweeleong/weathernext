@@ -1221,11 +1221,11 @@
         // NEW: Translations Dictionary
         // Added keys: spray, fert, safe, risk, unsafe for Work Plan localization
         const TRANS = {
-            en: { brief: "✨ Smart Briefing", pest: "🦠 Pest & Disease Risk Analysis", tools: "✨ Ask AI & Plan", irrig: "💧 Smart Irrigation Calc", harvest: "✨ Harvest Estimator", soil: "✨ Soil & Fert Advisor", plan: "✨ Generate 3-Day Work Plan", sop: "✨ Tomorrow's SOP Checklist", yield: "✨ Yield & Market Insight", chat: "Ask Weather AI", placeholder: "e.g. Can I prune today?", calc: "Calculate", est: "Estimate", rec: "Get Recommendation", send: "Send", consult: "Consulting AI...", spray: "SPRAY", fert: "FERT", safe: "Safe", risk: "Risky", unsafe: "Avoid", action: "Action Plan", shareWA: "💬 Share to WhatsApp", shareWAHeader: "🌳 {name} — 7-Day Forecast", shareWADay: "{date}: {temp}°C, Rain {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Storm Days: {days}", shareWAFooter: "\nFull forecast: {url}", popupBlocked: "Popup blocked — open WhatsApp Web manually to send" },
-            ms: { brief: "✨ Ringkasan Pintar", pest: "🦠 Analisis Risiko Perosak & Penyakit", tools: "✨ Tanya AI & Rancang", irrig: "💧 Kalkulator Irigasi", harvest: "✨ Anggaran Tuai", soil: "✨ Penasihat Tanah & Baja", plan: "✨ Jana Pelan Kerja 3-Hari", sop: "✨ Senarai Semak SOP Esok", yield: "✨ Wawasan Hasil & Pasaran", chat: "Tanya AI Cuaca", placeholder: "Cth: Bolehkah mencantas hari ini?", calc: "Kira", est: "Anggar", rec: "Dapatkan Syor", send: "Hantar", consult: "Merujuk AI...", spray: "SEMBUR", fert: "BAJA", safe: "Sesuai", risk: "Risiko", unsafe: "Elak", action: "Pelan Tindakan", shareWA: "💬 Kongsi ke WhatsApp", shareWAHeader: "🌳 {name} — Ramalan 7-Hari", shareWADay: "{date}: {temp}°C, Hujan {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Hari Ribut: {days}", shareWAFooter: "\nRamalan penuh: {url}", popupBlocked: "Pop-up disekat — buka WhatsApp Web secara manual untuk hantar" },
-            zh: { brief: "✨ 智能农事简报", pest: "🦠 病虫害风险分析", tools: "✨ AI 策划与咨询", irrig: "💧 智能灌溉计算", harvest: "✨ 收成预估", soil: "✨ 土壤与施肥顾问", plan: "✨ 生成三天工作计划", sop: "✨ 明日 SOP 检查表", yield: "✨ 产量与市场分析", chat: "询问天气 AI", placeholder: "例如：今天适合修剪吗？", calc: "计算", est: "预估", rec: "获取建议", send: "发送", consult: "正在咨询 AI...", spray: "喷药", fert: "施肥", safe: "适宜", risk: "风险", unsafe: "不宜", action: "行动计划", shareWA: "💬 分享到 WhatsApp", shareWAHeader: "🌳 {name} — 7天天气", shareWADay: "{date}: {temp}°C, 雨{rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ 风暴日: {days}", shareWAFooter: "\n完整预报: {url}", popupBlocked: "弹窗被阻止 — 请手动打开 WhatsApp Web 发送" },
-            ta: { brief: "✨ விவேக விளக்கம்", pest: "🦠 பூச்சி அபாய ஆய்வு", tools: "✨ AI திட்டம் & கேள்வி", irrig: "💧 நீர்ப்பாசனக் கணக்கீடு", harvest: "✨ அறுவடை மதிப்பீடு", soil: "✨ மண் & உரம் ஆலோசகர்", plan: "✨ 3-நாள் வேலைத் திட்டம்", sop: "✨ நாளைய SOP பட்டியல்", yield: "✨ விளைச்சல் & சந்தை", chat: "வானிலை AI-யிடம் கேளுங்கள்", placeholder: "எ.கா: இன்று கத்தரிக்கலாமா?", calc: "கணக்கிடு", est: "மதிப்பிடு", rec: "பரிந்துரை பெறு", send: "அனுப்பு", consult: "AI-யை அணுகுகிறது...", spray: "தெளி", fert: "உரம்", safe: "ஏற்றது", risk: "கவனம்", unsafe: "தவிர்", action: "செயல் திட்டம்", shareWA: "💬 WhatsApp-இல் பகிர்", shareWAHeader: "🌳 {name} — 7-நாள் முன்னறிவிப்பு", shareWADay: "{date}: {temp}°C, மழை {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ புயல் நாட்கள்: {days}", shareWAFooter: "\nமுழு முன்னறிவிப்பு: {url}", popupBlocked: "பாப்-அப் தடுக்கப்பட்டது — WhatsApp Web-ஐ கைமுறையாக திறக்கவும்" },
-            my: { brief: "✨ စမတ် အကျဉ်းချုပ်", pest: "🦠 ပိုးမွှားအန္တရာယ်", tools: "✨ AI မေးရန် & စီစဉ်ရန်", irrig: "💧 ရေသွင်း တွက်ချက်မှု", harvest: "✨ ရိတ်သိမ်းချိန် ခန့်မှန်း", soil: "✨ မြေဆီလွှာ အကြံပေး", plan: "✨ ၃-ရက် လုပ်ငန်းစဉ်", sop: "✨ မနက်ဖြန် SOP စာရင်း", yield: "✨ အထွက်နှုန်း & ဈေးကွက်", chat: "မိုးလေဝသ AI မေးရန်", placeholder: "ဥပမာ - ဒီနေ့ ကိုင်းဖြတ်လို့ရမလား?", calc: "တွက်ချက်ပါ", est: "ခန့်မှန်းပါ", rec: "အကြံပြုချက်ရယူပါ", send: "ပို့ပါ", consult: "AI ကို မေးမြန်းနေသည်...", spray: "ဆေးဖြန်း", fert: "မြေသြဇာ", safe: "ကောင်း", risk: "သတိ", unsafe: "ရှောင်", action: "လုပ်ဆောင်ရန်", shareWA: "💬 WhatsApp သို့ မျှဝေပါ", shareWAHeader: "🌳 {name} — ၇-ရက် ခန့်မှန်း", shareWADay: "{date}: {temp}°C, မိုး {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ မုန်တိုင်းရက်များ: {days}", shareWAFooter: "\nခန့်မှန်းအပြည့်အစုံ: {url}", popupBlocked: "Popup ပိတ်ထားသည် — WhatsApp Web ကို ကိုယ်တိုင်ဖွင့်ပါ" }
+            en: { brief: "✨ Smart Briefing", pest: "🦠 Pest & Disease Risk Analysis", tools: "✨ Ask AI & Plan", irrig: "💧 Smart Irrigation Calc", harvest: "✨ Harvest Estimator", soil: "✨ Soil & Fert Advisor", plan: "✨ Generate 3-Day Work Plan", sop: "✨ Tomorrow's SOP Checklist", yield: "✨ Yield & Market Insight", chat: "Ask Weather AI", placeholder: "e.g. Can I prune today?", calc: "Calculate", est: "Estimate", rec: "Get Recommendation", send: "Send", consult: "Consulting AI...", spray: "SPRAY", fert: "FERT", safe: "Safe", risk: "Risky", unsafe: "Avoid", action: "Action Plan", shareWA: "💬 Share to WhatsApp", shareWAHeader: "🌳 {name} — 7-Day Forecast", shareWADay: "{date}: {temp}°C, Rain {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Storm Days: {days}", shareWAFooter: "\nFull forecast: {url}", popupBlocked: "Popup blocked — open WhatsApp Web manually to send", saveLoc: "+ Add to my list", savedLoc: "Added to your list" },
+            ms: { brief: "✨ Ringkasan Pintar", pest: "🦠 Analisis Risiko Perosak & Penyakit", tools: "✨ Tanya AI & Rancang", irrig: "💧 Kalkulator Irigasi", harvest: "✨ Anggaran Tuai", soil: "✨ Penasihat Tanah & Baja", plan: "✨ Jana Pelan Kerja 3-Hari", sop: "✨ Senarai Semak SOP Esok", yield: "✨ Wawasan Hasil & Pasaran", chat: "Tanya AI Cuaca", placeholder: "Cth: Bolehkah mencantas hari ini?", calc: "Kira", est: "Anggar", rec: "Dapatkan Syor", send: "Hantar", consult: "Merujuk AI...", spray: "SEMBUR", fert: "BAJA", safe: "Sesuai", risk: "Risiko", unsafe: "Elak", action: "Pelan Tindakan", shareWA: "💬 Kongsi ke WhatsApp", shareWAHeader: "🌳 {name} — Ramalan 7-Hari", shareWADay: "{date}: {temp}°C, Hujan {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Hari Ribut: {days}", shareWAFooter: "\nRamalan penuh: {url}", popupBlocked: "Pop-up disekat — buka WhatsApp Web secara manual untuk hantar", saveLoc: "+ Tambah ke senarai", savedLoc: "Disimpan ke senarai" },
+            zh: { brief: "✨ 智能农事简报", pest: "🦠 病虫害风险分析", tools: "✨ AI 策划与咨询", irrig: "💧 智能灌溉计算", harvest: "✨ 收成预估", soil: "✨ 土壤与施肥顾问", plan: "✨ 生成三天工作计划", sop: "✨ 明日 SOP 检查表", yield: "✨ 产量与市场分析", chat: "询问天气 AI", placeholder: "例如：今天适合修剪吗？", calc: "计算", est: "预估", rec: "获取建议", send: "发送", consult: "正在咨询 AI...", spray: "喷药", fert: "施肥", safe: "适宜", risk: "风险", unsafe: "不宜", action: "行动计划", shareWA: "💬 分享到 WhatsApp", shareWAHeader: "🌳 {name} — 7天天气", shareWADay: "{date}: {temp}°C, 雨{rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ 风暴日: {days}", shareWAFooter: "\n完整预报: {url}", popupBlocked: "弹窗被阻止 — 请手动打开 WhatsApp Web 发送", saveLoc: "+ 加入我的列表", savedLoc: "已加入列表" },
+            ta: { brief: "✨ விவேக விளக்கம்", pest: "🦠 பூச்சி அபாய ஆய்வு", tools: "✨ AI திட்டம் & கேள்வி", irrig: "💧 நீர்ப்பாசனக் கணக்கீடு", harvest: "✨ அறுவடை மதிப்பீடு", soil: "✨ மண் & உரம் ஆலோசகர்", plan: "✨ 3-நாள் வேலைத் திட்டம்", sop: "✨ நாளைய SOP பட்டியல்", yield: "✨ விளைச்சல் & சந்தை", chat: "வானிலை AI-யிடம் கேளுங்கள்", placeholder: "எ.கா: இன்று கத்தரிக்கலாமா?", calc: "கணக்கிடு", est: "மதிப்பிடு", rec: "பரிந்துரை பெறு", send: "அனுப்பு", consult: "AI-யை அணுகுகிறது...", spray: "தெளி", fert: "உரம்", safe: "ஏற்றது", risk: "கவனம்", unsafe: "தவிர்", action: "செயல் திட்டம்", shareWA: "💬 WhatsApp-இல் பகிர்", shareWAHeader: "🌳 {name} — 7-நாள் முன்னறிவிப்பு", shareWADay: "{date}: {temp}°C, மழை {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ புயல் நாட்கள்: {days}", shareWAFooter: "\nமுழு முன்னறிவிப்பு: {url}", popupBlocked: "பாப்-அப் தடுக்கப்பட்டது — WhatsApp Web-ஐ கைமுறையாக திறக்கவும்", saveLoc: "+ எனது பட்டியலில் சேர்", savedLoc: "பட்டியலில் சேர்க்கப்பட்டது" },
+            my: { brief: "✨ စမတ် အကျဉ်းချုပ်", pest: "🦠 ပိုးမွှားအန္တရာယ်", tools: "✨ AI မေးရန် & စီစဉ်ရန်", irrig: "💧 ရေသွင်း တွက်ချက်မှု", harvest: "✨ ရိတ်သိမ်းချိန် ခန့်မှန်း", soil: "✨ မြေဆီလွှာ အကြံပေး", plan: "✨ ၃-ရက် လုပ်ငန်းစဉ်", sop: "✨ မနက်ဖြန် SOP စာရင်း", yield: "✨ အထွက်နှုန်း & ဈေးကွက်", chat: "မိုးလေဝသ AI မေးရန်", placeholder: "ဥပမာ - ဒီနေ့ ကိုင်းဖြတ်လို့ရမလား?", calc: "တွက်ချက်ပါ", est: "ခန့်မှန်းပါ", rec: "အကြံပြုချက်ရယူပါ", send: "ပို့ပါ", consult: "AI ကို မေးမြန်းနေသည်...", spray: "ဆေးဖြန်း", fert: "မြေသြဇာ", safe: "ကောင်း", risk: "သတိ", unsafe: "ရှောင်", action: "လုပ်ဆောင်ရန်", shareWA: "💬 WhatsApp သို့ မျှဝေပါ", shareWAHeader: "🌳 {name} — ၇-ရက် ခန့်မှန်း", shareWADay: "{date}: {temp}°C, မိုး {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ မုန်တိုင်းရက်များ: {days}", shareWAFooter: "\nခန့်မှန်းအပြည့်အစုံ: {url}", popupBlocked: "Popup ပိတ်ထားသည် — WhatsApp Web ကို ကိုယ်တိုင်ဖွင့်ပါ", saveLoc: "+ စာရင်းသို့ ထည့်ပါ", savedLoc: "စာရင်းသို့ ထည့်ပြီးပါပြီ" }
         };
 
         const LANG_CODES = ['en', 'ms', 'zh', 'ta', 'my'];
@@ -1577,17 +1577,39 @@
                 setStatus("Offline", 'error');
             });
             fetchLandingWeather();
+            // Deep-link receiver (v1.0.110) — check URL params and open a shared
+            // location's modal if a friend's WhatsApp link brought the user here.
+            // Defined as a window function so it's also callable from other
+            // entry points (e.g. PWA shortcut launchers) in future.
+            if (typeof window.handleIncomingDeepLink === 'function') {
+                window.handleIncomingDeepLink();
+            }
         }
         
         async function saveUserData() {
             if(!user) return;
             try {
+                // Filter ephemeral (deep-link-received but not-yet-saved) locations
+                // out of the cloud sync. window.ephemeralLocationIds is a Set of ids
+                // injected into customLocations by handleIncomingDeepLink that haven't
+                // been explicitly persisted via the "Add to my list" button.
+                // Without this filter, any saveUserData() call (e.g. triggered by an
+                // unrelated favourite toggle while the ephemeral modal was open) would
+                // sync the un-asked-for location to the user's other devices.
+                const ephemeral = window.ephemeralLocationIds || new Set();
+                const customToSync = Array.isArray(customLocations)
+                    ? customLocations.filter(l => !ephemeral.has(l.id))
+                    : [];
+                const favoriteIdsToSync = Array.isArray(favoriteIds)
+                    ? favoriteIds.filter(fid => !ephemeral.has(fid))
+                    : [];
+                
                 const favDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'favorites', 'data');
                 await setDoc(favDoc, { 
-                    ids: favoriteIds, 
+                    ids: favoriteIdsToSync, 
                     hidden: hiddenIds, 
                     renamed: renamedLocations, 
-                    custom: customLocations, 
+                    custom: customToSync, 
                     purged: purgedIds,
                     model: activeModel,
                     aiLangs: locationAiLangs,
@@ -2742,6 +2764,171 @@
             fetchMultiDetailWeather(targets);
         };
 
+        // ============================================================
+        // DEEP-LINK RECEIVER (v1.0.110) — incoming half of the WhatsApp
+        // share handshake. The sender encodes ?loc=&lat=&lng=&name= via
+        // buildShareText; this function decodes those params on app load
+        // and opens the corresponding location's modal.
+        // ------------------------------------------------------------
+        // Three cases handled, in order:
+        //   1. Stable location id (kk, cd, etc) already known to every
+        //      installation — open existing entry. No save needed.
+        //   2. Custom location id (c_<ts>_<rand>) that this recipient
+        //      already has in their customLocations — open existing
+        //      entry. No save (they already have it).
+        //   3. New custom location not on this device. Build a location
+        //      object from lat/lng/name params. ONLY auto-save into
+        //      customLocations if this is a brand-new user (no saved
+        //      favourites or customs at all) — existing users keep their
+        //      curated list untidied; new users get an onboarding-win
+        //      starting saved location.
+        // ------------------------------------------------------------
+        // After modal opens, URL is cleaned via history.replaceState so
+        // a page refresh doesn't re-trigger the deep link unexpectedly.
+        // If params are missing or malformed, function exits silently —
+        // the recipient lands on the normal home screen as if no link
+        // were involved.
+        // ============================================================
+        window.handleIncomingDeepLink = () => {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const loc = params.get('loc');
+                if (!loc) return; // No deep link present — normal cold start
+
+                const lat = parseFloat(params.get('lat'));
+                const lng = parseFloat(params.get('lng'));
+                const rawName = params.get('name') || '';
+
+                // Always clean the URL early — even if we bail on errors below,
+                // we don't want stale params lingering on the next refresh.
+                try { history.replaceState({}, '', window.location.pathname); } catch(e) { /* non-fatal */ }
+
+                // CASE 1+2 — recipient already has this location (stable or custom).
+                // getAllLocations() merges STABLE_LOCATIONS with customLocations, so a
+                // single lookup covers both. Just open it.
+                const existing = getAllLocations().find(l => l.id === loc);
+                if (existing) {
+                    setTimeout(() => window.openDetail(loc), 100);
+                    return;
+                }
+
+                // CASE 3 — incoming custom location this device doesn't have yet.
+                // Need lat/lng to fetch weather data; without them we can't render
+                // anything meaningful. Bail silently if missing.
+                if (isNaN(lat) || isNaN(lng)) return;
+                if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
+
+                // Decide en/zh from the URL-encoded name. Single string; pick which
+                // field based on whether it contains CJK characters.
+                const decodedName = rawName;
+                const hasCJK = /[\u4e00-\u9fff]/.test(decodedName);
+                const newLoc = {
+                    id: loc,                       // Reuse sender's id so re-clicks idempotent
+                    en: hasCJK ? '' : decodedName,
+                    zh: hasCJK ? decodedName : '',
+                    lat, lng,
+                    t: 0, p: 0,
+                    em: lng > 108.0               // East Malaysia flag — same rule as getAllLocations
+                };
+
+                // EPHEMERAL handling (uniform for ALL recipients — v1.0.111 design).
+                // Earlier v1.0.110 silently auto-saved for brand-new users on the
+                // theory that an onboarding-empty home screen was a bad first state.
+                // That broke the "no surprises" principle — users got something saved
+                // to their device they never asked for. The new design: every
+                // deep-linked location the recipient doesn't already have starts
+                // ephemeral. An explicit "Add to my list" button in the report card
+                // lets them save when they want to keep it. Brand-new users discover
+                // the add-location mechanic organically through that button.
+                //
+                // The location is injected into customLocations so getAllLocations()
+                // and openDetail() can find it, and tracked in window.ephemeralLocationIds
+                // so the report-card render can show the "Add to my list" button only
+                // for not-yet-saved entries. NOT written to localStorage — vanishes on
+                // reload, exactly as designed.
+                customLocations = Array.isArray(customLocations) ? customLocations : [];
+                customLocations.push(newLoc);
+                window.ephemeralLocationIds = window.ephemeralLocationIds || new Set();
+                window.ephemeralLocationIds.add(loc);
+
+                // Refresh the home list and open the modal pointed at the new location.
+                if (typeof renderList === 'function') renderList();
+                setTimeout(() => window.openDetail(loc), 100);
+
+            } catch (err) {
+                console.warn('Deep-link handler error (non-fatal):', err);
+            }
+        };
+
+        // ============================================================
+        // SAVE SHARED LOCATION (v1.0.111) — handler for the
+        // "+ Add to my list" button that appears in the report card
+        // when a deep-linked location is ephemeral (received from a
+        // WhatsApp share but not yet persisted).
+        // ------------------------------------------------------------
+        // Flow:
+        //   1. Move the location's id out of window.ephemeralLocationIds
+        //      (so the button stops rendering on re-render)
+        //   2. Persist customLocations to localStorage (the location is
+        //      already in the in-memory customLocations array — the
+        //      deep-link receiver put it there)
+        //   3. Add to favoriteIds so it shows on the home screen
+        //   4. Save user data to cloud (if signed in)
+        //   5. Remove the Add button from the open modal
+        //   6. Re-render the home list so the location appears behind
+        //   7. Localized toast confirmation
+        // ------------------------------------------------------------
+        // Safe to call even if the location isn't ephemeral — the
+        // function bails early in that case. Defensive against double-tap.
+        // ============================================================
+        window.saveSharedLocation = (id) => {
+            try {
+                if (!window.ephemeralLocationIds || !window.ephemeralLocationIds.has(id)) return;
+                
+                // The location object already lives in customLocations (the deep-link
+                // receiver pushed it there). We just need to persist that to disk.
+                customLocations = Array.isArray(customLocations) ? customLocations : [];
+                if (!customLocations.some(l => l.id === id)) {
+                    console.warn('saveSharedLocation: id not in customLocations, aborting');
+                    return;
+                }
+                
+                window.ephemeralLocationIds.delete(id);
+                
+                // Add to favourites so the location appears on the home list.
+                favoriteIds = Array.isArray(favoriteIds) ? favoriteIds : [];
+                if (!favoriteIds.includes(id)) favoriteIds.push(id);
+                
+                // Persist to localStorage. safeSet handles quota errors gracefully.
+                try {
+                    safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
+                    safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+                } catch(e) {
+                    console.warn('saveSharedLocation: localStorage save failed:', e);
+                }
+                
+                // Cloud sync if authed. saveUserData is a no-op when not signed in.
+                if (typeof saveUserData === 'function') saveUserData();
+                
+                // Remove the Add button row from the open modal so the user sees
+                // immediate feedback. The next render of this card (e.g. on modal
+                // re-open) won't include the row because the ephemeral check fails.
+                const row = document.getElementById(`save-shared-row-${id}`);
+                if (row) row.remove();
+                
+                // Refresh the home list under the modal so when the user closes
+                // the modal they see the location in their list.
+                if (typeof renderList === 'function') renderList();
+                
+                // Localized confirmation toast.
+                const lang = (typeof getLang === 'function') ? getLang(id) : 'zh';
+                const msg = (TRANS[lang] && TRANS[lang].savedLoc) || TRANS.en.savedLoc;
+                if (typeof window.showToast === 'function') window.showToast(msg, false);
+            } catch (err) {
+                console.warn('saveSharedLocation error:', err);
+            }
+        };
+
         function renderReports(locIds) {
              const c = document.getElementById('infographic-report');
              
@@ -3772,6 +3959,10 @@
              // Reduced mt-2 to mt-0.5 and added leading-none to English headers to save vertical space
              return `<div class="report-card" id="report-card-${id}">
                 <div class="report-header"><div class="w-full flex flex-col"><div class="flex justify-between items-start w-full"><div class="flex items-center gap-2"><h2 class="text-xl font-black uppercase text-slate-900 leading-none">${nameEn}</h2></div><h2 id="m-range-${id}" class="text-sm font-black uppercase text-slate-900 leading-none">--</h2></div><div class="flex justify-between items-end w-full mt-0.5"><div class="flex flex-wrap items-center gap-x-3 gap-y-1"><h2 class="text-xl font-black text-blue-700 leading-none">${nameZh}</h2><div class="flex items-center">${langBtns}</div></div><div class="flex items-center gap-1"><span id="m-crop-toggle-${id}" onclick="window.toggleCrop('${id}')" class="crop-pill">${crop}</span><span onclick="window.toggleModel()" class="model-toggle-btn">${activeModel==='best_match'?'AI Model':'ECMWF'}</span></div></div></div></div>
+                ${(window.ephemeralLocationIds && window.ephemeralLocationIds.has(id)) ? `
+                <div id="save-shared-row-${id}" class="mt-2 mb-1">
+                    <button onclick="window.saveSharedLocation('${id}')" class="w-full text-center py-2.5 px-3 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50 text-emerald-700 font-black text-xs uppercase tracking-wider active:scale-95 transition-transform">${labels.saveLoc}</button>
+                </div>` : ''}
                 
                 <div class="mt-2 mb-2">
                     <button id="ai-btn-${id}" class="ai-btn semi-bleed" style="margin-bottom:0;" onclick="window.handleSmartBriefClick('${id}')"><div class="ai-btn-progress" id="ai-prog-${id}"></div><span id="ai-btn-text-${id}">${labels.brief}</span><div class="ai-loading-spinner" id="ai-spin-${id}"></div></button>
@@ -4719,9 +4910,23 @@
                     const h12 = h % 12 || 12;
                     return `${h12}${meridiem}`;
                 };
+                // Storm-event vocabulary for the WhatsApp share message only.
+                // ----------
+                // In Malaysian everyday usage, 风暴 / "Storm" / "Ribut" carry near-cyclone weight
+                // — front-page-newspaper severity. Routine heavy afternoon thunderstorms (which is
+                // what CAPE ≥ 1500 J/kg actually means in this tropical environment) are described
+                // with lighter words in conversation:
+                //   zh: 暴雨 (heavy rain / downpour) — Stanley's direct guidance
+                //   ms: Ribut Petir (thunderstorm) — matches MetMalaysia's official forecast term
+                //   en: Thunderstorm — Stanley's note on Malaysian English usage
+                //   ta, my: kept as-is — no native-speaker confirmation; better correct-formal
+                //          than wrong-colloquial. Revisit when a Tamil/Burmese user advises.
+                // The in-app chart row label still says 风暴风险 / "Storm Risk" / "Risiko Ribut"
+                // because that's the technical/meteorological register where the help card
+                // explains CAPE × CIN classification. Different audience, different vocabulary.
                 const stormLabel = {
-                    en: 'Storm', ms: 'Ribut', zh: '风暴', ta: 'புயல்', my: 'မုန်တိုင်း'
-                }[lang] || 'Storm';
+                    en: 'Thunderstorm', ms: 'Ribut Petir', zh: '暴雨', ta: 'புயல்', my: 'မုန်တိုင်း'
+                }[lang] || 'Thunderstorm';
                 const todayLabel = {
                     en: 'Today', ms: 'Hari Ini', zh: '今天', ta: 'இன்று', my: 'ဒီနေ့'
                 }[lang] || 'Today';
@@ -4729,9 +4934,9 @@
                     en: 'Rain', ms: 'Hujan', zh: '雨', ta: 'மழை', my: 'မိုး'
                 }[lang] || 'Rain';
                 const stormDaysLabel = {
-                    en: 'Storm Days:', ms: 'Hari Ribut:', zh: '风暴日:',
+                    en: 'Thunderstorm Days:', ms: 'Hari Ribut Petir:', zh: '暴雨日:',
                     ta: 'புயல் நாட்கள்:', my: 'မုန်တိုင်းရက်များ:'
-                }[lang] || 'Storm Days:';
+                }[lang] || 'Thunderstorm Days:';
                 const fullForecastLabel = {
                     en: 'Full forecast', ms: 'Ramalan penuh', zh: '完整预报',
                     ta: 'முழு முன்னறிவிப்பு', my: 'ခန့်မှန်းအပြည့်အစုံ'
