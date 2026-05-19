@@ -3981,24 +3981,39 @@
                     const cinValues = win('convective_inhibition', 12, 18);
                     const dailyCIN = cinValues.length ? Math.min(...cinValues) : 0;
                     
-                    // ===== TRIGGER WINDOW (v1.0.97) =====
-                    // CAPE alone tells "how much fuel", CIN alone tells "is the cap breakable",
-                    // but neither answers "WHEN during the day will the storm fire?". For that we
-                    // scan the daylight hours (8-21) and compute an hourly "trigger likelihood":
-                    //   score(h) = (CAPE[h] / 2500) * max(0, 1 - |CIN[h]|/150)
-                    // The contiguous run of hours where score >= 0.30 is the trigger window.
-                    // Threshold 0.30 is calibrated for Malaysian tropics — most known afternoon
-                    // storms produce hourly scores 0.4-0.9 in their peak window.
+                    // ===== TRIGGER WINDOW (v1.0.99 tightened algorithm) =====
+                    // Earlier version used a fixed threshold (score >= 0.30) over 8AM-9PM. That
+                    // was overinclusive because in tropical Malaysia CAPE is often "loaded-looking"
+                    // even at 8AM (residual from yesterday) but storms don't fire until solar
+                    // heating breaks through the cap around 11AM-2PM.
                     //
-                    // Output: { start: 14, end: 17, peakHour: 15 } or null if no window found.
-                    // The UI shows this as "2-5 PM" text under the storm dot on Loaded+ days.
+                    // Three corrections in this version:
+                    //
+                    // 1) PHYSICAL CLOCK BOUNDS — Only consider hours 10 AM through 8 PM. Outside
+                    //    this range, real-world tropical storms don't initiate even if CAPE/CIN
+                    //    look favourable (no surface heating to push parcels through the cap).
+                    //
+                    // 2) RELATIVE-TO-PEAK THRESHOLD — Instead of a fixed score floor, find each
+                    //    day's peak hourly score in the 10-20h window, then include hours where
+                    //    score >= 60% of peak. This naturally adapts: a quiet day produces a
+                    //    narrow window, an active day a wider one.
+                    //
+                    // 3) WINDOW LENGTH CAP — Maximum 5 hours. Beyond that the result is not a
+                    //    "trigger window" anymore but "atmosphere unstable all afternoon" — less
+                    //    actionable for farmers. We center the cap around the peak hour.
+                    //
+                    // Absolute floor: if NO hour in 10-20h reaches score 0.20, return null
+                    // (no meaningful storm potential). Handles low-CAPE / strongly-capped days.
+                    //
+                    // Output: { start, end, peakHour } in 24h time, or null.
                     let triggerWindow = null;
                     {
                         const capeArr = map.cape;
                         const cinArr = map.convective_inhibition;
                         if (capeArr && cinArr) {
+                            // Score every hour in the physical trigger window (10 AM - 8 PM).
                             const hourlyScore = [];
-                            for (let h = 8; h <= 21; h++) {
+                            for (let h = 10; h <= 20; h++) {
                                 const idx = start + h;
                                 if (idx >= HOURS_LEN) break;
                                 const c = capeArr[idx];
@@ -4007,28 +4022,36 @@
                                     hourlyScore.push({ h, score: 0 });
                                     continue;
                                 }
-                                const capeNorm = Math.min(c / 2500, 1.5);  // allow >1 for very high CAPE
+                                const capeNorm = Math.min(c / 2500, 1.5);
                                 const cinNorm = Math.max(0, 1 - Math.abs(i) / 150);
                                 hourlyScore.push({ h, score: capeNorm * cinNorm });
                             }
-                            // Find longest contiguous run of score >= 0.30
-                            let bestStart = -1, bestEnd = -1, bestPeak = -1, bestPeakScore = 0;
-                            let curStart = -1, curPeak = -1, curPeakScore = 0;
-                            for (let k = 0; k < hourlyScore.length; k++) {
-                                const { h, score } = hourlyScore[k];
-                                if (score >= 0.30) {
-                                    if (curStart < 0) { curStart = h; curPeak = h; curPeakScore = score; }
-                                    else if (score > curPeakScore) { curPeak = h; curPeakScore = score; }
-                                    // Save current end every iteration in case the run ends here
-                                    if ((curStart >= 0) && ((bestEnd - bestStart) < (h - curStart))) {
-                                        bestStart = curStart; bestEnd = h; bestPeak = curPeak; bestPeakScore = curPeakScore;
-                                    }
-                                } else {
-                                    curStart = -1; curPeak = -1; curPeakScore = 0;
-                                }
+                            // Find the day's peak score in this window.
+                            let peakScore = 0, peakHour = -1;
+                            for (const e of hourlyScore) {
+                                if (e.score > peakScore) { peakScore = e.score; peakHour = e.h; }
                             }
-                            if (bestStart >= 0 && bestEnd >= bestStart) {
-                                triggerWindow = { start: bestStart, end: bestEnd, peakHour: bestPeak };
+                            // Absolute floor: skip days that never reach a meaningful score.
+                            if (peakScore >= 0.20 && peakHour >= 0) {
+                                // Find all hours within 60% of the peak — those are the high-risk hours.
+                                const threshold = peakScore * 0.60;
+                                let earliest = peakHour, latest = peakHour;
+                                for (const e of hourlyScore) {
+                                    if (e.score >= threshold) {
+                                        if (e.h < earliest) earliest = e.h;
+                                        if (e.h > latest) latest = e.h;
+                                    }
+                                }
+                                // Cap at 5 hours total, centered around the peak.
+                                const MAX_LEN = 5;
+                                if ((latest - earliest) + 1 > MAX_LEN) {
+                                    // Symmetric cap around peakHour, biased later if odd.
+                                    const halfBack = Math.floor((MAX_LEN - 1) / 2);
+                                    const halfFwd  = Math.ceil((MAX_LEN - 1) / 2);
+                                    earliest = Math.max(earliest, peakHour - halfBack);
+                                    latest   = Math.min(latest,   peakHour + halfFwd);
+                                }
+                                triggerWindow = { start: earliest, end: latest, peakHour };
                             }
                         }
                     }
