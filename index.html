@@ -2886,21 +2886,6 @@
                 window.ephemeralLocationIds = window.ephemeralLocationIds || new Set();
                 window.ephemeralLocationIds.add(loc);
 
-                // Autosave from iOS install URL (v1.0.118).
-                // ----------
-                // If the URL has &autosave=1, the user already explicitly tapped "+ Add to my list"
-                // in Safari before installing the PWA. Their saved state didn't carry across the
-                // Safari→standalone-PWA storage chasm, but the URL did. So we treat this as a
-                // re-confirmation of their save intent — call saveSharedLocation immediately on
-                // the just-injected ephemeral entry, which persists it to the PWA's localStorage
-                // and removes the ephemeral flag. The "Add to my list" button never shows because
-                // by the time the modal opens the ephemeral set no longer contains this id.
-                const isAutosave = params.get('autosave') === '1';
-                if (isAutosave && typeof window.saveSharedLocation === 'function') {
-                    // Defer one tick so the location is fully injected before save runs.
-                    setTimeout(() => window.saveSharedLocation(loc), 50);
-                }
-
                 // Refresh the home list and open the modal pointed at the new location.
                 if (typeof renderList === 'function') renderList();
                 setTimeout(() => window.openDetail(loc), 100);
@@ -3002,39 +2987,6 @@
                         diskFavsLength: parsedFavs.length
                     });
                 } catch(e) { console.warn('[saveSharedLocation] disk verify failed:', e); }
-                
-                // iOS storage-chasm mitigation (v1.0.118).
-                // ----------
-                // On iOS, when the user taps "Add to Home Screen" in Safari to install
-                // the PWA, the resulting standalone app gets its OWN localStorage bucket,
-                // separate from Safari's. The location they just saved in Safari isn't
-                // visible to the installed PWA on first launch. This is documented Apple
-                // behaviour, not a bug.
-                //
-                // Workaround: encode the saved location into the page URL via
-                // history.replaceState. If iOS captures the current URL at install time
-                // (which it does in most cases — anecdotal across PWA forums; Apple docs
-                // are silent on exact semantics), the PWA's start_url will include the
-                // location data + an autosave=1 flag. The PWA's first launch sees these
-                // params via handleIncomingDeepLink, skips the "ephemeral, wait for tap"
-                // state, and recreates the save in its own localStorage.
-                //
-                // Fallback if iOS captures the ORIGINAL URL instead of our updated one:
-                // PWA launches with the original deep-link params, no autosave flag — the
-                // user sees the normal "+ Add to my list" button and taps once more.
-                // Annoying but not broken — degraded gracefully.
-                try {
-                    const loc = customLocations.find(l => l.id === id);
-                    if (loc && typeof history.replaceState === 'function') {
-                        let url = `${window.location.pathname}?loc=${encodeURIComponent(id)}`
-                                + `&lat=${loc.lat}&lng=${loc.lng}`;
-                        if (loc.en) url += `&en=${encodeURIComponent(loc.en)}`;
-                        if (loc.zh) url += `&zh=${encodeURIComponent(loc.zh)}`;
-                        url += `&autosave=1`;
-                        history.replaceState({}, '', url);
-                        console.log('[saveSharedLocation] URL updated for iOS install capture:', url);
-                    }
-                } catch(e) { console.warn('[saveSharedLocation] URL update failed:', e); }
                 
                 // Cloud sync if authed. saveUserData is a no-op when not signed in.
                 if (typeof saveUserData === 'function') {
@@ -5403,7 +5355,6 @@
         <div class="pwa-sub">添加到主屏幕 · Faster, works offline</div>
       </div>
       <button id="pwa-install-btn" type="button">Install</button>
-      <button id="pwa-have-btn" type="button" style="background:transparent;color:#475569;font-weight:700;border:1px solid #cbd5e1;font-size:11px;">Already have it</button>
       <button class="pwa-close" id="pwa-dismiss-btn" type="button" aria-label="Dismiss">✕</button>
     </div>
 
@@ -5456,12 +5407,9 @@
 
       let deferredInstallPrompt = null;
       const DISMISS_KEY = 'wnext_pwa_install_dismissed_v1';
-      const PERMANENT_DISMISS_KEY = 'wnext_pwa_install_dismissed_permanent';
       const DISMISS_DAYS = 90;
 
       const isDismissed = () => {
-        // Permanent dismiss never expires — user tapped "Already have it".
-        if (localStorage.getItem(PERMANENT_DISMISS_KEY) === '1') return true;
         const t = parseInt(localStorage.getItem(DISMISS_KEY) || '0', 10);
         if (!t) return false;
         const elapsed = (Date.now() - t) / (1000 * 60 * 60 * 24);
@@ -5500,7 +5448,6 @@
 
       const installBtn = document.getElementById('pwa-install-btn');
       const dismissBtn = document.getElementById('pwa-dismiss-btn');
-      const haveBtn = document.getElementById('pwa-have-btn');
       const banner = document.getElementById('pwa-install-banner');
 
       if (installBtn) {
@@ -5521,17 +5468,6 @@
         dismissBtn.addEventListener('click', () => {
           banner.classList.remove('show');
           safeSet(DISMISS_KEY, String(Date.now()));
-        });
-      }
-
-      // "Already have it" — permanent dismiss. For users who have the PWA
-      // installed but are visiting in Safari (or any browser that can't
-      // detect the installed PWA). Sets a never-expires localStorage flag
-      // so the banner won't show again on this storage context.
-      if (haveBtn) {
-        haveBtn.addEventListener('click', () => {
-          banner.classList.remove('show');
-          safeSet(PERMANENT_DISMISS_KEY, '1');
         });
       }
 
