@@ -915,6 +915,68 @@
                 return fallback;
             }
         }
+        
+        // ===== DETAIL FORECAST CACHE HELPERS =====
+        // The detail cache is a SINGLE localStorage entry (one big JSON blob) containing
+        // entries keyed by `${locationId}__${model}`. Each entry has { ts, data }.
+        // 
+        // Why one blob rather than one key per location?
+        //   - Fewer storage operations (each setItem is synchronous and blocks the main thread)
+        //   - Easier to expire/prune the whole cache at once
+        //   - LocalStorage has overhead per key, so packing into one key is more space-efficient
+        //
+        // Tradeoff: writing one location requires re-serializing the whole blob. With ~10
+        // favorites at ~50KB each = ~500KB of JSON, this is ~5-10ms on modern phones — fine.
+        const detailCacheKey = (id, model) => `${id}__${model}`;
+        
+        function loadDetailCache() {
+            // Returns the entire cache object, pruning stale entries on read.
+            const blob = safeGetJson(DETAIL_CACHE_KEY, {});
+            const now = Date.now();
+            let pruned = false;
+            for (const k in blob) {
+                if (!blob[k] || typeof blob[k].ts !== 'number' || (now - blob[k].ts) > DETAIL_CACHE_TTL_MS * 24) {
+                    // Drop entries older than 24h regardless (avoids accumulating forever).
+                    delete blob[k];
+                    pruned = true;
+                }
+            }
+            if (pruned) safeSet(DETAIL_CACHE_KEY, JSON.stringify(blob));
+            return blob;
+        }
+        
+        function saveDetailCacheEntry(id, model, data) {
+            // Writes a single location's detail payload to the cache. Robust to quota errors:
+            // if write fails, drop the oldest 3 entries and retry once. (safeSet itself also
+            // does its own emergency cleanup of WEATHER_CACHE_KEY as a deeper fallback.)
+            try {
+                const blob = safeGetJson(DETAIL_CACHE_KEY, {});
+                blob[detailCacheKey(id, model)] = { ts: Date.now(), data };
+                if (safeSet(DETAIL_CACHE_KEY, JSON.stringify(blob))) return;
+                // First attempt failed — try shrinking the cache.
+                const entries = Object.entries(blob)
+                    .filter(([k]) => k !== detailCacheKey(id, model))
+                    .sort((a, b) => (a[1].ts || 0) - (b[1].ts || 0));
+                for (let i = 0; i < Math.min(3, entries.length); i++) {
+                    delete blob[entries[i][0]];
+                }
+                blob[detailCacheKey(id, model)] = { ts: Date.now(), data };
+                safeSet(DETAIL_CACHE_KEY, JSON.stringify(blob));
+            } catch (e) {
+                console.warn('[DetailCache] save failed', e);
+            }
+        }
+        
+        function getDetailCacheEntry(id, model) {
+            // Returns { data, isFresh } or null if no entry exists.
+            // `isFresh` flags whether the entry is within TTL — caller uses this to decide
+            // whether to background-refresh after rendering the cached payload.
+            const blob = safeGetJson(DETAIL_CACHE_KEY, {});
+            const entry = blob[detailCacheKey(id, model)];
+            if (!entry || !entry.data || typeof entry.ts !== 'number') return null;
+            const age = Date.now() - entry.ts;
+            return { data: entry.data, isFresh: age < DETAIL_CACHE_TTL_MS, age };
+        }
         // Math.max(...[]) returns -Infinity silently — corrupts downstream math and display.
         // safeMax returns the fallback (default 0) when the array is empty/missing.
         function safeMax(arr, fallback = 0) {
@@ -960,6 +1022,15 @@
         const RENAME_CACHE_KEY = `wnext_v41_rename_store`;
         const CUSTOM_CACHE_KEY = `wnext_v41_custom_store`;
         const PURGED_CACHE_KEY = `wnext_v41_purged_store`; // NEW
+        // Detail forecast cache — stores the per-location hourly forecast payload so that
+        // tapping a location feels instant when the data is fresh. Keyed by `id__model` so
+        // switching weather models (ECMWF / Best Match) doesn't return stale model data.
+        // Format: { [`${id}__${model}`]: { ts: <epoch ms>, data: <hourly+daily payload> } }
+        // TTL is 1 hour: weather forecasts are updated by Open-Meteo a few times per day, but
+        // hourly resolution is fine enough that an hour-old cached forecast is still useful.
+        // We use stale-while-revalidate: show cached data immediately, then refresh in bg.
+        const DETAIL_CACHE_KEY = `wnext_v41_detail_store`;
+        const DETAIL_CACHE_TTL_MS = 60 * 60 * 1000; // 1 hour
         const PREF_MODEL_KEY = `wnext_v41_pref_model_store`;
         const PREF_CROPS_KEY = `wnext_v41_pref_crops_store`;
         const PREF_AI_KEY = `wnext_v41_ai_pref_map_v2`;
@@ -1245,6 +1316,27 @@
                 if (cachedFavs) try { favoriteIds = Array.from(new Set(JSON.parse(cachedFavs))); } catch(e) { favoriteIds = []; }
                 if (cachedHidden) try { hiddenIds = Array.from(new Set(JSON.parse(cachedHidden))); } catch(e) { hiddenIds = []; }
                 if (cachedRenamed) try { renamedLocations = JSON.parse(cachedRenamed) || {}; } catch(e) { renamedLocations = {}; }
+                
+                // Hydrate detail forecast cache from localStorage so taps on a previously
+                // opened location feel instant after a page refresh / cold start. We pre-load
+                // the in-memory `detailData` for any cached entries (regardless of staleness);
+                // fetchMultiDetailWeather() will background-refresh stale entries when invoked.
+                try {
+                    const detailBlob = loadDetailCache();
+                    for (const k in detailBlob) {
+                        // Key format: "id__model" — extract id and only hydrate matching active model
+                        const sepIdx = k.lastIndexOf('__');
+                        if (sepIdx < 0) continue;
+                        const id = k.substring(0, sepIdx);
+                        const model = k.substring(sepIdx + 2);
+                        // Only pre-load for the currently active model. Other models stay on disk
+                        // and become available the moment the user switches to them.
+                        const willBeActive = (cachedModel === model) || (!cachedModel && model === 'ecmwf_ifs');
+                        if (willBeActive && detailBlob[k] && detailBlob[k].data) {
+                            detailData[id] = detailBlob[k].data;
+                        }
+                    }
+                } catch(e) { console.warn('[DetailCache] hydration failed', e); }
                 
                 if (cachedCustom) {
                     try { customLocations = JSON.parse(cachedCustom) || []; } catch(e) { customLocations = []; }
@@ -2146,11 +2238,57 @@
 
         async function fetchMultiDetailWeather(locIds) {
              if(!locIds || locIds.length === 0) return;
-             setStatus(`Syncing ${locIds.length} Locations...`);
+             
+             // ===== PHASE 1: hydrate from cache instantly =====
+             // For each requested location, check if we have a usable cached payload.
+             // If yes, populate detailData[id] immediately so renderReports() / populateReportData()
+             // can show the data without waiting for the network.
+             //
+             // We classify each id as:
+             //   - 'fresh'   → cache exists and is within TTL → no network fetch needed
+             //   - 'stale'   → cache exists but is older than TTL → render now, refresh in background
+             //   - 'missing' → no cache at all → must fetch from network (with loading indicator)
+             const cacheStatus = {};
              locIds.forEach(id => {
-                const rangeEl = document.getElementById(`m-range-${id}`);
-                if (rangeEl) rangeEl.innerHTML = '<span class="text-[9px] text-slate-300 animate-pulse uppercase tracking-widest">Processing...</span>';
+                 const cached = getDetailCacheEntry(id, activeModel);
+                 if (cached) {
+                     detailData[id] = cached.data;
+                     cacheStatus[id] = cached.isFresh ? 'fresh' : 'stale';
+                 } else {
+                     cacheStatus[id] = 'missing';
+                 }
              });
+             
+             // Show "Processing..." badge only on locations that lack any cached data.
+             // Stale-cached locations show the cached date range immediately, so the user
+             // never sees a blank "Processing" state for them — even if a background refresh
+             // is in flight.
+             locIds.forEach(id => {
+                if (cacheStatus[id] === 'missing') {
+                    const rangeEl = document.getElementById(`m-range-${id}`);
+                    if (rangeEl) rangeEl.innerHTML = '<span class="text-[9px] text-slate-300 animate-pulse uppercase tracking-widest">Processing...</span>';
+                }
+             });
+             
+             // Render whatever we already have from cache before touching the network.
+             // This is the perceptual speed win — taps feel instant when cache is hot.
+             const cachedIds = locIds.filter(id => cacheStatus[id] !== 'missing');
+             if (cachedIds.length > 0) {
+                 renderReports(locIds);
+             }
+             
+             // ===== PHASE 2: figure out which ids need a network fetch =====
+             // - 'missing' → always fetch
+             // - 'stale'   → fetch in background (don't block UI)
+             // - 'fresh'   → skip
+             const idsToFetch = locIds.filter(id => cacheStatus[id] !== 'fresh');
+             if (idsToFetch.length === 0) {
+                 setStatus("Ready", true);
+                 return;
+             }
+             
+             setStatus(`Syncing ${idsToFetch.length} Location${idsToFetch.length>1?'s':''}...`);
+             
              const fetchOne = async (id) => {
                  const s = getAllLocations().find(l => l.id === id); if(!s) return;
                  // Hourly variables: temperature, humidity, precipitation, clouds, wind, ET0, CAPE, visibility
@@ -2198,9 +2336,20 @@
                      detailData[id] = data.hourly;
                      // Attach daily data (leaf wetness, growing degree days) onto detailData so AI prompts can use it
                      if (data.daily) detailData[id]._daily = data.daily;
+                     // Persist to localStorage so the next session/page-refresh can hydrate
+                     // this data instantly without re-fetching. Keyed by id+model so switching
+                     // weather models doesn't return stale model data.
+                     saveDetailCacheEntry(id, activeModel, detailData[id]);
                  }
              };
-             try { await Promise.all(locIds.map(fetchOne)); renderReports(locIds); setStatus("Ready", true); } catch (e) { setStatus("Sync Error", 'error'); }
+             // Only fetch the network for ids that need it (missing or stale).
+             // Re-render all requested locIds afterwards so freshly-fetched data replaces
+             // the stale-cached version that was shown during phase 1.
+             try { 
+                 await Promise.all(idsToFetch.map(fetchOne));
+                 renderReports(locIds);
+                 setStatus("Ready", true);
+             } catch (e) { setStatus("Sync Error", 'error'); }
         }
 
         const getHourlyData = (locId, variable, isDetail = false) => {
@@ -2649,7 +2798,7 @@
         window.openAddModal = () => { document.getElementById('add-loc-modal').classList.remove('hidden'); window.switchAddTab('manual'); };
         window.switchAddTab = (tab) => { ['manual', 'scan', 'recycle'].forEach(t => { const tabEl = document.getElementById(`tab-${t}`); const viewEl = document.getElementById(`view-${t}`); if(tabEl) tabEl.classList.toggle('active', t === tab); if(viewEl) { viewEl.classList.toggle('hidden', t !== tab); if (t === 'recycle') { viewEl.classList.toggle('flex', t === tab); } else { viewEl.classList.toggle('block', t === tab); } } }); const btn = document.getElementById('btn-save-loc'); if (btn) { if (tab === 'recycle') { btn.style.visibility = 'hidden'; window.renderRecycleView(); } else { btn.style.visibility = 'visible'; } } };
         window.renderRecycleView = () => { const list = document.getElementById('recycle-list-integrated'); if(!list) return; list.innerHTML = ''; const deleted = getAllLocations().filter(l => hiddenIds.includes(l.id)); if(deleted.length === 0) { list.innerHTML = '<div class="p-8 text-center text-xs text-slate-300 font-bold uppercase tracking-widest">Bin is empty</div>'; } else { deleted.forEach(l => { const custom = renamedLocations[l.id]; const en = custom?.en || l.en; const zh = custom?.zh || l.zh; list.innerHTML += `<div class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 bg-slate-50/50"><div class="flex-1 min-w-0 pr-2"><div class="font-bold text-slate-700 text-xs truncate">${en}</div>${zh ? `<div class="text-[10px] text-slate-400 truncate">${zh}</div>` : ''}</div><div class="flex items-center gap-2"><button onclick="window.purgeLocation('${l.id}')" class="text-[9px] font-black text-red-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Purge</button><button onclick="window.restoreLocation('${l.id}')" class="text-[9px] font-black text-blue-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Restore</button></div></div>`; }); } };
-        window.purgeLocation = (id) => { window.showConfirm("Permanently delete this location? This cannot be undone.\n永久删除此地点？无法撤销。", () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
+        window.purgeLocation = (id) => { window.showConfirm("Permanently delete this location? This cannot be undone.\n永久删除此地点？无法撤销。", () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; try { const detailBlob = safeGetJson(DETAIL_CACHE_KEY, {}); let changed = false; for (const k in detailBlob) { if (k.startsWith(id + '__')) { delete detailBlob[k]; changed = true; } } if (changed) safeSet(DETAIL_CACHE_KEY, JSON.stringify(detailBlob)); } catch(e) {} safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
         window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); if(!en && !zh) { window.showToast("Name Required / 请输入名字", true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast("Invalid Coordinates / 坐标无效", true); latInput.focus(); return; } if(lat < -90 || lat > 90 || lng < -180 || lng > 180) { window.showToast("Coordinates out of range / 坐标超出范围", true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast("Location Exists / 地点已存在", true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); safeSet(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); safeSet(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast("Saved! Add another? / 已保存"); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast("Storage Error / 存储错误", true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm("Warning: These coordinates appear to be outside Malaysia.\n警告：此坐标似乎不在马来西亚境内。\n\nContinue adding?", performSave); } else { performSave(); } };
         window.handlePhotoScan = async (e) => { const file = e.target.files[0]; if(!file) return; const res = document.getElementById('scan-result'); res.innerText = "Scanning... / 正在扫描..."; const reader = new FileReader(); reader.onload = async function(event) { const base64Data = event.target.result.split(',')[1]; const prompt = "Analyze this image. It might be a photo of a compass app, a GPS device, or a location screenshot. Extract the Latitude and Longitude. Return strictly JSON format: { \"lat\": 3.1234, \"lng\": 101.5678 }. If not found, return { \"error\": \"No coordinates found\" }."; try { 
             const payload = { contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64Data } } ] }], generationConfig: { responseMimeType: "application/json" } };
