@@ -2818,14 +2818,29 @@
                 if (isNaN(lat) || isNaN(lng)) return;
                 if (lat < -90 || lat > 90 || lng < -180 || lng > 180) return;
 
-                // Decide en/zh from the URL-encoded name. Single string; pick which
-                // field based on whether it contains CJK characters.
-                const decodedName = rawName;
-                const hasCJK = /[\u4e00-\u9fff]/.test(decodedName);
+                // Resolve en/zh names from URL params. Three cases:
+                //   1. New format (v1.0.115+) — both en and zh params present. Use both directly.
+                //   2. New format with one name — only en OR zh present. Use the one given, leave
+                //      the other empty. The location was single-named on the sender's device too.
+                //   3. Legacy format (v1.0.108-v1.0.114) — only name= present. Apply the original
+                //      CJK heuristic: characters in U+4E00..U+9FFF go to zh, others go to en.
+                //      Single-named round-trip is lossless under this fallback.
+                const rawEn = params.get('en');
+                const rawZh = params.get('zh');
+                let nameEn = '';
+                let nameZh = '';
+                if (rawEn || rawZh) {
+                    nameEn = rawEn || '';
+                    nameZh = rawZh || '';
+                } else if (rawName) {
+                    const hasCJK = /[\u4e00-\u9fff]/.test(rawName);
+                    nameEn = hasCJK ? '' : rawName;
+                    nameZh = hasCJK ? rawName : '';
+                }
                 const newLoc = {
                     id: loc,                       // Reuse sender's id so re-clicks idempotent
-                    en: hasCJK ? '' : decodedName,
-                    zh: hasCJK ? decodedName : '',
+                    en: nameEn,
+                    zh: nameZh,
                     lat, lng,
                     t: 0, p: 0,
                     em: lng > 108.0               // East Malaysia flag — same rule as getAllLocations
@@ -4915,28 +4930,38 @@
                 // In Malaysian everyday usage, 风暴 / "Storm" / "Ribut" carry near-cyclone weight
                 // — front-page-newspaper severity. Routine heavy afternoon thunderstorms (which is
                 // what CAPE ≥ 1500 J/kg actually means in this tropical environment) are described
-                // with lighter words in conversation:
-                //   zh: 暴雨 (heavy rain / downpour) — Stanley's direct guidance
-                //   ms: Ribut Petir (thunderstorm) — matches MetMalaysia's official forecast term
-                //   en: Thunderstorm — Stanley's note on Malaysian English usage
+                // with lighter words in conversation. And the time window itself represents WHEN
+                // conditions peak (a probability window), not WHEN rain will definitely arrive —
+                // real-world testing showed a forecast "暴雨 10AM-1PM" day actually rained at
+                // 2:55PM, which was technically correct (it was a storm day) but read as wrong
+                // because the time label looked like a schedule. So we hedge with "可能有"/"Possible"
+                // to match the model's actual claim: "atmospheric conditions favour heavy rain in
+                // this window" rather than "rain will fall in this window."
+                //   zh: 可能有暴雨 ("may have heavy rain")
+                //   ms: Kemungkinan Ribut Petir — matches MetMalaysia's hedged-forecast wording
+                //   en: Possible Thunderstorm — same hedge applied in English
                 //   ta, my: kept as-is — no native-speaker confirmation; better correct-formal
                 //          than wrong-colloquial. Revisit when a Tamil/Burmese user advises.
                 // The in-app chart row label still says 风暴风险 / "Storm Risk" / "Risiko Ribut"
                 // because that's the technical/meteorological register where the help card
                 // explains CAPE × CIN classification. Different audience, different vocabulary.
                 const stormLabel = {
-                    en: 'Thunderstorm', ms: 'Ribut Petir', zh: '暴雨', ta: 'புயல்', my: 'မုန်တိုင်း'
-                }[lang] || 'Thunderstorm';
+                    en: 'Possible Thunderstorm', ms: 'Kemungkinan Ribut Petir', zh: '可能有暴雨', ta: 'புயல்', my: 'မုန်တိုင်း'
+                }[lang] || 'Possible Thunderstorm';
                 const todayLabel = {
                     en: 'Today', ms: 'Hari Ini', zh: '今天', ta: 'இன்று', my: 'ဒီနေ့'
                 }[lang] || 'Today';
                 const rainLabel = {
                     en: 'Rain', ms: 'Hujan', zh: '雨', ta: 'மழை', my: 'မိုး'
                 }[lang] || 'Rain';
+                // Section header — English and Malay parallel the body phrasing directly.
+                // Chinese uses 可能有暴雨的日期 (literally "dates with possible heavy rain") so
+                // the section header keeps the same 可能有暴雨 verb phrase as the body lines,
+                // just nominalised. Reads naturally as a list label.
                 const stormDaysLabel = {
-                    en: 'Thunderstorm Days:', ms: 'Hari Ribut Petir:', zh: '暴雨日:',
+                    en: 'Possible Thunderstorm Days:', ms: 'Hari Kemungkinan Ribut Petir:', zh: '可能有暴雨的日期:',
                     ta: 'புயல் நாட்கள்:', my: 'မုန်တိုင်းရက်များ:'
-                }[lang] || 'Thunderstorm Days:';
+                }[lang] || 'Possible Thunderstorm Days:';
                 const fullForecastLabel = {
                     en: 'Full forecast', ms: 'Ramalan penuh', zh: '完整预报',
                     ta: 'முழு முன்னறிவிப்பு', my: 'ခန့်မှန်းအပြည့်အစုံ'
@@ -4958,15 +4983,29 @@
                     lines.push(stormDaysLabel);
                     stormDays.forEach(d => {
                         const win = `${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
-                        lines.push(`- ${d.date} ${stormLabel} ${win} (${rainLabel} ${d.pp}%)`);
+                        // No storm label per line — the section header above already announces
+                        // these as storm days, so repeating "可能有暴雨"/"Possible Thunderstorm"
+                        // on every row was visual noise. "@" is a clean date-time-rain joiner
+                        // that reads naturally in WhatsApp register across all five languages.
+                        lines.push(`- ${d.date} @ ${win} (${rainLabel} ${d.pp}%)`);
                     });
                 }
                 
-                // Deep-link: include id + lat/lng so recipients without that location saved
-                // can still resolve it (id alone breaks for user-added places that don't
-                // exist on the recipient's device).
+                // Deep-link: include id + lat/lng + both name fields so the recipient can
+                // recreate a dual-named custom location faithfully. The previous version
+                // encoded a single `name=` param which lost the alt-language name on the
+                // round trip (a "RESTAURANT 157 / 157 小食店" share carried only one name,
+                // and the recipient saved a single-language location).
+                //   - en/zh are encoded independently — recipient gets both or whichever exists
+                //   - name= is kept ONLY when neither en nor zh are present (defensive fallback;
+                //     shouldn't happen in practice since locName itself is derived from en/zh)
+                //   - Legacy URLs with only `name=` still parse correctly on the receiver side
+                //     because the receiver checks en/zh/name in priority order
                 if (loc) {
-                    const params = `?loc=${encodeURIComponent(lid)}&lat=${loc.lat}&lng=${loc.lng}&name=${encodeURIComponent(locName)}`;
+                    let params = `?loc=${encodeURIComponent(lid)}&lat=${loc.lat}&lng=${loc.lng}`;
+                    if (resolvedEn) params += `&en=${encodeURIComponent(resolvedEn)}`;
+                    if (resolvedZh) params += `&zh=${encodeURIComponent(resolvedZh)}`;
+                    if (!resolvedEn && !resolvedZh) params += `&name=${encodeURIComponent(locName)}`;
                     lines.push('');
                     lines.push(`${fullForecastLabel}: ${BASE_URL}${params}`);
                 } else {
