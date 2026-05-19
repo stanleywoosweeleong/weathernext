@@ -898,7 +898,7 @@
                 } catch (e2) {
                     console.error('[Storage] Critical: cleanup retry also failed for', key, e2);
                     if (typeof window !== 'undefined' && window.showToast) {
-                        window.showToast('Storage error / 存储错误', true);
+                        window.showToast(sysT().storageError, true);
                     }
                     return false;
                 }
@@ -977,6 +977,81 @@
             const age = Date.now() - entry.ts;
             return { data: entry.data, isFresh: age < DETAIL_CACHE_TTL_MS, age };
         }
+        
+        // ===== DEVICE-LANGUAGE-AWARE SYSTEM MESSAGES =====
+        // navigator.language returns BCP-47 like "en-US", "zh-CN", "zh-TW", "ms-MY", "ta-IN", "my-MM".
+        // Map primary subtag to one of the 5 supported app languages. Unknown → English.
+        // Defined early so legacy storage helpers (above the main UI code) can use it too.
+        const getDeviceLang = () => {
+            const raw = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+            const primary = raw.split('-')[0];
+            if (['en', 'zh', 'ms', 'ta', 'my'].includes(primary)) return primary;
+            return 'en';
+        };
+        
+        // SYSTEM_I18N: short single-language strings for OS-level/storage/validation toasts.
+        // Per-feature i18n tables (GPS, help cards, AI prompts, etc.) live in their own scope
+        // closer to the feature code; this table is for app-wide messages that any layer can hit.
+        const SYSTEM_I18N = {
+            en: {
+                storageError: "Storage error",
+                keyEmpty: "Key cannot be empty",
+                nameRequired: "Name required",
+                invalidCoords: "Invalid coordinates",
+                coordsOutOfRange: "Coordinates out of range",
+                locationExists: "Location already exists",
+                saved: "Saved! Add another?",
+                outsideMalaysia: "Warning: These coordinates appear to be outside Malaysia.\n\nContinue adding?",
+                confirmPurge: "Permanently delete this location? This cannot be undone."
+            },
+            zh: {
+                storageError: "存储错误",
+                keyEmpty: "密钥不能为空",
+                nameRequired: "请输入名字",
+                invalidCoords: "坐标无效",
+                coordsOutOfRange: "坐标超出范围",
+                locationExists: "地点已存在",
+                saved: "已保存",
+                outsideMalaysia: "警告：此坐标似乎不在马来西亚境内。\n\n是否继续添加？",
+                confirmPurge: "永久删除此地点？无法撤销。"
+            },
+            ms: {
+                storageError: "Ralat storan",
+                keyEmpty: "Kunci tidak boleh kosong",
+                nameRequired: "Nama diperlukan",
+                invalidCoords: "Koordinat tidak sah",
+                coordsOutOfRange: "Koordinat di luar julat",
+                locationExists: "Lokasi sudah wujud",
+                saved: "Disimpan! Tambah lagi?",
+                outsideMalaysia: "Amaran: Koordinat ini kelihatan di luar Malaysia.\n\nTeruskan menambah?",
+                confirmPurge: "Padam lokasi ini secara kekal? Tindakan ini tidak boleh dibatalkan."
+            },
+            ta: {
+                storageError: "சேமிப்பு பிழை",
+                keyEmpty: "விசை காலியாக இருக்க முடியாது",
+                nameRequired: "பெயர் தேவை",
+                invalidCoords: "தவறான ஆயத்தொலைவுகள்",
+                coordsOutOfRange: "ஆயத்தொலைவுகள் வரம்புக்கு வெளியே",
+                locationExists: "இடம் ஏற்கனவே உள்ளது",
+                saved: "சேமிக்கப்பட்டது! மற்றொன்று சேர்?",
+                outsideMalaysia: "எச்சரிக்கை: இந்த ஆயத்தொலைவுகள் மலேசியாவிற்கு வெளியே உள்ளன.\n\nதொடரவா?",
+                confirmPurge: "இந்த இடத்தை நிரந்தரமாக நீக்கவா? இதை மீட்க முடியாது."
+            },
+            my: {
+                storageError: "သိုလှောင်မှု အမှား",
+                keyEmpty: "ကီးကို ဗလာမထားနိုင်ပါ",
+                nameRequired: "အမည် လိုအပ်သည်",
+                invalidCoords: "ကိုသြဒိနိတ်များ မမှန်ပါ",
+                coordsOutOfRange: "ကိုသြဒိနိတ်များ အပိုင်းအခြားပြင်ပ",
+                locationExists: "ဤနေရာသည် ရှိပြီးသား",
+                saved: "သိမ်းပြီး! နောက်တစ်ခုထပ်ထည့်မလား?",
+                outsideMalaysia: "သတိ: ဤကိုသြဒိနိတ်များသည် မလေးရှားပြင်ပတွင် ရှိပုံရသည်။\n\nဆက်လက်ထည့်မလား?",
+                confirmPurge: "ဤနေရာကို အပြီးတိုင်ဖျက်မလား? ပြန်လည်ရယူ၍မရပါ။"
+            }
+        };
+        // Convenience: get the active translation table.
+        const sysT = () => SYSTEM_I18N[getDeviceLang()];
+        
         // Math.max(...[]) returns -Infinity silently — corrupts downstream math and display.
         // safeMax returns the fallback (default 0) when the array is empty/missing.
         function safeMax(arr, fallback = 0) {
@@ -1189,7 +1264,7 @@
                 document.getElementById('api-key-modal').classList.add('hidden');
                 if (apiKeyResolve) { apiKeyResolve(newKey); apiKeyResolve = null; }
             } else {
-                window.showToast("Key cannot be empty / 密钥不能为空", true);
+                window.showToast(sysT().keyEmpty, true);
             }
         };
 
@@ -2707,15 +2782,7 @@
             }
         };
         
-        // Detect device language → map to one of our 5 supported languages.
-        // navigator.language returns BCP-47 tags like "en-US", "zh-CN", "zh-TW", "ms-MY",
-        // "ta-IN", "my-MM". We match by primary subtag. Anything unmatched falls back to English.
-        const getDeviceLang = () => {
-            const raw = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
-            const primary = raw.split('-')[0];
-            if (['en', 'zh', 'ms', 'ta', 'my'].includes(primary)) return primary;
-            return 'en';
-        };
+        // Note: getDeviceLang() is defined globally near the top of the script (with SYSTEM_I18N).
         
         window.fillFromGPS = () => {
             const btn = document.getElementById('gps-fill-btn');
@@ -2798,8 +2865,8 @@
         window.openAddModal = () => { document.getElementById('add-loc-modal').classList.remove('hidden'); window.switchAddTab('manual'); };
         window.switchAddTab = (tab) => { ['manual', 'scan', 'recycle'].forEach(t => { const tabEl = document.getElementById(`tab-${t}`); const viewEl = document.getElementById(`view-${t}`); if(tabEl) tabEl.classList.toggle('active', t === tab); if(viewEl) { viewEl.classList.toggle('hidden', t !== tab); if (t === 'recycle') { viewEl.classList.toggle('flex', t === tab); } else { viewEl.classList.toggle('block', t === tab); } } }); const btn = document.getElementById('btn-save-loc'); if (btn) { if (tab === 'recycle') { btn.style.visibility = 'hidden'; window.renderRecycleView(); } else { btn.style.visibility = 'visible'; } } };
         window.renderRecycleView = () => { const list = document.getElementById('recycle-list-integrated'); if(!list) return; list.innerHTML = ''; const deleted = getAllLocations().filter(l => hiddenIds.includes(l.id)); if(deleted.length === 0) { list.innerHTML = '<div class="p-8 text-center text-xs text-slate-300 font-bold uppercase tracking-widest">Bin is empty</div>'; } else { deleted.forEach(l => { const custom = renamedLocations[l.id]; const en = custom?.en || l.en; const zh = custom?.zh || l.zh; list.innerHTML += `<div class="flex items-center justify-between p-3 border-b border-slate-50 last:border-0 bg-slate-50/50"><div class="flex-1 min-w-0 pr-2"><div class="font-bold text-slate-700 text-xs truncate">${en}</div>${zh ? `<div class="text-[10px] text-slate-400 truncate">${zh}</div>` : ''}</div><div class="flex items-center gap-2"><button onclick="window.purgeLocation('${l.id}')" class="text-[9px] font-black text-red-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Purge</button><button onclick="window.restoreLocation('${l.id}')" class="text-[9px] font-black text-blue-600 bg-white px-3 py-2 rounded shadow-sm border border-slate-100 uppercase tracking-wider active:scale-95 transition-transform">Restore</button></div></div>`; }); } };
-        window.purgeLocation = (id) => { window.showConfirm("Permanently delete this location? This cannot be undone.\n永久删除此地点？无法撤销。", () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; try { const detailBlob = safeGetJson(DETAIL_CACHE_KEY, {}); let changed = false; for (const k in detailBlob) { if (k.startsWith(id + '__')) { delete detailBlob[k]; changed = true; } } if (changed) safeSet(DETAIL_CACHE_KEY, JSON.stringify(detailBlob)); } catch(e) {} safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
-        window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); if(!en && !zh) { window.showToast("Name Required / 请输入名字", true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast("Invalid Coordinates / 坐标无效", true); latInput.focus(); return; } if(lat < -90 || lat > 90 || lng < -180 || lng > 180) { window.showToast("Coordinates out of range / 坐标超出范围", true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast("Location Exists / 地点已存在", true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); safeSet(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); safeSet(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast("Saved! Add another? / 已保存"); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast("Storage Error / 存储错误", true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm("Warning: These coordinates appear to be outside Malaysia.\n警告：此坐标似乎不在马来西亚境内。\n\nContinue adding?", performSave); } else { performSave(); } };
+        window.purgeLocation = (id) => { window.showConfirm(sysT().confirmPurge, () => { if(!purgedIds.includes(id)) { purgedIds.push(id); } if (id.startsWith('c_')) { const cIdx = customLocations.findIndex(c => c.id === id); if (cIdx > -1) customLocations.splice(cIdx, 1); } const hIdx = hiddenIds.indexOf(id); if (hIdx > -1) hiddenIds.splice(hIdx, 1); const fIdx = favoriteIds.indexOf(id); if (fIdx > -1) favoriteIds.splice(fIdx, 1); if (renamedLocations[id]) delete renamedLocations[id]; if (weatherData[id]) delete weatherData[id]; if (detailData[id]) delete detailData[id]; try { const detailBlob = safeGetJson(DETAIL_CACHE_KEY, {}); let changed = false; for (const k in detailBlob) { if (k.startsWith(id + '__')) { delete detailBlob[k]; changed = true; } } if (changed) safeSet(DETAIL_CACHE_KEY, JSON.stringify(detailBlob)); } catch(e) {} safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations)); safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds)); safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds)); safeSet(RENAME_CACHE_KEY, JSON.stringify(renamedLocations)); safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds)); saveUserData(); window.renderRecycleView(); const binCountEl = document.getElementById('tab-bin-count'); if (binCountEl) { binCountEl.innerText = hiddenIds.length; if(hiddenIds.length === 0) binCountEl.classList.add('hidden'); } renderList(); }); };
+        window.saveCustomLocation = () => { const enInput = document.getElementById('add-en'); const zhInput = document.getElementById('add-zh'); const latInput = document.getElementById('add-lat'); const lngInput = document.getElementById('add-lng'); if(!enInput || !zhInput || !latInput || !lngInput) { alert("System Error: Inputs missing."); return; } const en = enInput.value.trim(); const zh = zhInput.value.trim(); const lat = parseFloat(latInput.value); const lng = parseFloat(lngInput.value); const T = sysT(); if(!en && !zh) { window.showToast(T.nameRequired, true); enInput.focus(); return; } if(isNaN(lat) || isNaN(lng)) { window.showToast(T.invalidCoords, true); latInput.focus(); return; } if(lat < -90 || lat > 90 || lng < -180 || lng > 180) { window.showToast(T.coordsOutOfRange, true); latInput.focus(); return; } const allLocs = getAllLocations(); const isDuplicate = allLocs.some(l => Math.abs(l.lat - lat) < 0.0001 && Math.abs(l.lng - lng) < 0.0001); if (isDuplicate) { window.showToast(T.locationExists, true); return; } let finalEn = en; let finalZh = zh; if (!finalEn && finalZh) { finalEn = finalZh; finalZh = ""; } else if (finalEn && !finalZh) { finalZh = ""; } else if (finalEn === finalZh) { finalZh = ""; } const id = `c_${Date.now()}_${Math.floor(Math.random()*1000)}`; const newLoc = { id, en: finalEn, zh: finalZh, lat, lng, t: 0, p: 0, em: lng > 108.0 }; const performSave = () => { try { let diskCustom = []; try { const raw = localStorage.getItem(CUSTOM_CACHE_KEY); diskCustom = raw ? JSON.parse(raw) : []; if(!Array.isArray(diskCustom)) diskCustom = []; } catch(e) { diskCustom = []; } diskCustom.push(newLoc); safeSet(CUSTOM_CACHE_KEY, JSON.stringify(diskCustom)); customLocations = diskCustom; let diskFavs = []; try { const rawF = localStorage.getItem(FAV_CACHE_KEY); diskFavs = rawF ? JSON.parse(rawF) : []; if(!Array.isArray(diskFavs)) diskFavs = []; } catch(e) { diskFavs = []; } if (!diskFavs.includes(id)) { diskFavs.push(id); safeSet(FAV_CACHE_KEY, JSON.stringify(diskFavs)); } favoriteIds = diskFavs; saveUserData(); window.showToast(T.saved); enInput.value = ''; zhInput.value = ''; latInput.value = ''; lngInput.value = ''; enInput.focus(); renderList(); if(currentDisplayedIds.length > 0) window.closeModal(); fetchLandingWeather(); setTimeout(() => { const newEl = document.getElementById(`content-${id}`); if(newEl) { newEl.scrollIntoView({ behavior: 'smooth', block: 'center' }); newEl.style.backgroundColor = '#ecfdf5'; setTimeout(() => { newEl.style.backgroundColor = ''; }, 1500); } }, 500); } catch(e) { console.error("Save Critical Error:", e); window.showToast(T.storageError, true); } }; if (lat < 0.8 || lat > 7.8 || lng < 99.0 || lng > 120.0) { window.showConfirm(T.outsideMalaysia, performSave); } else { performSave(); } };
         window.handlePhotoScan = async (e) => { const file = e.target.files[0]; if(!file) return; const res = document.getElementById('scan-result'); res.innerText = "Scanning... / 正在扫描..."; const reader = new FileReader(); reader.onload = async function(event) { const base64Data = event.target.result.split(',')[1]; const prompt = "Analyze this image. It might be a photo of a compass app, a GPS device, or a location screenshot. Extract the Latitude and Longitude. Return strictly JSON format: { \"lat\": 3.1234, \"lng\": 101.5678 }. If not found, return { \"error\": \"No coordinates found\" }."; try { 
             const payload = { contents: [{ parts: [ { text: prompt }, { inlineData: { mimeType: "image/jpeg", data: base64Data } } ] }], generationConfig: { responseMimeType: "application/json" } };
             const response = await fetchGemini(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent`, payload);
