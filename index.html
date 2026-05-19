@@ -1701,6 +1701,24 @@
                     rule2: "Heavy low cloud + high rain prob = field will stay wet, plan around it",
                     rule3: "All three rows low + high cloud only = good day for full field work"
                 },
+                storm: {
+                    title: "Storm Risk — CAPE × CIN",
+                    body: "CAPE is stored fuel for storms; CIN is the lid that stops them. Together they tell you what kind of weather day you'll have — better than rain probability alone.",
+                    capeExplain: "CAPE (Convective Available Potential Energy) measures how unstable the atmosphere is — higher values mean more storm fuel. Peak afternoon values in tropical Malaysia typically hit 1500–3500 J/kg.",
+                    cinExplain: "CIN (Convective Inhibition) is the negative-energy 'cap' that prevents storms. Strong CIN (more negative than -75) locks the atmosphere down. Weak CIN (-25 or less negative) means storms trigger easily.",
+                    classes: "How the dot color is decided",
+                    stable: "Stable — CAPE < 500 OR very strong cap. Confident dry day.",
+                    moderate: "Moderate — CAPE 500–1500. Light showers possible, no organized storms.",
+                    loaded: "Loaded — CAPE 1500–3000, moderate cap. Afternoon storms likely 2–5 PM.",
+                    capped: "Capped Boiler — CAPE ≥ 2000 + strong cap. Atmosphere full of fuel but locked. If cap breaks (sea breeze, mountain heating, front), violent surprise storms.",
+                    severe: "Severe — CAPE ≥ 3000 + weak cap. Major organized storm potential.",
+                    warnFlag: "⚠️ Warning flag: CAPE-based risk is high but the day's max rain probability stays below 40%. This is the classic 'PoP understating storm risk' case — farmers get surprised because the rain % alone looked safe. Watch the sky after lunch.",
+                    howToUse: "How to use it for spray decisions",
+                    rule1: "Stable / Moderate = safe to plan a full-day field schedule",
+                    rule2: "Loaded = finish spray by 11 AM, expect rain 2–5 PM",
+                    rule3: "Capped Boiler = watch sky after lunch. If cumulus grows fast, the cap is breaking — rush home",
+                    rule4: "Severe = no afternoon field work. Spray before 10 AM only or skip the day"
+                },
                 sky: {
                     title: "Sky Tint (AM / PM)",
                     body: "Two squares per day: how the sky will LOOK at sunrise (top) and sunset (bottom). A visual quick-glance forecast — no numbers to read.",
@@ -1762,6 +1780,24 @@
                     rule1: "CB 风险日 = 只在清晨喷洒，正午前完成",
                     rule2: "低云重 + 降雨概率高 = 田地将持续潮湿，需相应规划",
                     rule3: "三行都低 + 只有高云 = 适合全天田间作业的好日子"
+                },
+                storm: {
+                    title: "风暴风险 — CAPE × CIN",
+                    body: "CAPE 是风暴的储存燃料；CIN 是阻止它们的盖子。两者结合比单看降雨概率更能告诉你今日是什么天气。",
+                    capeExplain: "CAPE（对流可用位能）测量大气不稳定程度 — 数值越高，风暴燃料越多。马来西亚热带午后峰值通常达 1500–3500 J/kg。",
+                    cinExplain: "CIN（对流抑制）是阻止风暴的负能量「盖子」。强 CIN（比 -75 更负）锁住大气；弱 CIN（-25 或更接近 0）则容易触发风暴。",
+                    classes: "圆点颜色判断方法",
+                    stable: "稳定 — CAPE < 500 或非常强的盖子。确信的干燥日。",
+                    moderate: "中等 — CAPE 500–1500。可能有零星小雨，无组织风暴。",
+                    loaded: "蓄势待发 — CAPE 1500–3000，中等盖子。午后 2–5 时可能有风暴。",
+                    capped: "盖压锅炉 — CAPE ≥ 2000 + 强盖子。大气充满燃料但被锁住。若盖子破裂（海风、山地加热、锋面），可能出现猛烈的突发风暴。",
+                    severe: "严重 — CAPE ≥ 3000 + 弱盖子。重大组织风暴潜势。",
+                    warnFlag: "⚠️ 警告标志：CAPE 风险高，但当日最大降雨概率低于 40%。这正是「降雨概率低估风暴风险」的经典情况 — 单看降雨百分比看似安全，结果被偷袭。午餐后留意天空。",
+                    howToUse: "用于喷洒决策",
+                    rule1: "稳定 / 中等 = 可安排全天田间作业",
+                    rule2: "蓄势待发 = 11 时前完成喷洒，预期 2–5 时降雨",
+                    rule3: "盖压锅炉 = 午餐后留意天空。若积云迅速增长，盖子正在破 — 立即收工",
+                    rule4: "严重 = 午后不宜田间作业。只在 10 时前喷洒或跳过当日"
                 },
                 sky: {
                     title: "天空色彩 (上午/下午)",
@@ -1825,6 +1861,24 @@
                     rule2: "Awan rendah tebal + hujan tinggi = ladang akan kekal basah, rancang ikut",
                     rule3: "Ketiga-tiga baris rendah + awan tinggi sahaja = hari baik untuk kerja ladang penuh"
                 },
+                storm: {
+                    title: "Risiko Ribut — CAPE × CIN",
+                    body: "CAPE adalah bahan bakar tersimpan untuk ribut; CIN adalah tudung yang menghalangnya. Bersama-sama mereka memberitahu anda hari cuaca apa — lebih baik daripada kebarangkalian hujan sahaja.",
+                    capeExplain: "CAPE (Convective Available Potential Energy) mengukur ketidakstabilan atmosfera — nilai lebih tinggi bermakna lebih banyak bahan bakar ribut. Nilai puncak petang di Malaysia tropika biasanya 1500–3500 J/kg.",
+                    cinExplain: "CIN (Convective Inhibition) adalah 'tudung' tenaga negatif yang menghalang ribut. CIN kuat (lebih negatif dari -75) mengunci atmosfera. CIN lemah (-25 atau kurang negatif) bermakna ribut mudah tercetus.",
+                    classes: "Bagaimana warna titik ditentukan",
+                    stable: "Stabil — CAPE < 500 ATAU tudung sangat kuat. Hari kering yakin.",
+                    moderate: "Sederhana — CAPE 500–1500. Hujan ringan mungkin, tiada ribut tersusun.",
+                    loaded: "Bersedia — CAPE 1500–3000, tudung sederhana. Ribut petang berkemungkinan 2–5 PM.",
+                    capped: "Dandang Bertudung — CAPE ≥ 2000 + tudung kuat. Atmosfera penuh bahan bakar tetapi terkunci. Jika tudung pecah (angin laut, pemanasan gunung, hadapan), ribut mengejutkan ganas.",
+                    severe: "Teruk — CAPE ≥ 3000 + tudung lemah. Potensi ribut tersusun besar.",
+                    warnFlag: "⚠️ Bendera amaran: Risiko CAPE tinggi tetapi kebarangkalian hujan maksimum kekal di bawah 40%. Ini kes klasik 'PoP memandang remeh risiko ribut' — petani terkejut kerana % hujan kelihatan selamat. Perhatikan langit selepas makan tengah hari.",
+                    howToUse: "Cara menggunakannya untuk keputusan semburan",
+                    rule1: "Stabil / Sederhana = boleh rancang jadual ladang sepanjang hari",
+                    rule2: "Bersedia = habiskan semburan menjelang 11 pagi, jangkakan hujan 2–5 PM",
+                    rule3: "Dandang Bertudung = perhatikan langit selepas makan. Jika kumulus tumbuh cepat, tudung pecah — segera pulang",
+                    rule4: "Teruk = tiada kerja ladang petang. Sembur sebelum 10 pagi sahaja atau langkau hari ini"
+                },
                 sky: {
                     title: "Warna Langit (Pagi / Petang)",
                     body: "Dua petak setiap hari: rupa langit ketika matahari terbit (atas) dan terbenam (bawah). Ramalan visual sekilas — tiada nombor.",
@@ -1887,6 +1941,24 @@
                     rule2: "கனமான தாழ் மேகம் + அதிக மழை = வயல் ஈரமாக இருக்கும், அதற்கேற்ப திட்டமிடுங்கள்",
                     rule3: "மூன்று வரிசைகளும் குறைவு + உயர் மேகம் மட்டும் = முழு வயல் வேலைக்கு நல்ல நாள்"
                 },
+                storm: {
+                    title: "புயல் ஆபத்து — CAPE × CIN",
+                    body: "CAPE புயல்களுக்கான சேமிக்கப்பட்ட எரிபொருள்; CIN அவற்றைத் தடுக்கும் மூடி. இரண்டும் சேர்ந்து இன்று எப்படிப்பட்ட நாள் என்பதை மழை வாய்ப்பை விட சிறப்பாகச் சொல்லும்.",
+                    capeExplain: "CAPE (Convective Available Potential Energy) வளிமண்டலம் எவ்வளவு உறுதியற்றது என்பதை அளக்கிறது — அதிக மதிப்பு என்றால் அதிக புயல் எரிபொருள். மலேசிய வெப்பமண்டலத்தின் மதிய உச்ச மதிப்புகள் பொதுவாக 1500–3500 J/kg.",
+                    cinExplain: "CIN (Convective Inhibition) புயல்களைத் தடுக்கும் எதிர்மறை ஆற்றல் 'மூடி'. வலிமையான CIN (-75-ஐ விட எதிர்மறை) வளிமண்டலத்தைப் பூட்டுகிறது. பலவீனமான CIN (-25 அல்லது குறைந்த எதிர்மறை) புயல்கள் எளிதில் தூண்டப்படும் என்று அர்த்தம்.",
+                    classes: "புள்ளி நிறம் எப்படி தீர்மானிக்கப்படுகிறது",
+                    stable: "நிலையான — CAPE < 500 அல்லது மிக வலுவான மூடி. நம்பிக்கையான வறண்ட நாள்.",
+                    moderate: "மிதமான — CAPE 500–1500. லேசான மழை சாத்தியம், ஒழுங்கமைக்கப்பட்ட புயல் இல்லை.",
+                    loaded: "சுமை — CAPE 1500–3000, மிதமான மூடி. மதியம் 2–5 மணிக்கு புயல்கள் சாத்தியம்.",
+                    capped: "மூடிய கொதிகலன் — CAPE ≥ 2000 + வலுவான மூடி. வளிமண்டலம் எரிபொருளால் நிறைந்துள்ளது ஆனால் பூட்டப்பட்டுள்ளது. மூடி உடைந்தால் (கடல் காற்று, மலை வெப்பம், முன்னணி), திடீர் கடுமையான புயல்கள்.",
+                    severe: "கடுமையான — CAPE ≥ 3000 + பலவீனமான மூடி. பெரிய ஒழுங்கமைக்கப்பட்ட புயல் வாய்ப்பு.",
+                    warnFlag: "⚠️ எச்சரிக்கைக் கொடி: CAPE அடிப்படையிலான ஆபத்து அதிகம் ஆனால் நாளின் அதிகபட்ச மழை வாய்ப்பு 40%-க்கு கீழ். இது 'மழை வாய்ப்பு புயல் ஆபத்தை குறைத்து மதிப்பிடுதல்' என்ற தீர்க்கமான வழக்கு — மழை % மட்டும் பாதுகாப்பானதாகத் தோன்றியதால் விவசாயிகள் ஆச்சரியப்படுகிறார்கள். மதிய உணவுக்குப் பிறகு வானத்தைப் பாருங்கள்.",
+                    howToUse: "தெளிப்பு முடிவுகளுக்கு எப்படிப் பயன்படுத்துவது",
+                    rule1: "நிலையான / மிதமான = முழு நாள் வயல் அட்டவணையை திட்டமிடலாம்",
+                    rule2: "சுமை = காலை 11 மணிக்குள் தெளிப்பை முடிக்கவும், மதியம் 2–5 மணிக்கு மழை எதிர்பார்க்கவும்",
+                    rule3: "மூடிய கொதிகலன் = மதிய உணவுக்குப் பிறகு வானத்தைப் பாருங்கள். குமுலஸ் வேகமாக வளர்ந்தால், மூடி உடைகிறது — விரைவாக வீட்டிற்குச் செல்லுங்கள்",
+                    rule4: "கடுமையான = மதிய வயல் வேலை இல்லை. காலை 10 மணிக்கு முன் மட்டுமே தெளிக்கவும் அல்லது நாளை தவிர்க்கவும்"
+                },
                 sky: {
                     title: "வானம் நிறம் (காலை / மாலை)",
                     body: "ஒவ்வொரு நாளும் இரண்டு சதுரங்கள்: சூரிய உதயம் (மேல்) மற்றும் சூரிய அஸ்தமனம் (கீழ்) போது வானம் எப்படி தெரியும். ஒரு பார்வை வானிலை முன்னறிவிப்பு.",
@@ -1948,6 +2020,24 @@
                     rule1: "CB အန္တရာယ်နေ့ = နံနက်စောစော ဆေးပက်၊ နေ့လယ်မတိုင်မီ ပြီးဆုံးပါ",
                     rule2: "နိမ့်တိမ်ထူ + မိုးဖြစ်ဖို့ဖြစ်နိုင်ခြေ မြင့် = ကွင်းသည် စိုစွတ်နေဦးမည်",
                     rule3: "သုံးတန်းလုံး နိမ့် + မြင့်တိမ်သာ = ကွင်းအလုပ် အပြည့်အဝ လုပ်ဆောင်ရန် ကောင်းသောနေ့"
+                },
+                storm: {
+                    title: "မုန်တိုင်းအန္တရာယ် — CAPE × CIN",
+                    body: "CAPE သည် မုန်တိုင်းအတွက် သိုလှောင်ထားသော လောင်စာ; CIN သည် ၎င်းတို့ကိုတားဆီးသော အဖုံး။ နှစ်ခုပေါင်းသည် မိုးရွာဖို့ဖြစ်နိုင်ခြေတစ်ခုထဲထက် ပိုကောင်းသော ဖော်ပြချက်ပေးသည်။",
+                    capeExplain: "CAPE (Convective Available Potential Energy) သည် လေထု မည်မျှ မတည်ငြိမ်သည်ကို တိုင်းတာသည် — တန်ဖိုးပိုမြင့်လေ မုန်တိုင်းလောင်စာပိုများလေ။ မလေးရှားအပူပိုင်းတွင် နေ့လယ်ပိုင်းအထွတ်အထိပ်တန်ဖိုးများ ပုံမှန် 1500–3500 J/kg။",
+                    cinExplain: "CIN (Convective Inhibition) သည် မုန်တိုင်းများကိုတားဆီးသော အပျက်အင်အား 'အဖုံး'။ CIN အားကောင်း (-75 ထက်ပိုအနုတ်) သည် လေထုကိုပိတ်ထားသည်။ CIN အားနည်း (-25 သို့ ပိုနည်းသောအနုတ်) သည် မုန်တိုင်းလွယ်လင့်တကူ ဖြစ်ပေါ်လာသည်။",
+                    classes: "အစက်အရောင် ဆုံးဖြတ်ပုံ",
+                    stable: "တည်ငြိမ် — CAPE < 500 သို့မဟုတ် အလွန်အားကောင်းသောအဖုံး။ ယုံကြည်စိတ်ချရသော ခြောက်သွေ့သောနေ့။",
+                    moderate: "အလယ်အလတ် — CAPE 500–1500။ မိုးပေါ့ပါးနိုင်၊ စနစ်တကျမုန်တိုင်းမရှိ။",
+                    loaded: "အသင့်ပြင် — CAPE 1500–3000၊ အလယ်အလတ်အဖုံး။ နေ့လယ် ၂–၅ နာရီ မုန်တိုင်းဖြစ်နိုင်ခြေ။",
+                    capped: "အဖုံးပိတ်အိုးကြီး — CAPE ≥ 2000 + အားကောင်းသောအဖုံး။ လေထုလောင်စာပြည့်နေသော်လည်း ပိတ်ထား။ အဖုံးကွဲပါက (ပင်လယ်လေ၊ တောင်အပူပေး၊ ရှေ့မှန်)၊ ပြင်းထန်သော အံ့အားသင့်ဖွယ်ရာ မုန်တိုင်းများ။",
+                    severe: "ပြင်းထန် — CAPE ≥ 3000 + အားနည်းသောအဖုံး။ ကြီးမားသော စနစ်တကျမုန်တိုင်းဖြစ်နိုင်ခြေ။",
+                    warnFlag: "⚠️ သတိပေးတံဆိပ်: CAPE အခြေပြုအန္တရာယ်မြင့်သော်လည်း နေ့၏အမြင့်ဆုံးမိုးရွာဖို့ဖြစ်နိုင်ခြေ ၄၀% အောက်ဖြစ်နေ။ ဤသည် 'PoP သည် မုန်တိုင်းအန္တရာယ်ကို လျှော့တွက်' သော ဂန္ထဝင်အခြေအနေ — မိုးရာခိုင်နှုန်းတစ်ခုထဲ ကြည့်ရင် လုံခြုံပုံပေါ်သောကြောင့် တောင်သူများ အံ့အားသင့်ကြသည်။ နေ့လည်စာစားပြီးနောက် မိုးကောင်းကင်ကို စောင့်ကြည့်ပါ။",
+                    howToUse: "ဆေးပက်ဆုံးဖြတ်ချက်များအတွက် အသုံးပြုပုံ",
+                    rule1: "တည်ငြိမ် / အလယ်အလတ် = တစ်နေ့လုံး ကွင်းအချိန်ဇယားကို စီစဉ်နိုင်",
+                    rule2: "အသင့်ပြင် = မနက် ၁၁ နာရီအထိ ဆေးပက်ပြီးပါစေ၊ မွန်းလွဲ ၂–၅ နာရီ မိုးရွာဖို့ မျှော်လင့်ပါ",
+                    rule3: "အဖုံးပိတ်အိုးကြီး = နေ့လည်စာစားပြီးနောက် မိုးကောင်းကင်ကို စောင့်ကြည့်ပါ။ ကျုမူလပ်စ်တိမ်များ မြန်မြန်ကြီးထွားလာပါက အဖုံးကွဲနေပြီ — အိမ်အလျင်အမြန်ပြန်ပါ",
+                    rule4: "ပြင်းထန် = နေ့လည် ကွင်းအလုပ်မရှိ။ မနက် ၁၀ နာရီမတိုင်မီသာ ဆေးပက်ပါ သို့မဟုတ် ယနေ့ ကျော်လိုက်ပါ"
                 },
                 sky: {
                     title: "မိုးကောင်းကင် အရောင် (နံနက် / ညနေ)",
@@ -2090,6 +2180,37 @@
                             <div style="margin-bottom:4px;">• ${t.cloud.rule1}</div>
                             <div style="margin-bottom:4px;">• ${t.cloud.rule2}</div>
                             <div>• ${t.cloud.rule3}</div>
+                        </div>
+                    </div>
+                `;
+            } else if (rowType === 'storm') {
+                bodyHTML = `
+                    <div class="help-card-section">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.storm.title}</div>
+                        <div style="color:#1e293b; margin-bottom:8px;">${t.storm.body}</div>
+                        <div style="color:#1e293b; margin-bottom:6px; padding-left:6px; border-left:3px solid #ea580c;">${t.storm.capeExplain}</div>
+                        <div style="color:#1e293b; padding-left:6px; border-left:3px solid #7c2d12;">${t.storm.cinExplain}</div>
+                    </div>
+                    <div class="help-card-section">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.storm.classes}</div>
+                        <div style="font-size:11.5px; line-height:1.85; color:#1e293b;">
+                            <div>${dot('#16a34a')}<b>${t.storm.stable}</b></div>
+                            <div>${dot('#eab308')}<b>${t.storm.moderate}</b></div>
+                            <div>${dot('#ea580c')}<b>${t.storm.loaded}</b></div>
+                            <div>${dot('#dc2626')}<b>${t.storm.capped}</b></div>
+                            <div>${dot('#7f1d1d')}<b>${t.storm.severe}</b></div>
+                        </div>
+                    </div>
+                    <div class="help-card-section" style="background:#fef3c7; border:1px solid #fbbf24; border-radius:6px; padding:10px;">
+                        <div style="font-size:11.5px; color:#78350f;">${t.storm.warnFlag}</div>
+                    </div>
+                    <div class="help-card-section" style="background:#fff; border:1px solid #d8b4fe; border-radius:6px; padding:10px;">
+                        <div style="font-size:11.5px; font-weight:800; color:#1e293b; margin-bottom:6px; text-transform:uppercase; letter-spacing:0.04em;">${t.howToUse}</div>
+                        <div style="font-size:11.5px; line-height:1.65; color:#1e293b;">
+                            <div style="margin-bottom:4px;">• ${t.storm.rule1}</div>
+                            <div style="margin-bottom:4px;">• ${t.storm.rule2}</div>
+                            <div style="margin-bottom:4px;">• ${t.storm.rule3}</div>
+                            <div>• ${t.storm.rule4}</div>
                         </div>
                     </div>
                 `;
@@ -3691,6 +3812,7 @@
                 <div class="relative"><div class="row-label-overlay"><span style="color:#f97316;">Hi</span>/<span style="color:#2563eb;">Lo</span> / <span style="color:#06b6d4;">DewPt</span> <span style="color:#cbd5e1; margin:0 2px;">|</span> <span style="color:#7e22ce;">DeltaT (8AM)</span> / <span style="color:#166534;">Safe Hours</span><span class="help-icon-btn" id="help-icon-temp-${id}" onclick="window.toggleHelpCard('${id}', 'temp')" title="What is DeltaT and Safe Hours?">?</span></div><div id="help-card-temp-${id}" class="help-card"></div><div class="info-row" id="row-temp-combined-${id}" style="min-height: 200px; padding-top: 10px;"></div><svg id="trend-layer-temp-${id}" class="trend-layer" height="200"></svg></div>
                 <div class="relative bg-slate-50/10" id="wind-row-container-${id}" style="margin-top:-38px;z-index:10;"><div class="row-label-overlay">Wind 2m / Dir 10m / Gusts (km/h)</div><div class="info-row" id="row-wind-${id}" style="min-height:60px;padding-top:14px;"></div></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay">Cloud (%) & CB Risk<span class="help-icon-btn" id="help-icon-cloud-${id}" onclick="window.toggleHelpCard('${id}', 'cloud')" title="What is Cloud % and CB Risk?">?</span></div><div id="help-card-cloud-${id}" class="help-card"></div><div class="info-row" id="row-cl-high-${id}" style="min-height:42px;padding-top:14px;"></div><div class="info-row" id="row-cl-mid-${id}" style="min-height:28px;"></div><div class="info-row" id="row-cl-low-${id}" style="min-height:28px;"></div></div>
+                <div class="relative bg-white border-b border-slate-200"><div class="row-label-overlay" style="color:#7c2d12;">Storm Risk (CAPE/CIN)<span class="help-icon-btn" id="help-icon-storm-${id}" onclick="window.toggleHelpCard('${id}', 'storm')" title="What is Storm Risk?">?</span></div><div id="help-card-storm-${id}" class="help-card"></div><div class="info-row" id="row-storm-${id}" style="min-height: 60px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Sky Tint (AM/PM)<span class="help-icon-btn" id="help-icon-sky-${id}" onclick="window.toggleHelpCard('${id}', 'sky')" title="What is Sky Tint?">?</span></div><div id="help-card-sky-${id}" class="help-card"></div><div class="info-row" id="row-sky-${id}" style="min-height: 42px; padding-top: 14px;"></div></div>
                 <div class="relative"><div class="row-label-overlay">Rain Prob (%)</div><div class="info-row" id="row-rain-pp-${id}" style="min-height:70px;padding-top:18px;"></div><svg id="trend-layer-pp-${id}" class="trend-layer" height="70"></svg></div>
                 <div class="relative bg-slate-50/10"><div class="row-label-overlay" style="color:#1e3a8a">Rainfall (mm)</div><div class="info-row" id="row-rain-vv-${id}" style="min-height:52px;padding-top:18px;"></div><svg id="trend-layer-vv-${id}" class="trend-layer" height="52"></svg></div>
@@ -3835,6 +3957,16 @@
                     // CAPE: MAX during afternoon (12-18) since convective storms develop in afternoon heat
                     const dailyCAPE = max0(win('cape', 12, 18));
                     
+                    // CIN (Convective Inhibition): the negative-energy "cap" that prevents storms.
+                    // Take the MOST NEGATIVE value during the afternoon — that's the lowest barrier
+                    // a parcel needs to overcome. Storm forecasters look at CAPE+CIN together:
+                    //   - High CAPE + weak CIN (>-25 J/kg) = loaded gun, easy trigger
+                    //   - High CAPE + strong CIN (<-75 J/kg) = capped boiler, surprise storms if cap breaks
+                    //   - Low CAPE or very strong CIN (<-150 J/kg) = stable, low storm risk
+                    // CIN values from Open-Meteo are 0 or negative. min0 returns 0 if no data.
+                    const cinValues = win('convective_inhibition', 12, 18);
+                    const dailyCIN = cinValues.length ? Math.min(...cinValues) : 0;
+                    
                     // VPD: peak afternoon (12-16) is when atmospheric demand is highest — used for WVET
                     const dailyVPD = max0(win('vapour_pressure_deficit', 12, 16));
                     
@@ -3953,7 +4085,7 @@
                         ch: Math.round(dailyCH), cm: Math.round(dailyCM), cl: Math.round(dailyCL),
                         w2m: Math.round(dailyW2m), wd: Math.round(dailyWD), wg: Math.round(dailyWG),
                         wgEst: gustIsEstimated,
-                        wvet, cape: Math.round(dailyCAPE),
+                        wvet, cape: Math.round(dailyCAPE), cin: Math.round(dailyCIN),
                         vis: map.visibility?.[start] ?? 10000,
                         visibilityFlag,
                         // NEW v1.0.52 agronomic fields
@@ -4030,6 +4162,35 @@
                 }).join('');
             };
             ren(`row-cl-high-${id}`, 'ch'); ren(`row-cl-mid-${id}`, 'cm'); ren(`row-cl-low-${id}`, 'cl');
+            
+            // ===== STORM RISK ROW (CAPE × CIN classification) =====
+            // Tropical Malaysia is a near-textbook convective environment: warm humid surface,
+            // cool aloft, frequent afternoon CAPE 1500-3500 J/kg. Classification logic uses the
+            // afternoon (12-18) CAPE max paired with the afternoon CIN min to label each day:
+            //   severe       — CAPE>=3000 with weak cap (CIN >-75) — major storm potential
+            //   capped_boil  — CAPE>=2000 with strong cap (CIN<=-75) — surprise storms if cap breaks
+            //   loaded       — CAPE 1500-2999 with moderate cap — afternoon storms likely
+            //   moderate     — CAPE 500-1499 — light showers possible, no organized storms
+            //   stable       — CAPE<500 OR CIN<-150 — confident dry day
+            // The "PoP disagreement" flag (⚠) appears when CAPE-based risk is high (loaded+) but
+            // the day's max rain probability stays below 40% — the classic case where farmers get
+            // surprised by storms because the rain-probability number alone looked safe.
+            const classifyStorm = (cape, cin) => {
+                if (cape < 500 || cin < -150) return { cls: 'stable',      color: '#16a34a', label: 'STABLE' };
+                if (cape >= 3000 && cin > -75)  return { cls: 'severe',      color: '#7f1d1d', label: 'SEVERE' };
+                if (cape >= 2000 && cin <= -75) return { cls: 'capped_boil', color: '#dc2626', label: 'CAPPED' };
+                if (cape >= 1500)               return { cls: 'loaded',      color: '#ea580c', label: 'LOADED' };
+                return { cls: 'moderate', color: '#eab308', label: 'MOD' };
+            };
+            document.getElementById(`row-storm-${id}`).innerHTML = days.map(d => {
+                const cape = d.cape || 0;
+                const cin = d.cin || 0;
+                const s = classifyStorm(cape, cin);
+                // PoP disagreement: high CAPE-based risk but low rain probability — the false-confidence trap
+                const popUnderstated = (s.cls === 'severe' || s.cls === 'capped_boil' || s.cls === 'loaded') && d.pp < 40;
+                const warnFlag = popUnderstated ? '<span style="position:absolute;top:-2px;right:-2px;font-size:10px;line-height:1" title="PoP understates storm risk">⚠️</span>' : '';
+                return `<div class="info-data-cell"><div class="flex flex-col items-center"><div style="position:relative;width:14px;height:14px;border-radius:50%;background:${s.color};box-shadow:0 0 0 1.5px rgba(255,255,255,1),0 1px 3px rgba(0,0,0,0.15);">${warnFlag}</div><span class="text-[9px] font-black text-slate-500 mt-1">${cape}</span></div></div>`;
+            }).join('');
             
             // New Sky Tint Row Rendering
             document.getElementById(`row-sky-${id}`).innerHTML = days.map(d => `
