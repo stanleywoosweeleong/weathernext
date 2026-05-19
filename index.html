@@ -4678,19 +4678,32 @@
                 const days = (window.daysCache || {})[lid];
                 if (!days || days.length === 0) continue;
                 
-                // Resolve location name — prefer current-language name from the
-                // locations list, fall back to the id if absent. STABLE_LOCATIONS
-                // uses {en, zh}; user-added locations may only have one of these.
+                // Resolve location name. Three sources to consult, in order:
+                //   1. getAllLocations() — merges STABLE_LOCATIONS + customLocations.
+                //      User-added locations have ids like "c_<timestamp>_<rand>" and only
+                //      live in customLocations; the original buildShareText assumed an
+                //      "allLocations" global that doesn't actually exist, which made every
+                //      user-added location render as its raw id in the share header.
+                //   2. renamedLocations[id] — user-edited display names override the
+                //      original en/zh fields. Without this, a location the user renamed
+                //      to "RESTAURANT 157" would share as its original auto-generated name.
+                //   3. Hard fallback to the id string so the message is never broken,
+                //      even if the location was somehow deleted between display and share.
                 const lang = (typeof getLang === 'function') ? getLang(lid) : 'zh';
                 let loc = null;
-                if (typeof allLocations !== 'undefined' && allLocations) {
-                    loc = allLocations.find(l => l.id === lid);
+                if (typeof getAllLocations === 'function') {
+                    loc = getAllLocations().find(l => l.id === lid);
                 } else if (typeof STABLE_LOCATIONS !== 'undefined') {
                     loc = STABLE_LOCATIONS.find(l => l.id === lid);
                 }
+                // Apply user rename overlay if present. renamedLocations[id] may have
+                // only one of {en, zh} populated — the other falls back to the original.
+                const rn = (typeof renamedLocations !== 'undefined' && renamedLocations) ? renamedLocations[lid] : null;
+                const resolvedEn = (rn && rn.en) || (loc && loc.en) || '';
+                const resolvedZh = (rn && rn.zh) || (loc && loc.zh) || '';
                 // Pick the language-appropriate name; fall back gracefully.
-                const locName = loc ? (loc[lang] || loc.zh || loc.en || lid) : lid;
-                const altName = loc ? ((lang === 'zh' ? loc.en : loc.zh) || '') : '';
+                const locName = (lang === 'zh' ? resolvedZh : resolvedEn) || resolvedEn || resolvedZh || lid;
+                const altName = (lang === 'zh' ? resolvedEn : resolvedZh) || '';
                 
                 // Header: location name in chosen language, alt name in parentheses
                 // if it differs (so 中文 messages still carry the EN name for dealer
