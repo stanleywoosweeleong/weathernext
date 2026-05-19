@@ -814,7 +814,7 @@
                          after the OS-level location permission prompt is granted. -->
                     <button type="button" id="gps-fill-btn" onclick="window.fillFromGPS()" class="w-full mt-2 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center gap-2 text-emerald-700 font-bold text-sm transition-colors">
                         <svg id="gps-fill-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line></svg>
-                        <span id="gps-fill-label">Use Current GPS / 使用当前GPS</span>
+                        <span id="gps-fill-label">Use Current GPS</span>
                     </button>
                     <div id="gps-fill-info" class="text-[10px] text-slate-500 text-center mt-1 h-3"></div>
                 </div>
@@ -2495,6 +2495,77 @@
         // shows a native prompt the first time). The user still types the location
         // name(s) and confirms via the Save button — this just spares them from typing
         // coordinates manually or looking them up in another app.
+        //
+        // Localized strings: detected from navigator.language at runtime, mapped to one
+        // of the 5 app languages (en/ms/zh/ta/my). Falls back to English for anything else.
+        const GPS_I18N = {
+            en: {
+                btn: "Use Current GPS",
+                locating: "Locating…",
+                accuracy: (m) => `Located within ${m}m`,
+                success: "GPS coordinates filled",
+                notSupported: "GPS not supported on this device",
+                denied: "GPS permission denied. Enable in Settings.",
+                unavailable: "GPS signal unavailable. Try outdoors.",
+                timeout: "GPS timed out. Try again in an open area.",
+                error: "GPS error"
+            },
+            zh: {
+                btn: "使用当前GPS",
+                locating: "定位中…",
+                accuracy: (m) => `定位精度 ${m} 米`,
+                success: "GPS坐标已填入",
+                notSupported: "此设备不支持GPS",
+                denied: "GPS权限被拒绝，请在设置中启用。",
+                unavailable: "GPS信号不可用，请到户外尝试。",
+                timeout: "GPS超时，请到开阔处再试。",
+                error: "GPS错误"
+            },
+            ms: {
+                btn: "Guna GPS Semasa",
+                locating: "Mencari lokasi…",
+                accuracy: (m) => `Ketepatan ${m}m`,
+                success: "Koordinat GPS dimasukkan",
+                notSupported: "Peranti ini tidak menyokong GPS",
+                denied: "Kebenaran GPS ditolak. Aktifkan dalam Tetapan.",
+                unavailable: "Isyarat GPS tidak tersedia. Cuba di luar.",
+                timeout: "GPS tamat masa. Cuba di kawasan terbuka.",
+                error: "Ralat GPS"
+            },
+            ta: {
+                btn: "தற்போதைய GPS பயன்படுத்து",
+                locating: "இடம் கண்டறிகிறது…",
+                accuracy: (m) => `துல்லியம் ${m}மீ`,
+                success: "GPS ஆயத்தொலைவுகள் நிரப்பப்பட்டன",
+                notSupported: "இந்த சாதனம் GPS-ஐ ஆதரிக்கவில்லை",
+                denied: "GPS அனுமதி மறுக்கப்பட்டது. அமைப்புகளில் இயக்கவும்.",
+                unavailable: "GPS சமிக்ஞை இல்லை. வெளியே முயற்சிக்கவும்.",
+                timeout: "GPS காலாவதியானது. திறந்த இடத்தில் மீண்டும் முயற்சிக்கவும்.",
+                error: "GPS பிழை"
+            },
+            my: {
+                btn: "လက်ရှိ GPS သုံးပါ",
+                locating: "တည်နေရာရှာဖွေနေ…",
+                accuracy: (m) => `တိကျမှု ${m}မီတာ`,
+                success: "GPS ကိုသြဒိနိတ်များ ဖြည့်ပြီး",
+                notSupported: "ဤစက်တွင် GPS မပံ့ပိုးပါ",
+                denied: "GPS ခွင့်ပြုချက် ငြင်းပယ်ခံရသည်။ ဆက်တင်တွင် ဖွင့်ပါ။",
+                unavailable: "GPS အချက်ပြ မရရှိနိုင်ပါ။ ပြင်ပတွင် စမ်းကြည့်ပါ။",
+                timeout: "GPS အချိန်ကုန်သွားပါပြီ။ ပွင့်လင်းသောနေရာတွင် ပြန်စမ်းပါ။",
+                error: "GPS အမှား"
+            }
+        };
+        
+        // Detect device language → map to one of our 5 supported languages.
+        // navigator.language returns BCP-47 tags like "en-US", "zh-CN", "zh-TW", "ms-MY",
+        // "ta-IN", "my-MM". We match by primary subtag. Anything unmatched falls back to English.
+        const getDeviceLang = () => {
+            const raw = (navigator.language || navigator.userLanguage || 'en').toLowerCase();
+            const primary = raw.split('-')[0];
+            if (['en', 'zh', 'ms', 'ta', 'my'].includes(primary)) return primary;
+            return 'en';
+        };
+        
         window.fillFromGPS = () => {
             const btn = document.getElementById('gps-fill-btn');
             const label = document.getElementById('gps-fill-label');
@@ -2502,24 +2573,25 @@
             const latInput = document.getElementById('add-lat');
             const lngInput = document.getElementById('add-lng');
             if (!btn || !latInput || !lngInput) return;
+            const t = GPS_I18N[getDeviceLang()];
             
             // No Geolocation API at all (very old browser / insecure context).
             if (!('geolocation' in navigator)) {
-                window.showToast("GPS not supported on this device / 此设备不支持GPS", true);
+                window.showToast(t.notSupported, true);
                 return;
             }
             
             // Show "locating" state. Disable so user doesn't double-tap.
             btn.disabled = true;
             btn.style.opacity = '0.7';
-            label.textContent = "Locating… / 定位中…";
+            label.textContent = t.locating;
             info.textContent = "";
             
             // Reset to idle state.
             const resetButton = () => {
                 btn.disabled = false;
                 btn.style.opacity = '';
-                label.textContent = "Use Current GPS / 使用当前GPS";
+                label.textContent = t.btn;
             };
             
             navigator.geolocation.getCurrentPosition(
@@ -2534,29 +2606,22 @@
                     // Trigger any input event listeners (in case validation is bound).
                     latInput.dispatchEvent(new Event('input', { bubbles: true }));
                     lngInput.dispatchEvent(new Event('input', { bubbles: true }));
-                    info.textContent = `Located within ${accuracy}m / 定位精度 ${accuracy}米`;
+                    info.textContent = t.accuracy(accuracy);
                     resetButton();
-                    window.showToast("GPS coordinates filled / GPS坐标已填入");
+                    window.showToast(t.success);
                     // Focus the English name input so the user's next natural step is naming.
                     const enInput = document.getElementById('add-en');
                     if (enInput && !enInput.value.trim()) enInput.focus();
                 },
                 (err) => {
                     resetButton();
-                    // Map the specific GeolocationPositionError codes to clear bilingual messages.
+                    // Map the specific GeolocationPositionError codes to clear localized messages.
                     let msg;
                     switch (err.code) {
-                        case 1: // PERMISSION_DENIED
-                            msg = "GPS permission denied. Enable in Settings.\nGPS权限被拒绝，请在设置中启用。";
-                            break;
-                        case 2: // POSITION_UNAVAILABLE
-                            msg = "GPS signal unavailable. Try outdoors.\nGPS信号不可用，请到户外尝试。";
-                            break;
-                        case 3: // TIMEOUT
-                            msg = "GPS timed out. Try again in an open area.\nGPS超时，请到开阔处再试。";
-                            break;
-                        default:
-                            msg = "GPS error / GPS错误";
+                        case 1: msg = t.denied; break;
+                        case 2: msg = t.unavailable; break;
+                        case 3: msg = t.timeout; break;
+                        default: msg = t.error;
                     }
                     window.showToast(msg, true);
                     info.textContent = "";
@@ -2568,6 +2633,14 @@
                 }
             );
         };
+        
+        // Apply localized button label on initial render (before user taps).
+        // Runs once at script init — the modal HTML uses the default bilingual label until
+        // this runs, then it gets swapped to the device-language-specific label.
+        document.addEventListener('DOMContentLoaded', () => {
+            const label = document.getElementById('gps-fill-label');
+            if (label) label.textContent = GPS_I18N[getDeviceLang()].btn;
+        });
 
         // ... [Add Location Logic Retained] ...
         window.showToast = (msg, isError = false) => { const t = document.getElementById('toast'); const m = document.getElementById('toast-msg'); const i = document.getElementById('toast-icon'); if(t && m && i) { m.innerText = msg; if(isError) { i.className = "w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0"; i.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#ef4444" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>'; } else { i.className = "w-6 h-6 bg-white rounded-full flex items-center justify-center shrink-0"; i.innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="black" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>'; } t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 3000); } };
