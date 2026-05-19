@@ -810,6 +810,13 @@
                         <input type="number" id="add-lat" class="w-input text-sm" placeholder="Lat 纬度" step="0.0001">
                         <input type="number" id="add-lng" class="w-input text-sm" placeholder="Lng 经度" step="0.0001">
                     </div>
+                    <!-- Use current GPS location button. Populates the lat/lng inputs above
+                         after the OS-level location permission prompt is granted. -->
+                    <button type="button" id="gps-fill-btn" onclick="window.fillFromGPS()" class="w-full mt-2 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center gap-2 text-emerald-700 font-bold text-sm transition-colors">
+                        <svg id="gps-fill-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line></svg>
+                        <span id="gps-fill-label">Use Current GPS / 使用当前GPS</span>
+                    </button>
+                    <div id="gps-fill-info" class="text-[10px] text-slate-500 text-center mt-1 h-3"></div>
                 </div>
 
                 <div id="view-scan" class="hidden h-full overflow-y-auto no-scrollbar py-2">
@@ -2480,6 +2487,86 @@
             if(!isFav) {
                  window.showToast("Added to Favorites");
             }
+        };
+
+        // ===== GPS LOCATION FILL =====
+        // Reads the device's precise GPS coordinates and populates the lat/lng inputs
+        // in the "Add Location" modal's manual tab. Requires user permission (the OS
+        // shows a native prompt the first time). The user still types the location
+        // name(s) and confirms via the Save button — this just spares them from typing
+        // coordinates manually or looking them up in another app.
+        window.fillFromGPS = () => {
+            const btn = document.getElementById('gps-fill-btn');
+            const label = document.getElementById('gps-fill-label');
+            const info = document.getElementById('gps-fill-info');
+            const latInput = document.getElementById('add-lat');
+            const lngInput = document.getElementById('add-lng');
+            if (!btn || !latInput || !lngInput) return;
+            
+            // No Geolocation API at all (very old browser / insecure context).
+            if (!('geolocation' in navigator)) {
+                window.showToast("GPS not supported on this device / 此设备不支持GPS", true);
+                return;
+            }
+            
+            // Show "locating" state. Disable so user doesn't double-tap.
+            btn.disabled = true;
+            btn.style.opacity = '0.7';
+            label.textContent = "Locating… / 定位中…";
+            info.textContent = "";
+            
+            // Reset to idle state.
+            const resetButton = () => {
+                btn.disabled = false;
+                btn.style.opacity = '';
+                label.textContent = "Use Current GPS / 使用当前GPS";
+            };
+            
+            navigator.geolocation.getCurrentPosition(
+                (pos) => {
+                    // Round to 4 decimal places (~11m precision — fine for farm plots,
+                    // and matches the `step="0.0001"` of the lat/lng inputs).
+                    const lat = pos.coords.latitude.toFixed(4);
+                    const lng = pos.coords.longitude.toFixed(4);
+                    const accuracy = Math.round(pos.coords.accuracy);
+                    latInput.value = lat;
+                    lngInput.value = lng;
+                    // Trigger any input event listeners (in case validation is bound).
+                    latInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    lngInput.dispatchEvent(new Event('input', { bubbles: true }));
+                    info.textContent = `Located within ${accuracy}m / 定位精度 ${accuracy}米`;
+                    resetButton();
+                    window.showToast("GPS coordinates filled / GPS坐标已填入");
+                    // Focus the English name input so the user's next natural step is naming.
+                    const enInput = document.getElementById('add-en');
+                    if (enInput && !enInput.value.trim()) enInput.focus();
+                },
+                (err) => {
+                    resetButton();
+                    // Map the specific GeolocationPositionError codes to clear bilingual messages.
+                    let msg;
+                    switch (err.code) {
+                        case 1: // PERMISSION_DENIED
+                            msg = "GPS permission denied. Enable in Settings.\nGPS权限被拒绝，请在设置中启用。";
+                            break;
+                        case 2: // POSITION_UNAVAILABLE
+                            msg = "GPS signal unavailable. Try outdoors.\nGPS信号不可用，请到户外尝试。";
+                            break;
+                        case 3: // TIMEOUT
+                            msg = "GPS timed out. Try again in an open area.\nGPS超时，请到开阔处再试。";
+                            break;
+                        default:
+                            msg = "GPS error / GPS错误";
+                    }
+                    window.showToast(msg, true);
+                    info.textContent = "";
+                },
+                {
+                    enableHighAccuracy: true,  // request actual GPS, not wifi/cell triangulation
+                    timeout: 15000,            // 15 seconds — generous for cold GPS fix on iPhone
+                    maximumAge: 0              // don't use cached position
+                }
+            );
         };
 
         // ... [Add Location Logic Retained] ...
