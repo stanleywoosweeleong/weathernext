@@ -800,8 +800,10 @@
                 </div>
             </div>
 
-            <!-- Content Container -->
-            <div class="relative overflow-hidden h-[220px]">
+            <!-- Content Container — 280px gives the Manual tab room for name fields,
+                 coordinate row, GPS-fill button, and the accuracy info line all visible
+                 without scrolling. Photo and Recycle tabs still fit comfortably. -->
+            <div class="relative overflow-hidden h-[280px]">
                 
                 <div id="view-manual" class="block h-full overflow-y-auto no-scrollbar pt-1">
                     <input type="text" id="add-en" class="w-input text-sm" placeholder="Location Name (English)">
@@ -812,11 +814,11 @@
                     </div>
                     <!-- Use current GPS location button. Populates the lat/lng inputs above
                          after the OS-level location permission prompt is granted. -->
-                    <button type="button" id="gps-fill-btn" onclick="window.fillFromGPS()" class="w-full mt-2 py-2 px-3 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center gap-2 text-emerald-700 font-bold text-sm transition-colors">
+                    <button type="button" id="gps-fill-btn" onclick="window.fillFromGPS()" class="w-full mt-3 py-2.5 px-3 bg-emerald-50 hover:bg-emerald-100 active:bg-emerald-200 border border-emerald-200 rounded-lg flex items-center justify-center gap-2 text-emerald-700 font-bold text-sm transition-colors">
                         <svg id="gps-fill-icon" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="3"></circle><line x1="12" y1="2" x2="12" y2="4"></line><line x1="12" y1="20" x2="12" y2="22"></line><line x1="2" y1="12" x2="4" y2="12"></line><line x1="20" y1="12" x2="22" y2="12"></line></svg>
                         <span id="gps-fill-label">Use Current GPS</span>
                     </button>
-                    <div id="gps-fill-info" class="text-[10px] text-slate-500 text-center mt-1 h-3"></div>
+                    <div id="gps-fill-info" class="text-[10px] text-slate-500 text-center mt-1.5 h-3"></div>
                 </div>
 
                 <div id="view-scan" class="hidden h-full overflow-y-auto no-scrollbar py-2">
