@@ -390,7 +390,19 @@
         .cb-label { font-size: 6.5px; color: #ef4444; font-weight: 950; }
         @keyframes cb-pulse { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.4); opacity: 0.7; } 100% { transform: scale(1); opacity: 1; } }
 
-        .fog-badge { background: #cbd5e1; color: #475569; font-size: 7px; font-weight: 900; padding: 1px 3px; border-radius: 3px; margin-top: 1px; border: 1px solid #94a3b8; display: inline-block; }
+        .fog-badge { 
+            background: #cbd5e1; color: #475569; font-size: 7px; font-weight: 900; 
+            padding: 1px 3px; border-radius: 3px; margin-top: 1px; border: 1px solid #94a3b8; 
+            display: inline-block;
+            /* Constraints so longer bilingual translations (e.g. Malay "JEREBU", Burmese 
+               multi-syllable terms) can't push the chart column wider than its 25px slot.
+               The badge clips horizontally rather than expanding beyond max-width. */
+            max-width: 100%;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: clip;
+            line-height: 1.1;
+        }
         .haze-badge { background: #fef3c7; color: #92400e; border-color: #f59e0b; }
 
         .trend-layer { position: absolute; top: 0; left: 0; pointer-events: none; z-index: 20; width: 100%; }
@@ -4245,7 +4257,9 @@
                     // CB Risk only on HIGH cloud row, AND requires both mid and high clouds present
                     const showCB = (k === 'ch') && d.cape >= 1500 && d.pp >= 70 && d.cm >= 40 && d.ch >= 40;
                     const cbBadge = showCB ? `<div class="cb-indicator-container"><div class="cb-indicator"></div><span class="cb-label">CB RISK</span></div>` : '';
-                    // FOG/HAZE only on low cloud row (already correct)
+                    // FOG/HAZE only on low cloud row (already correct).
+                    // Kept in English as the international meteorology abbreviations FOG/HAZE
+                    // are universally recognized and guarantee fit within the ~25px column slot.
                     const fogBadge = (k === 'cl' && d.visibilityFlag) ? `<div class="fog-badge ${d.visibilityFlag==='HAZE'?'haze-badge':''}">${d.visibilityFlag}</div>` : '';
                     return `<div class="info-data-cell"><div class="flex flex-col items-center"><span>${value}</span><div class="pictogram-stack">${blocks}</div>${cbBadge}${fogBadge}</div></div>`;
                 }).join('');
@@ -4287,11 +4301,23 @@
                 const warnFlag = popUnderstated ? '<span style="position:absolute;top:-2px;right:-2px;font-size:10px;line-height:1" title="PoP understates storm risk">⚠️</span>' : '';
                 // Show trigger window text only when the day class warrants it (Loaded / Capped / Severe).
                 // Format compactly to fit the narrow column: "2-5P" or "1-6P".
+                // 
+                // CRITICAL: render as exactly TWO lines always (start hour with trailing "–" on
+                // line 1, end hour on line 2). Earlier version used "${start}-${end}" as one
+                // string and let the browser decide whether to wrap. Some cells wrapped to 2
+                // lines (e.g. "12P-/4P") while others stayed on 1 line (e.g. "1P-5P"), which
+                // gave each cell a different total content height. Since the flex column uses
+                // justify-content: center, varying content heights meant the storm-risk dots
+                // appeared at different vertical positions across the 14 cells, breaking the
+                // row's visual alignment. Explicitly using two lines guarantees uniform height.
                 const showWindow = (s.cls === 'severe' || s.cls === 'capped_boil' || s.cls === 'loaded') && d.triggerWindow;
                 const windowText = showWindow
-                    ? `<span class="text-[8px] font-black mt-0.5" style="color:${s.color}" title="Storm trigger window">${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}</span>`
+                    ? `<div class="flex flex-col items-center mt-0.5 leading-[1.1]" style="color:${s.color}" title="Storm trigger window"><span class="text-[8px] font-black">${fmtHour(d.triggerWindow.start)}–</span><span class="text-[8px] font-black">${fmtHour(d.triggerWindow.end)}</span></div>`
                     : '';
-                return `<div class="info-data-cell"><div class="flex flex-col items-center"><div style="position:relative;width:14px;height:14px;border-radius:50%;background:${s.color};box-shadow:0 0 0 1.5px rgba(255,255,255,1),0 1px 3px rgba(0,0,0,0.15);">${warnFlag}</div><span class="text-[9px] font-black text-slate-500 mt-1">${cape}</span>${windowText}</div></div>`;
+                // Wrap in justify-start container so the dot is anchored to the top, not centered
+                // around the variable-height content below. This keeps all 14 dots at the same Y
+                // even when some cells have a 2-line window text and others have none.
+                return `<div class="info-data-cell" style="justify-content:flex-start;"><div class="flex flex-col items-center"><div style="position:relative;width:14px;height:14px;border-radius:50%;background:${s.color};box-shadow:0 0 0 1.5px rgba(255,255,255,1),0 1px 3px rgba(0,0,0,0.15);">${warnFlag}</div><span class="text-[9px] font-black text-slate-500 mt-1">${cape}</span>${windowText}</div></div>`;
             }).join('');
             
             // New Sky Tint Row Rendering
