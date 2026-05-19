@@ -2918,12 +2918,22 @@
         // ============================================================
         window.saveSharedLocation = (id) => {
             try {
-                if (!window.ephemeralLocationIds || !window.ephemeralLocationIds.has(id)) return;
+                console.log('[saveSharedLocation] START', { id, ephemeralHas: window.ephemeralLocationIds?.has(id) });
+                if (!window.ephemeralLocationIds || !window.ephemeralLocationIds.has(id)) {
+                    console.warn('[saveSharedLocation] bailed: not in ephemeral set');
+                    return;
+                }
                 
                 // The location object already lives in customLocations (the deep-link
                 // receiver pushed it there). We just need to persist that to disk.
                 customLocations = Array.isArray(customLocations) ? customLocations : [];
-                if (!customLocations.some(l => l.id === id)) {
+                const locInArray = customLocations.find(l => l.id === id);
+                console.log('[saveSharedLocation] customLocations check', {
+                    arrayLength: customLocations.length,
+                    foundLocation: locInArray ? { id: locInArray.id, en: locInArray.en, zh: locInArray.zh, lat: locInArray.lat, lng: locInArray.lng } : null,
+                    allIds: customLocations.map(l => l.id)
+                });
+                if (!locInArray) {
                     console.warn('saveSharedLocation: id not in customLocations, aborting');
                     return;
                 }
@@ -2931,17 +2941,6 @@
                 window.ephemeralLocationIds.delete(id);
                 
                 // Re-add path: clear stale purgedIds and hiddenIds entries for this id.
-                // This handles the "user previously purged or deleted this location, then a
-                // friend re-shared it and they decided to add it back" case. Without this
-                // cleanup, the location is correctly written to customLocations and favoriteIds,
-                // but on next page reload initApp's hydration filter at line ~1492 sees the id
-                // in purgedIds and re-filters it out — the location vanishes from the home list
-                // after a refresh, confusing the user who just explicitly added it.
-                //
-                // Tapping "Add to my list" is an explicit, unambiguous re-add gesture that
-                // supersedes any prior purge/hide. We only mutate these arrays when the user
-                // has actively chosen to re-add — never automatically in the receiver itself —
-                // so a user who purged and never re-engages keeps their purge respected.
                 purgedIds = Array.isArray(purgedIds) ? purgedIds : [];
                 const purgeIdx = purgedIds.indexOf(id);
                 let purgedChanged = false;
@@ -2956,23 +2955,44 @@
                     hiddenIds.splice(hideIdx, 1);
                     hiddenChanged = true;
                 }
+                console.log('[saveSharedLocation] cleanup', { purgedChanged, hiddenChanged });
                 
                 // Add to favourites so the location appears on the home list.
                 favoriteIds = Array.isArray(favoriteIds) ? favoriteIds : [];
                 if (!favoriteIds.includes(id)) favoriteIds.push(id);
+                console.log('[saveSharedLocation] favoriteIds after push', { ids: favoriteIds });
                 
                 // Persist to localStorage. safeSet handles quota errors gracefully.
+                let customSaveOk = false, favSaveOk = false;
                 try {
-                    safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
-                    safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
+                    customSaveOk = safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
+                    favSaveOk = safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
                     if (purgedChanged) safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds));
                     if (hiddenChanged) safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
                 } catch(e) {
                     console.warn('saveSharedLocation: localStorage save failed:', e);
                 }
+                console.log('[saveSharedLocation] localStorage', { customSaveOk, favSaveOk });
+                
+                // Verify by re-reading what we just wrote.
+                try {
+                    const rawCustom = localStorage.getItem(CUSTOM_CACHE_KEY);
+                    const rawFavs = localStorage.getItem(FAV_CACHE_KEY);
+                    const parsedCustom = rawCustom ? JSON.parse(rawCustom) : [];
+                    const parsedFavs = rawFavs ? JSON.parse(rawFavs) : [];
+                    console.log('[saveSharedLocation] disk verify', {
+                        diskHasLocation: parsedCustom.some(l => l.id === id),
+                        diskFavsHasId: parsedFavs.includes(id),
+                        diskCustomLength: parsedCustom.length,
+                        diskFavsLength: parsedFavs.length
+                    });
+                } catch(e) { console.warn('[saveSharedLocation] disk verify failed:', e); }
                 
                 // Cloud sync if authed. saveUserData is a no-op when not signed in.
-                if (typeof saveUserData === 'function') saveUserData();
+                if (typeof saveUserData === 'function') {
+                    console.log('[saveSharedLocation] calling saveUserData');
+                    saveUserData();
+                }
                 
                 // Remove the Add button row from the open modal so the user sees
                 // immediate feedback. The next render of this card (e.g. on modal
