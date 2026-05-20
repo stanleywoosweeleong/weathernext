@@ -732,6 +732,16 @@
             <button onclick="window.closeModal()" class="back-btn shadow-md border border-slate-200">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M6 12h12"/></svg>
             </button>
+            <!-- CC-BY-4.0 attribution (v1.0.131). Required wherever data is displayed.
+                 Centered between back and download buttons, small slate text that doesn't
+                 compete with the controls. Both source names tappable per the "provide a link"
+                 part of the attribution requirement. -->
+            <div class="text-[9px] text-slate-400 text-center leading-tight">
+                Data:<br>
+                <a href="https://www.ecmwf.int" target="_blank" rel="noopener" class="underline">ECMWF</a>
+                ·
+                <a href="https://open-meteo.com" target="_blank" rel="noopener" class="underline">open-meteo.com</a>
+            </div>
             <button id="dl-btn" onclick="window.downloadInfographic(event)" class="back-btn shadow-md border border-slate-200 !bg-transparent active:scale-95 transition-transform">
                 <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
             </button>
@@ -5154,7 +5164,9 @@
             }
             
             lines.push('');
-            lines.push('WeatherNext');
+            // CC-BY-4.0 attribution (v1.0.131). Required wherever data is displayed.
+            // v1.0.132: dropped the "WeatherNext" tail — brand already in header.
+            lines.push('Data: ECMWF · open-meteo.com');
             
             return lines.join('\n');
         };
@@ -5240,14 +5252,58 @@
             const dayOffset = getTargetDayOffset();
             const runInfo = getLatestModelRun();
             
-            // Build the header. Bilingual brand line.
-            const brandHeader = '农友天气 WeatherNext';
-            
-            // Date label for the report. Format: "19/5" for today, "20/5 (明日)" for tomorrow.
+            // Target date — computed once, used for both Gregorian and lunar display.
+            // After-6PM rule already applied via dayOffset (today=0, tomorrow=1).
             const targetDate = new Date();
             targetDate.setDate(targetDate.getDate() + dayOffset);
             const targetDateStr = `${targetDate.getDate()}/${targetDate.getMonth() + 1}`;
-            const dateMarker = dayOffset === 0 ? targetDateStr : `${targetDateStr} (明日 Tomorrow)`;
+            
+            // Chinese lunar date (v1.0.133). Uses browser's built-in Intl.DateTimeFormat
+            // with the 'chinese' calendar — no library, no maintenance. Computes the
+            // traditional lunar day format (初一/十五/廿三 etc) from the day number returned
+            // by the formatter. Wrapped in try/catch because very old browsers without
+            // chinese calendar support would throw; the catch falls back to no lunar string.
+            const getLunarStr = (date) => {
+                try {
+                    const parts = new Intl.DateTimeFormat('zh-u-ca-chinese', {
+                        month: 'long', day: 'numeric'
+                    }).formatToParts(date);
+                    const monthPart = parts.find(p => p.type === 'month');
+                    const dayPart = parts.find(p => p.type === 'day');
+                    if (!monthPart || !dayPart) return '';
+                    const dayNum = parseInt(dayPart.value, 10);
+                    if (isNaN(dayNum)) return '';
+                    // Traditional Chinese lunar day formatting:
+                    //   1-10:  初一, 初二, ..., 初十
+                    //   11-19: 十一, 十二, ..., 十九
+                    //   20:    二十
+                    //   21-29: 廿一, 廿二, ..., 廿九
+                    //   30:    三十
+                    const units = ['', '一', '二', '三', '四', '五', '六', '七', '八', '九'];
+                    let dayStr;
+                    if (dayNum === 10) dayStr = '初十';
+                    else if (dayNum === 20) dayStr = '二十';
+                    else if (dayNum === 30) dayStr = '三十';
+                    else if (dayNum < 10) dayStr = '初' + units[dayNum];
+                    else if (dayNum < 20) dayStr = '十' + units[dayNum - 10];
+                    else if (dayNum < 30) dayStr = '廿' + units[dayNum - 20];
+                    else dayStr = String(dayNum);  // shouldn't happen — lunar months are 29 or 30 days
+                    return `${monthPart.value}${dayStr}`;
+                } catch (e) {
+                    console.warn('[broadcast] lunar date computation failed:', e);
+                    return '';
+                }
+            };
+            const lunarStr = getLunarStr(targetDate);
+            
+            // Build the combined header. Format:
+            //   农友天气 WeatherNext 20/5 四月初三                 (today)
+            //   农友天气 WeatherNext 21/5 (明日 Tomorrow) 四月初四  (after 6 PM, tomorrow)
+            // The brand at the top doubles as the message's identity for all subsequent
+            // attribution chains (translated forwards to foreign workers etc).
+            let headerLine = '农友天气 WeatherNext ' + targetDateStr;
+            if (dayOffset === 1) headerLine += ' (明日 Tomorrow)';
+            if (lunarStr) headerLine += ' ' + lunarStr;
             
             // Data freshness header.
             // ----------
@@ -5277,9 +5333,9 @@
             }
             
             if (ids.length === 0) {
-                const headerLines = [brandHeader, dateMarker];
+                const headerLines = [headerLine];
                 if (dataHeader) headerLines.push(dataHeader);
-                return `${headerLines.join('\n')}\n\n(没有可用的地点 / No locations available)\n\nWeatherNext`;
+                return `${headerLines.join('\n')}\n\n(没有可用的地点 / No locations available)\n\nData: ECMWF · open-meteo.com`;
             }
             
             // Format helpers — same conventions as buildShareText.
@@ -5365,8 +5421,7 @@
             
             // Build the per-location sections.
             const sections = [];
-            sections.push(brandHeader);
-            sections.push(dateMarker);
+            sections.push(headerLine);
             if (dataHeader) sections.push(dataHeader);
             sections.push('');
             
@@ -5493,7 +5548,13 @@
             while (sections.length && sections[sections.length - 1] === '') sections.pop();
             
             sections.push('');
-            sections.push('WeatherNext');
+            // CC-BY-4.0 attribution (v1.0.131). ECMWF's open-data license requires
+            // attribution wherever the data is displayed. The broadcast is displayed
+            // to ~3000 WhatsApp recipients, so attribution belongs here. v1.0.132:
+            // dropped the redundant "WeatherNext" tail line — the brand already
+            // appears in the header at the top of the message; repeating it at the
+            // bottom was clutter.
+            sections.push('Data: ECMWF · open-meteo.com');
             
             return sections.join('\n');
         };
