@@ -5404,25 +5404,18 @@
                 // Per-day line builder. Returns one formatted line for a given day index.
                 // Uses per-location vocab V — labels, storm phrase, rainfall classification
                 // all match the language assigned to this location.
+                // ----------
+                // Ensemble confidence marker (v1.0.129): if window.confidenceCache has
+                // a 'low' confidence entry for this day, append a "⚠️ Models disagree" /
+                // "⚠️ 模型不确定" warning. Only appears when ensemble members genuinely
+                // split (30-70% predicting rain >5mm) — actionable uncertainty signal.
+                // High-confidence days (the typical case) get no marker.
                 const buildDayLine = (dayIdx, prefix) => {
                     const d = days[dayIdx];
                     if (!d) return null;
-                    // Rainfall volume display (v1.0.128).
-                    // ----------
-                    // Two thresholds:
-                    //   ≥1mm   → show mm number. Tells recipients whether "雨 X%" is
-                    //            trace rainfall or real water. Without this, "雨 100%"
-                    //            with no volume context looked ambiguous — readers
-                    //            assumed heavy rain when actual volume could be 2-8mm
-                    //            (light shower).
-                    //   ≥10mm  → also prepend the qualitative label (中等降雨 / Moderate
-                    //            etc). Below 10mm, the bare mm number is enough — no
-                    //            label needed for "3mm" since it's obviously light.
-                    //            Above 10mm, the label adds intuitive magnitude on top
-                    //            of the number.
-                    // The two-tier design means recipients always see SOMETHING when
-                    // there's rain to report, but the label noise only appears when
-                    // it carries decision value.
+                    // Rainfall volume display (v1.0.128). Two thresholds:
+                    //   ≥1mm   → show mm number
+                    //   ≥10mm  → also prepend the qualitative label (中等降雨 etc)
                     let rainfallStr = '';
                     if (typeof d.rv === 'number' && d.rv >= 1) {
                         const mmRounded = Math.round(d.rv);
@@ -5441,6 +5434,19 @@
                         // temp/rain/mm basics on one line and gives the storm window a clean
                         // second line. Better than letting WhatsApp wrap mid-phrase.
                         line += `,\n${V.storm} ${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
+                    }
+                    // Ensemble low-confidence marker (v1.0.129). Bilingual brief — same as
+                    // the dataHeader staleness warning, which sets the convention for
+                    // warning-style annotations in the broadcast.
+                    const conf = (window.confidenceCache && window.confidenceCache[lid])
+                        ? window.confidenceCache[lid][dayIdx]
+                        : null;
+                    if (conf && conf.confidence === 'low') {
+                        // Per-language phrasing. Short — recipients learn the symbol over time.
+                        const lowConfLabel = locLang === 'zh'
+                            ? '⚠️ 模型不确定'
+                            : (locLang === 'ms' ? '⚠️ Model tidak pasti' : '⚠️ Models disagree');
+                        line += `\n${lowConfLabel}`;
                     }
                     return line;
                 };
@@ -5483,6 +5489,131 @@
             sections.push('WeatherNext');
             
             return sections.join('\n');
+        };
+        
+        // ============================================================
+        // ENSEMBLE CONFIDENCE FETCH (v1.0.129, Phase 1)
+        // ------------------------------------------------------------
+        // Fetches ECMWF AIFS ensemble data to compute per-day forecast confidence.
+        // Used by the broadcast functions to flag days where the 51 ensemble members
+        // disagree about whether tomorrow is a rain day — actionable uncertainty
+        // information for farmers planning around weather.
+        //
+        // Design choices documented for future maintenance:
+        //
+        // - Precipitation only (not temperature/wind). For our farmer audience,
+        //   "will it rain or not" is the decision driver. Temperature spread is
+        //   forecast uncertainty too but doesn't change daily plans for them.
+        //
+        // - 5mm threshold per day. Below 5mm = "light/no rain, workers go out",
+        //   above 5mm = "real rain, plans shift". The threshold matches the
+        //   binary decision farmers actually make. Sensitive to changing this
+        //   if the audience's decision threshold differs.
+        //
+        // - "Low confidence" defined as 30-70% of members predicting >5mm. If
+        //   95% of members predict rain (high confidence rainy) or 95% predict
+        //   no rain (high confidence dry), no marker. Only the genuine in-between
+        //   ("could go either way") gets flagged.
+        //
+        // - Models endpoint uses ecmwf_ifs025 (ECMWF AIFS 25km ensemble). Lower
+        //   resolution than the 9km deterministic IFS HRES we use elsewhere, but
+        //   that's a property of ensembles in general — atmospheric uncertainty
+        //   operates at scales larger than 9km anyway.
+        //
+        // - No caching beyond the session. Each broadcast tap refetches ensemble.
+        //   Cheap enough: 4 broadcasts/day × 50 locations × 1 API call each =
+        //   200 calls/day, well under the 10k/day free tier.
+        //
+        // - Fetch failures non-fatal. If ensemble API is down or slow, broadcast
+        //   still works without the marker. Confidence is bonus information, not
+        //   foundational.
+        // ============================================================
+        window.fetchEnsembleConfidence = async (ids) => {
+            if (!Array.isArray(ids) || ids.length === 0) return;
+            window.confidenceCache = window.confidenceCache || {};
+            
+            // Build per-location fetches. Open-Meteo's ensemble API doesn't support
+            // multi-location batching like the regular forecast API, so we issue one
+            // call per location. For 50+ locations this takes 3-8 seconds; acceptable
+            // for a broadcast workflow that runs 4 times daily.
+            const fetchOne = async (id) => {
+                try {
+                    const loc = getAllLocations().find(l => l.id === id);
+                    if (!loc) return;
+                    
+                    // Ensemble endpoint. Requesting hourly precipitation for 7 days.
+                    // models=ecmwf_ifs025 = the AIFS 0.25° ensemble (51 members).
+                    const url = `https://ensemble-api.open-meteo.com/v1/ensemble?`
+                              + `latitude=${loc.lat}&longitude=${loc.lng}`
+                              + `&hourly=precipitation&models=ecmwf_ifs025`
+                              + `&timezone=auto&forecast_days=7`;
+                    const resp = await fetch(url);
+                    if (!resp.ok) {
+                        console.warn(`[ensemble] fetch failed for ${id}: HTTP ${resp.status}`);
+                        return;
+                    }
+                    const data = await resp.json();
+                    
+                    // Response shape: hourly.precipitation_member01, hourly.precipitation_member02,
+                    // ... through member51 (ECMWF AIFS ENS has 51 members).
+                    // hourly.time is the time array.
+                    if (!data.hourly || !data.hourly.time) return;
+                    
+                    // Find member arrays. Keys look like "precipitation_member01" etc.
+                    const memberKeys = Object.keys(data.hourly).filter(k => k.startsWith('precipitation_member'));
+                    if (memberKeys.length === 0) {
+                        console.warn(`[ensemble] no member arrays found for ${id}`);
+                        return;
+                    }
+                    
+                    // For each forecast day (0=today, 1=tomorrow, etc), compute the
+                    // fraction of members that predict daily rainfall >5mm.
+                    // hourly.time[0] is hour 0, time[24] is hour 24, etc.
+                    const dayConfidence = [];
+                    const totalHours = data.hourly.time.length;
+                    const numDays = Math.floor(totalHours / 24);
+                    
+                    for (let day = 0; day < numDays; day++) {
+                        const startIdx = day * 24;
+                        const endIdx = Math.min(startIdx + 24, totalHours);
+                        
+                        // For each member, sum precipitation across this day's hours.
+                        let membersOver5mm = 0;
+                        let totalMembers = 0;
+                        for (const memKey of memberKeys) {
+                            const series = data.hourly[memKey];
+                            if (!Array.isArray(series)) continue;
+                            let daySum = 0;
+                            for (let h = startIdx; h < endIdx; h++) {
+                                const v = series[h];
+                                if (typeof v === 'number' && !isNaN(v)) daySum += v;
+                            }
+                            totalMembers++;
+                            if (daySum > 5) membersOver5mm++;
+                        }
+                        
+                        if (totalMembers === 0) {
+                            dayConfidence.push({ confidence: 'unknown', fraction: null });
+                            continue;
+                        }
+                        
+                        const fraction = membersOver5mm / totalMembers;
+                        // Low confidence when neither side has clear majority (30-70% split).
+                        const isLowConfidence = fraction >= 0.3 && fraction <= 0.7;
+                        dayConfidence.push({
+                            confidence: isLowConfidence ? 'low' : 'high',
+                            fraction: Math.round(fraction * 100)
+                        });
+                    }
+                    
+                    window.confidenceCache[id] = dayConfidence;
+                } catch (e) {
+                    console.warn(`[ensemble] error for ${id}:`, e);
+                }
+            };
+            
+            // Run all locations in parallel. Each is independent so no need to serialize.
+            await Promise.all(ids.map(fetchOne));
         };
         
         // Tap handler for either broadcast button. Builds text, copies to clipboard,
@@ -5535,6 +5666,21 @@
                             // Expected — DOM elements for non-displayed locations don't exist.
                             // daysCache was written before the failure, so the report still works.
                         }
+                    }
+                }
+                
+                // Fetch ensemble confidence in parallel for all locations in the report.
+                // This adds 3-8 seconds to the broadcast tap latency but provides the
+                // "⚠️ 模型不确定" marker on low-confidence days. Failures are non-fatal —
+                // broadcast still works without markers if ensemble API is unavailable.
+                if (typeof window.fetchEnsembleConfidence === 'function') {
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`正在分析模型确定性... / Analyzing forecast confidence...`, false);
+                    }
+                    try {
+                        await window.fetchEnsembleConfidence(neededIds);
+                    } catch (e) {
+                        console.warn('Ensemble confidence fetch failed (non-fatal):', e);
                     }
                 }
                 
