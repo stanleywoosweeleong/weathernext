@@ -684,17 +684,24 @@
     </header>
 
     <main id="main-content" style="height: calc(100vh - var(--chrome-h, 215px) - var(--safe-top) - var(--safe-bottom)); display: flex; flex-direction: column;" class="bg-slate-100">
-        <!-- Broadcast buttons (v1.0.122) — for Stanley's WhatsApp daily reports -->
-        <div id="broadcast-bar" class="flex gap-1.5 px-2 py-2 bg-slate-50 border-b border-slate-200 shrink-0">
-            <button onclick="window.handleBroadcastClick('favorites')" 
-                    class="flex-1 py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
-                    style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);">
-                ⭐ 收藏地点 3天<br><span class="text-[9px] opacity-80 font-bold">Favorites · 3 Days</span>
-            </button>
-            <button onclick="window.handleBroadcastClick('allStable')" 
-                    class="flex-1 py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
-                    style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
-                📡 全部地点 1天<br><span class="text-[9px] opacity-80 font-bold">All Stable · 1 Day</span>
+        <!-- Broadcast buttons (v1.0.122; v1.0.138 added hourly bilingual button) -->
+        <div id="broadcast-bar" class="flex flex-col gap-1.5 px-2 py-2 bg-slate-50 border-b border-slate-200 shrink-0">
+            <div class="flex gap-1.5">
+                <button onclick="window.handleBroadcastClick('favorites')" 
+                        class="flex-1 py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
+                        style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);">
+                    ⭐ 收藏地点 3天<br><span class="text-[9px] opacity-80 font-bold">Favorites · 3 Days</span>
+                </button>
+                <button onclick="window.handleBroadcastClick('allStable')" 
+                        class="flex-1 py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
+                        style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                    📡 全部地点 1天<br><span class="text-[9px] opacity-80 font-bold">All Stable · 1 Day</span>
+                </button>
+            </div>
+            <button onclick="window.handleBroadcastClick('allStableHourly')" 
+                    class="w-full py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
+                    style="background: linear-gradient(135deg, #ea580c 0%, #c2410c 100%);">
+                🕐 全部地点 双语逐时<br><span class="text-[9px] opacity-80 font-bold">All Stable · Hourly Bilingual</span>
             </button>
         </div>
         <div style="flex: 1; display: flex; overflow: hidden;">
@@ -5323,7 +5330,7 @@
                 // Filter out hidden ones (recycle bin) and any not in getAllLocations.
                 const visible = getAllLocations().filter(l => !hiddenIds.includes(l.id));
                 ids = ids.filter(id => visible.some(l => l.id === id));
-            } else if (mode === 'allStable') {
+            } else if (mode === 'allStable' || mode === 'allStableHourly') {
                 // STABLE_LOCATIONS is the baked-in list; filter out user-purged ones.
                 ids = STABLE_LOCATIONS
                     .filter(l => !purgedIds.includes(l.id) && !hiddenIds.includes(l.id))
@@ -5530,6 +5537,119 @@
                                 sections.push('');
                             }
                         }
+                    }
+                } else if (mode === 'allStableHourly') {
+                    // ==========================================================
+                    // HOURLY BILINGUAL FORECAST (v1.0.138)
+                    // ----------------------------------------------------------
+                    // Per-hour rainfall timeline for the target day, English on top
+                    // then Malay below. Matches Stanley's pre-existing manual broadcast
+                    // format that his farmer audience already expects.
+                    //
+                    // Time window:
+                    //   dayOffset = 0 (broadcasting before 6 PM): show hours from the
+                    //     next clock hour through 11 PM today. Recipients don't need to
+                    //     hear about morning rain in a 1 PM broadcast.
+                    //   dayOffset = 1 (broadcasting after 6 PM): show all 24 hours of
+                    //     tomorrow. Recipients planning the next day need the full picture.
+                    //
+                    // Intensity thresholds (per mm/hour):
+                    //   < 0.1   → skipped (treated as dry)
+                    //   0.1-0.5 → Drizzle / Renyai-renyai
+                    //   0.5-2   → Light Rain / Hujan ringan
+                    //   2-7     → Moderate Rain / Hujan sederhana
+                    //   7+      → Heavy Rain / Hujan lebat (with mm value shown)
+                    // ==========================================================
+                    const precipArr = (typeof getHourlyData === 'function')
+                        ? getHourlyData(lid, 'precipitation', true)
+                        : null;
+                    
+                    if (!Array.isArray(precipArr) || precipArr.length === 0) {
+                        sections.push('No data / Tiada data');
+                        sections.push('');
+                        continue;
+                    }
+                    
+                    // Determine the hour range to scan.
+                    // Hourly arrays from Open-Meteo start at hour 0 of TODAY local time.
+                    const now = new Date();
+                    let startHour, endHour;
+                    if (dayOffset === 0) {
+                        // Today — start from the next hour (round up).
+                        startHour = now.getHours() + 1;
+                        if (startHour < 0) startHour = 0;
+                        endHour = 24;  // up to end-of-today
+                    } else {
+                        // Tomorrow — full day (indices 24-47 in the hourly array).
+                        startHour = 24;
+                        endHour = 48;
+                    }
+                    
+                    // Format an hour as "1pm" / "11am" / "12am" / "12pm".
+                    const fmtClockHour = (h24) => {
+                        const h = h24 % 24;
+                        if (h === 0) return '12am';
+                        if (h === 12) return '12pm';
+                        return h < 12 ? `${h}am` : `${h - 12}pm`;
+                    };
+                    
+                    // Classify mm/hour into multilingual labels + showMm flag.
+                    // Thresholds calibrated by Stanley against 4 years of Windy.com ground-truth
+                    // observation in Malaysia. The 0.7mm/h floor is genuine — anything below
+                    // is not visible/felt on the ground in Malaysian humid conditions, even if
+                    // models forecast it.
+                    //
+                    // Vocabulary notes:
+                    // - Chinese 毛毛雨 used for 0.7-1mm/h (Stanley confirmed 细雨 and 毛毛雨 are
+                    //   interchangeable in Malaysian usage; no need for a separate 细雨 tier).
+                    // - Chinese 特大雨 used for ≥7mm/h to avoid vocabulary collision with the
+                    //   existing 可能有暴雨 / Possible Thunderstorm label (CAPE-based electrical
+                    //   activity warning) used elsewhere in the broadcast.
+                    // - Malay "Hujan sangat lebat" matches the daily-summary vocabulary from
+                    //   v1.0.127 for consistency across broadcast formats.
+                    const classify = (mm) => {
+                        if (mm < 0.7) return null;
+                        if (mm < 1)  return { en: 'Drizzle',         zh: '毛毛雨', ms: 'Renyai-renyai',      showMm: false };
+                        if (mm < 2)  return { en: 'Light Rain',      zh: '小雨',   ms: 'Hujan ringan',       showMm: false };
+                        if (mm < 4)  return { en: 'Moderate Rain',   zh: '中雨',   ms: 'Hujan sederhana',    showMm: true  };
+                        if (mm < 7)  return { en: 'Heavy Rain',      zh: '大雨',   ms: 'Hujan lebat',        showMm: true  };
+                        return         { en: 'Very Heavy Rain', zh: '特大雨', ms: 'Hujan sangat lebat', showMm: true  };
+                    };
+                    
+                    // Scan the hour range, collect rain hours.
+                    const rainEntries = [];
+                    for (let h = startHour; h < endHour; h++) {
+                        const mm = precipArr[h];
+                        if (typeof mm !== 'number' || isNaN(mm)) continue;
+                        const cls = classify(mm);
+                        if (!cls) continue;
+                        rainEntries.push({ hour: h, mm, cls });
+                    }
+                    
+                    if (rainEntries.length === 0) {
+                        // Dry day — bilingual no-rain line. Top language matches the farmer
+                        // owner's preference (Chinese for the bulk of locations, English for
+                        // the three foreign-worker farms — kk/keni/kion). Malay below for the
+                        // worker layer in every case.
+                        const topNoRain = locLang === 'en' ? 'No rain' : '没有下雨';
+                        sections.push(topNoRain);
+                        sections.push('Tiada hujan');
+                    } else {
+                        // Build top-language lines first (Chinese for owner, or English for
+                        // English-override farms), then Malay lines below for the worker layer.
+                        // This top/bottom split is intentional: the owner reads top, the worker
+                        // reads bottom, neither has to scan past the other's language.
+                        const topLines = [];
+                        const msLines = [];
+                        for (const e of rainEntries) {
+                            const clock = fmtClockHour(e.hour);
+                            const mmStr = e.cls.showMm ? `, ${Math.round(e.mm * 10) / 10}mm` : '';
+                            const topLabel = locLang === 'en' ? e.cls.en : e.cls.zh;
+                            topLines.push(`${clock} ${topLabel}${mmStr}`);
+                            msLines.push(`${clock} ${e.cls.ms}${mmStr}`);
+                        }
+                        for (const l of topLines) sections.push(l);
+                        for (const l of msLines) sections.push(l);
                     }
                 } else {
                     // 1-day per location for the all-stable broadcast. No internal day
