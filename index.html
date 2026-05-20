@@ -5632,25 +5632,30 @@
                         // second line. Better than letting WhatsApp wrap mid-phrase.
                         line += `,\n${V.storm} ${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
                     }
-                    // Ensemble low-confidence marker (v1.0.129; v1.0.130 reworded).
-                    // Originally used ⚠️ + "模型不确定 / Models disagree" — but the warning
-                    // icon and judgmental wording were ill-suited for the audience.
-                    // Many Malaysian farmer recipients are older, manage hypertension, and
-                    // ⚠️ signals "danger" universally. Daily exposure to alarm-style
-                    // markers creates real physiological stress over months.
+                    // Ensemble confidence marker (v1.0.129; v1.0.130 reworded gently;
+                    // v1.0.145 inverted to positive framing).
+                    // ----------
+                    // History of this marker:
+                    //   v1.0.129: ⚠️ "模型不确定 / Models disagree" — too alarming for elderly
+                    //             farmer audience managing health conditions.
+                    //   v1.0.130: ~ "模型不一致 / Models vary" — softer wording, still negative.
+                    //   v1.0.145: ~ "模型一致 / Models agree" — POSITIVE framing.
                     //
-                    // v1.0.130 design: tilde (~) reads as "approximately / variable" in
-                    // universal text/math convention, no color or alert cues. Wording
-                    // shifted from "disagree" (confrontational) to "vary" (observational).
-                    // Same information, lower stress response.
+                    // Inverted semantics: instead of firing on disagreement (negative, daily
+                    // stress for recipients seeing many warnings on convective weather days),
+                    // marker now fires on strong agreement (positive, reassures when models
+                    // genuinely converge). Same underlying ensemble information, opposite
+                    // affective register. Absence of marker = ordinary confidence (neutral),
+                    // not negative. Recipients learn "marker = trustworthy forecast" instead
+                    // of "marker = something is wrong".
                     const conf = (window.confidenceCache && window.confidenceCache[lid])
                         ? window.confidenceCache[lid][dayIdx]
                         : null;
-                    if (conf && conf.confidence === 'low') {
-                        const lowConfLabel = locLang === 'zh'
-                            ? '~ 模型不一致'
-                            : (locLang === 'ms' ? '~ Model tidak konsisten' : '~ Models vary');
-                        line += `\n${lowConfLabel}`;
+                    if (conf && conf.confidence === 'high') {
+                        const highConfLabel = locLang === 'zh'
+                            ? '~ 模型一致'
+                            : (locLang === 'ms' ? '~ Model konsisten' : '~ Models agree');
+                        line += `\n${highConfLabel}`;
                     }
                     return line;
                 };
@@ -5677,32 +5682,50 @@
                     }
                 } else if (mode === 'allStableHourly') {
                     // ==========================================================
-                    // HOURLY BILINGUAL FORECAST (v1.0.138)
+                    // HOURLY BILINGUAL FORECAST + DAILY SUMMARY (v1.0.144)
                     // ----------------------------------------------------------
-                    // Per-hour rainfall timeline for the target day, English on top
-                    // then Malay below. Matches Stanley's pre-existing manual broadcast
-                    // format that his farmer audience already expects.
+                    // Per-location structure:
+                    //   1. Daily summary (location's primary language: zh or en)
+                    //      with mm threshold + storm window + confidence marker
+                    //   2. Blank line for breathing room
+                    //   3. Hourly timeline (primary language on top, Malay below)
                     //
-                    // Time window:
-                    //   dayOffset = 0 (broadcasting before 6 PM): show hours from the
-                    //     next clock hour through 11 PM today. Recipients don't need to
-                    //     hear about morning rain in a 1 PM broadcast.
-                    //   dayOffset = 1 (broadcasting after 6 PM): show all 24 hours of
-                    //     tomorrow. Recipients planning the next day need the full picture.
+                    // The daily summary acts as a headline — recipient gets the day's
+                    // shape at a glance (peak temp, probability, total mm, storm window,
+                    // model confidence). The hourly timeline below provides the actionable
+                    // hour-by-hour detail.
                     //
-                    // Intensity thresholds (per mm/hour):
-                    //   < 0.1   → skipped (treated as dry)
-                    //   0.1-0.5 → Drizzle / Renyai-renyai
-                    //   0.5-2   → Light Rain / Hujan ringan
-                    //   2-7     → Moderate Rain / Hujan sederhana
-                    //   7+      → Heavy Rain / Hujan lebat (with mm value shown)
+                    // Time window for hourly section (three-tier per v1.0.143):
+                    //   Before 12 PM:  today from current hour through 23:00
+                    //   12 PM - 6 PM:  today's remaining hours + tomorrow 00:00-03:00
+                    //   After 6 PM:    all 24 hours of tomorrow (00:00-23:00)
+                    //
+                    // Intensity thresholds (per mm/hour, calibrated against 4 years of
+                    // Stanley's Windy.com ground-truth observation in Malaysia):
+                    //   < 0.7   → skipped
+                    //   0.7-1   → Drizzle / 毛毛雨 / Renyai-renyai
+                    //   1-2     → Light Rain / 小雨 / Hujan ringan
+                    //   2-4     → Moderate Rain / 中雨 / Hujan sederhana (mm shown)
+                    //   4-7     → Heavy Rain / 大雨 / Hujan lebat (mm shown)
+                    //   ≥7      → Very Heavy Rain / 特大雨 / Hujan sangat lebat (mm shown)
                     // ==========================================================
+                    
+                    // STEP 1: Daily summary line. Reuses buildDayLine() which handles
+                    // the language switching, mm thresholds, storm windows, and ensemble
+                    // confidence marker that the existing 'allStable' mode produces.
+                    const dailySummaryLine = buildDayLine(dayOffset, dayOffset === 0 ? V.today : V.tomorrow);
+                    if (dailySummaryLine) {
+                        sections.push(dailySummaryLine);
+                        sections.push('');  // blank line separating daily summary from hourly
+                    }
+                    
+                    // STEP 2: Hourly timeline.
                     const precipArr = (typeof getHourlyData === 'function')
                         ? getHourlyData(lid, 'precipitation', true)
                         : null;
                     
                     if (!Array.isArray(precipArr) || precipArr.length === 0) {
-                        sections.push('No data / Tiada data');
+                        sections.push('No hourly data / Tiada data setiap jam');
                         sections.push('');
                         continue;
                     }
@@ -5943,10 +5966,15 @@
                         }
                         
                         const fraction = membersOver5mm / totalMembers;
-                        // Low confidence when neither side has clear majority (30-70% split).
-                        const isLowConfidence = fraction >= 0.3 && fraction <= 0.7;
+                        // v1.0.145: tightened thresholds for positive-marker semantics.
+                        // The marker now fires on STRONG agreement (not just "not uncertain"),
+                        // so we need a stricter definition of high confidence.
+                        //   < 15% of members predicting >5mm = overwhelming dry consensus
+                        //   > 85% of members predicting >5mm = overwhelming wet consensus
+                        //   15-85% = ordinary confidence (no marker — neutral baseline)
+                        const isHighConfidence = fraction < 0.15 || fraction > 0.85;
                         dayConfidence.push({
-                            confidence: isLowConfidence ? 'low' : 'high',
+                            confidence: isHighConfidence ? 'high' : 'medium',
                             fraction: Math.round(fraction * 100)
                         });
                     }
