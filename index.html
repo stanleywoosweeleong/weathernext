@@ -5435,17 +5435,24 @@
                         // second line. Better than letting WhatsApp wrap mid-phrase.
                         line += `,\n${V.storm} ${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
                     }
-                    // Ensemble low-confidence marker (v1.0.129). Bilingual brief — same as
-                    // the dataHeader staleness warning, which sets the convention for
-                    // warning-style annotations in the broadcast.
+                    // Ensemble low-confidence marker (v1.0.129; v1.0.130 reworded).
+                    // Originally used ⚠️ + "模型不确定 / Models disagree" — but the warning
+                    // icon and judgmental wording were ill-suited for the audience.
+                    // Many Malaysian farmer recipients are older, manage hypertension, and
+                    // ⚠️ signals "danger" universally. Daily exposure to alarm-style
+                    // markers creates real physiological stress over months.
+                    //
+                    // v1.0.130 design: tilde (~) reads as "approximately / variable" in
+                    // universal text/math convention, no color or alert cues. Wording
+                    // shifted from "disagree" (confrontational) to "vary" (observational).
+                    // Same information, lower stress response.
                     const conf = (window.confidenceCache && window.confidenceCache[lid])
                         ? window.confidenceCache[lid][dayIdx]
                         : null;
                     if (conf && conf.confidence === 'low') {
-                        // Per-language phrasing. Short — recipients learn the symbol over time.
                         const lowConfLabel = locLang === 'zh'
-                            ? '⚠️ 模型不确定'
-                            : (locLang === 'ms' ? '⚠️ Model tidak pasti' : '⚠️ Models disagree');
+                            ? '~ 模型不一致'
+                            : (locLang === 'ms' ? '~ Model tidak konsisten' : '~ Models vary');
                         line += `\n${lowConfLabel}`;
                     }
                     return line;
