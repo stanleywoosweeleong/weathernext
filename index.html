@@ -5407,13 +5407,33 @@
                 const buildDayLine = (dayIdx, prefix) => {
                     const d = days[dayIdx];
                     if (!d) return null;
-                    // Rainfall volume in mm with qualitative label (Path D, v1.0.125; v1.0.127
-                    // refactored to use per-location vocab). Threshold ≥10mm — below that the
-                    // label "light rain" carries no actionable signal for farmer decisions.
+                    // Rainfall volume display (v1.0.128).
+                    // ----------
+                    // Two thresholds:
+                    //   ≥1mm   → show mm number. Tells recipients whether "雨 X%" is
+                    //            trace rainfall or real water. Without this, "雨 100%"
+                    //            with no volume context looked ambiguous — readers
+                    //            assumed heavy rain when actual volume could be 2-8mm
+                    //            (light shower).
+                    //   ≥10mm  → also prepend the qualitative label (中等降雨 / Moderate
+                    //            etc). Below 10mm, the bare mm number is enough — no
+                    //            label needed for "3mm" since it's obviously light.
+                    //            Above 10mm, the label adds intuitive magnitude on top
+                    //            of the number.
+                    // The two-tier design means recipients always see SOMETHING when
+                    // there's rain to report, but the label noise only appears when
+                    // it carries decision value.
                     let rainfallStr = '';
-                    if (typeof d.rv === 'number' && d.rv >= 10) {
-                        const label = V.rainfall(d.rv);
-                        if (label) rainfallStr = ` (${label} ${Math.round(d.rv)}mm)`;
+                    if (typeof d.rv === 'number' && d.rv >= 1) {
+                        const mmRounded = Math.round(d.rv);
+                        if (d.rv >= 10) {
+                            const label = V.rainfall(d.rv);
+                            rainfallStr = label
+                                ? ` (${label} ${mmRounded}mm)`
+                                : ` (${mmRounded}mm)`;
+                        } else {
+                            rainfallStr = ` (${mmRounded}mm)`;
+                        }
                     }
                     let line = `${prefix}: ${d.hi}°C, ${V.rain} ${d.pp}%${rainfallStr}`;
                     if (d.cape >= 1500 && d.triggerWindow) {
