@@ -5249,9 +5249,18 @@
             const targetDateStr = `${targetDate.getDate()}/${targetDate.getMonth() + 1}`;
             const dateMarker = dayOffset === 0 ? targetDateStr : `${targetDateStr} (明日 Tomorrow)`;
             
-            // Data freshness header. Always show. Includes a staleness warning if >8 hours.
-            const ageWarn = runInfo.ageHours > 8 ? ' ⚠️数据较旧' : '';
-            const dataHeader = `（数据: ${runInfo.initMytStr} ECMWF · ${runInfo.ageHours}h${ageWarn}）`;
+            // Data freshness header.
+            // ----------
+            // Shown ONLY when the data is unexpectedly stale (>8 hours since model
+            // initialization). For normal-fresh broadcasts (5-6 hour data, the typical
+            // case at Stanley's 5:30 AM / 7 AM / 1 PM / 8 PM broadcast windows), the
+            // timestamp adds visual noise without decision value — recipients trust
+            // the broadcast schedule. When data IS stale, the timestamp suddenly
+            // matters because it explains why the forecast might disagree with what
+            // recipients are experiencing outside.
+            const dataHeader = runInfo.ageHours > 8
+                ? `⚠️ 数据较旧 (Last updated: ${runInfo.initMytStr}, ${runInfo.ageHours}h ago)`
+                : null;
             
             // Determine which location ids to include.
             let ids = [];
@@ -5268,7 +5277,9 @@
             }
             
             if (ids.length === 0) {
-                return `${brandHeader}\n${dateMarker}\n${dataHeader}\n\n(没有可用的地点 / No locations available)\n\nWeatherNext`;
+                const headerLines = [brandHeader, dateMarker];
+                if (dataHeader) headerLines.push(dataHeader);
+                return `${headerLines.join('\n')}\n\n(没有可用的地点 / No locations available)\n\nWeatherNext`;
             }
             
             // Format helpers — same conventions as buildShareText.
@@ -5277,19 +5288,86 @@
                 const h12 = h % 12 || 12;
                 return `${h12}${meridiem}`;
             };
-            const stormLabel = { en: 'Possible Thunderstorm', ms: 'Kemungkinan Ribut Petir', zh: '可能有暴雨', ta: 'புயல்', my: 'မုန်တိုင်း' }[lang] || 'Possible Thunderstorm';
-            const rainLabel = { en: 'Rain', ms: 'Hujan', zh: '雨', ta: 'மழை', my: 'မိုး' }[lang] || 'Rain';
             
-            // Section headers for the 3-day mode.
-            const todayLabel = { en: 'Today', ms: 'Hari Ini', zh: '今天', ta: 'இன்று', my: 'ဒီနေ့' }[lang] || 'Today';
-            const tomorrowLabel = { en: 'Tomorrow', ms: 'Esok', zh: '明天', ta: 'நாளை', my: 'မနက်ဖြန်' }[lang] || 'Tomorrow';
-            const dayAfterLabel = { en: 'Day After', ms: 'Lusa', zh: '后天', ta: 'நாளை மறுநாள்', my: 'သန်ဘက်ခါ' }[lang] || 'Day After';
+            // ============================================================
+            // PER-LOCATION LANGUAGE OVERRIDE (v1.0.127)
+            // ------------------------------------------------------------
+            // Some locations need to render in English regardless of the broadcaster's
+            // default app language. Stanley broadcasts in Chinese, but a subset of
+            // recipients (farm owners with foreign-worker labour pools) need English
+            // for downstream machine-translation into their workers' native languages
+            // (Bengali, Indonesian, Nepali, Burmese, Vietnamese).
+            //
+            // English is the safest pivot language for these flows — translation
+            // models are most accurate translating FROM English to small Asian
+            // languages, vs translating FROM Chinese which often introduces ambiguity.
+            //
+            // This list is hard-coded for now. When Stanley spins up a dedicated
+            // broadcaster repo with config UI, this becomes user-editable.
+            // ============================================================
+            const ENGLISH_LOCATIONS = ['kk', 'keni', 'kion'];
+            
+            // Vocabulary lookup keyed by language. getLangVocab returns the right
+            // set of labels for a given location's effective language.
+            const VOCAB = {
+                en: {
+                    storm: 'Possible Thunderstorm',
+                    rain: 'Rain',
+                    today: 'Today',
+                    tomorrow: 'Tomorrow',
+                    dayAfter: 'Day After',
+                    rainfall: (mm) => {
+                        if (mm < 10) return null;
+                        if (mm < 25) return 'Moderate Rainfall';
+                        if (mm < 50) return 'Heavy Rainfall';
+                        if (mm < 100) return 'Very Heavy Rainfall';
+                        return 'Extreme Rainfall';
+                    }
+                },
+                zh: {
+                    storm: '可能有暴雨',
+                    rain: '雨',
+                    today: '今天',
+                    tomorrow: '明天',
+                    dayAfter: '后天',
+                    rainfall: (mm) => {
+                        // Non-colliding vocabulary — avoids 暴雨 (which means "thunderstorm
+                        // hedge" in the storm clause already in this report).
+                        if (mm < 10) return null;
+                        if (mm < 25) return '中等降雨';
+                        if (mm < 50) return '强降雨';
+                        if (mm < 100) return '大量降雨';
+                        return '极端降雨';
+                    }
+                },
+                ms: {
+                    storm: 'Kemungkinan Ribut Petir',
+                    rain: 'Hujan',
+                    today: 'Hari Ini',
+                    tomorrow: 'Esok',
+                    dayAfter: 'Lusa',
+                    rainfall: (mm) => {
+                        if (mm < 10) return null;
+                        if (mm < 25) return 'Hujan Sederhana';
+                        if (mm < 50) return 'Hujan Lebat';
+                        if (mm < 100) return 'Hujan Sangat Lebat';
+                        return 'Hujan Ekstrem';
+                    }
+                }
+            };
+            // For ta and my, no native-speaker confirmation of vocabulary — fall through
+            // to English so the message is still useful rather than wrong.
+            const getLocLang = (lid) => {
+                if (ENGLISH_LOCATIONS.includes(lid)) return 'en';
+                if (VOCAB[lang]) return lang;
+                return 'en';
+            };
             
             // Build the per-location sections.
             const sections = [];
             sections.push(brandHeader);
             sections.push(dateMarker);
-            sections.push(dataHeader);
+            if (dataHeader) sections.push(dataHeader);
             sections.push('');
             
             for (const lid of ids) {
@@ -5317,30 +5395,61 @@
                 
                 sections.push(`📍 ${locName}`);
                 
+                // Pick this location's vocabulary based on per-location override.
+                // English-override locations always use English; other locations use
+                // the app's default language. See VOCAB / ENGLISH_LOCATIONS above.
+                const locLang = getLocLang(lid);
+                const V = VOCAB[locLang] || VOCAB.en;
+                
                 // Per-day line builder. Returns one formatted line for a given day index.
+                // Uses per-location vocab V — labels, storm phrase, rainfall classification
+                // all match the language assigned to this location.
                 const buildDayLine = (dayIdx, prefix) => {
                     const d = days[dayIdx];
                     if (!d) return null;
-                    let line = `${prefix}: ${d.hi}°C, ${rainLabel} ${d.pp}%`;
+                    // Rainfall volume in mm with qualitative label (Path D, v1.0.125; v1.0.127
+                    // refactored to use per-location vocab). Threshold ≥10mm — below that the
+                    // label "light rain" carries no actionable signal for farmer decisions.
+                    let rainfallStr = '';
+                    if (typeof d.rv === 'number' && d.rv >= 10) {
+                        const label = V.rainfall(d.rv);
+                        if (label) rainfallStr = ` (${label} ${Math.round(d.rv)}mm)`;
+                    }
+                    let line = `${prefix}: ${d.hi}°C, ${V.rain} ${d.pp}%${rainfallStr}`;
                     if (d.cape >= 1500 && d.triggerWindow) {
-                        line += `, ${stormLabel} ${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
+                        // Intentional line break before the storm clause (v1.0.125): keeps the
+                        // temp/rain/mm basics on one line and gives the storm window a clean
+                        // second line. Better than letting WhatsApp wrap mid-phrase.
+                        line += `,\n${V.storm} ${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
                     }
                     return line;
                 };
                 
                 if (mode === 'favorites') {
                     // 3-day per location: dayOffset, dayOffset+1, dayOffset+2.
+                    // Day labels come from the location's own vocab — so an English-override
+                    // location shows "Today / Tomorrow / Day After" even when the broadcast
+                    // is otherwise in Chinese.
                     const labels3 = dayOffset === 0
-                        ? [todayLabel, tomorrowLabel, dayAfterLabel]
-                        : [tomorrowLabel, dayAfterLabel, '+2'];
+                        ? [V.today, V.tomorrow, V.dayAfter]
+                        : [V.tomorrow, V.dayAfter, '+2'];
                     for (let i = 0; i < 3; i++) {
                         const idx = dayOffset + i;
                         const line = buildDayLine(idx, labels3[i]);
-                        if (line) sections.push(line);
+                        if (line) {
+                            sections.push(line);
+                            // Path B (v1.0.126): blank line after storm-day for breathing room.
+                            const isLastDay = (i === 2);
+                            if (!isLastDay && line.includes('\n')) {
+                                sections.push('');
+                            }
+                        }
                     }
                 } else {
-                    // 1-day per location for the all-stable broadcast.
-                    const line = buildDayLine(dayOffset, dayOffset === 0 ? todayLabel : tomorrowLabel);
+                    // 1-day per location for the all-stable broadcast. No internal day
+                    // separation needed — there's only one day per location, and the
+                    // per-location blank line below provides separation from the next.
+                    const line = buildDayLine(dayOffset, dayOffset === 0 ? V.today : V.tomorrow);
                     if (line) sections.push(line);
                 }
                 
