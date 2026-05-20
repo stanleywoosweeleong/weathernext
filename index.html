@@ -5707,8 +5707,15 @@
                 
                 if (missing.length > 0) {
                     // Show loading status — large multi-location fetch can take 5-10 seconds.
+                    // v1.0.137: show total report count + cached count so it's clear the
+                    // broadcast covers ALL neededIds, not just the missing ones. Previously
+                    // the toast read "Fetching 60 locations" which sounded like the report
+                    // would have 60 entries, when actually it has all 61 (60 fetched fresh
+                    // + 1 from earlier session cache).
                     if (typeof window.showToast === 'function') {
-                        window.showToast(`正在获取 ${missing.length} 个地点的数据... / Fetching ${missing.length} locations...`, false);
+                        const cachedCount = neededIds.length - missing.length;
+                        const cacheNote = cachedCount > 0 ? ` (${cachedCount} 已缓存 / cached)` : '';
+                        window.showToast(`正在获取 ${neededIds.length} 个地点的数据${cacheNote} / Fetching data for ${neededIds.length} locations${cacheNote}...`, false);
                     }
                     // fetchMultiDetailWeather populates detailData with raw hourly weather.
                     if (typeof fetchMultiDetailWeather === 'function') {
