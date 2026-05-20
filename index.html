@@ -5613,16 +5613,19 @@
                     // Rainfall volume display (v1.0.128). Two thresholds:
                     //   ≥1mm   → show mm number
                     //   ≥10mm  → also prepend the qualitative label (中等降雨 etc)
+                    // mm suffix "/D" (v1.0.146) marks this as daily total — distinguishes
+                    // from per-hour mm values in the hourly timeline that follows the daily
+                    // summary in the integrated allStableHourly report.
                     let rainfallStr = '';
                     if (typeof d.rv === 'number' && d.rv >= 1) {
                         const mmRounded = Math.round(d.rv);
                         if (d.rv >= 10) {
                             const label = V.rainfall(d.rv);
                             rainfallStr = label
-                                ? ` (${label} ${mmRounded}mm)`
-                                : ` (${mmRounded}mm)`;
+                                ? ` (${label} ${mmRounded}mm/D)`
+                                : ` (${mmRounded}mm/D)`;
                         } else {
-                            rainfallStr = ` (${mmRounded}mm)`;
+                            rainfallStr = ` (${mmRounded}mm/D)`;
                         }
                     }
                     let line = `${prefix}: ${d.hi}°C, ${V.rain} ${d.pp}%${rainfallStr}`;
