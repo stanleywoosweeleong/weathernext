@@ -5164,7 +5164,7 @@
             lines.push('');
             // CC-BY-4.0 attribution (v1.0.131). Required wherever data is displayed.
             // v1.0.132: dropped the "WeatherNext" tail — brand already in header.
-            lines.push('Data: ECMWF · open-meteo.com');
+            lines.push('Data: ecmwf.int · open-meteo.com');
             
             return lines.join('\n');
         };
@@ -5333,7 +5333,7 @@
             if (ids.length === 0) {
                 const headerLines = [headerLine];
                 if (dataHeader) headerLines.push(dataHeader);
-                return `${headerLines.join('\n')}\n\n(没有可用的地点 / No locations available)\n\nData: ECMWF · open-meteo.com`;
+                return `${headerLines.join('\n')}\n\n(没有可用的地点 / No locations available)\n\nData: ecmwf.int · open-meteo.com`;
             }
             
             // Format helpers — same conventions as buildShareText.
@@ -5552,7 +5552,7 @@
             // dropped the redundant "WeatherNext" tail line — the brand already
             // appears in the header at the top of the message; repeating it at the
             // bottom was clutter.
-            sections.push('Data: ECMWF · open-meteo.com');
+            sections.push('Data: ecmwf.int · open-meteo.com');
             
             return sections.join('\n');
         };
