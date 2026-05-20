@@ -1221,11 +1221,11 @@
         // NEW: Translations Dictionary
         // Added keys: spray, fert, safe, risk, unsafe for Work Plan localization
         const TRANS = {
-            en: { brief: "✨ Smart Briefing", pest: "🦠 Pest & Disease Risk Analysis", tools: "✨ Ask AI & Plan", irrig: "💧 Smart Irrigation Calc", harvest: "✨ Harvest Estimator", soil: "✨ Soil & Fert Advisor", plan: "✨ Generate 3-Day Work Plan", sop: "✨ Tomorrow's SOP Checklist", yield: "✨ Yield & Market Insight", chat: "Ask Weather AI", placeholder: "e.g. Can I prune today?", calc: "Calculate", est: "Estimate", rec: "Get Recommendation", send: "Send", consult: "Consulting AI...", spray: "SPRAY", fert: "FERT", safe: "Safe", risk: "Risky", unsafe: "Avoid", action: "Action Plan", shareWA: "💬 Share to WhatsApp", shareWAHeader: "🌳 {name} — 7-Day Forecast", shareWADay: "{date}: {temp}°C, Rain {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Storm Days: {days}", shareWAFooter: "\nFull forecast: {url}", popupBlocked: "Popup blocked — open WhatsApp Web manually to send", saveLoc: "+ Add to my list", savedLoc: "Added to your list" },
-            ms: { brief: "✨ Ringkasan Pintar", pest: "🦠 Analisis Risiko Perosak & Penyakit", tools: "✨ Tanya AI & Rancang", irrig: "💧 Kalkulator Irigasi", harvest: "✨ Anggaran Tuai", soil: "✨ Penasihat Tanah & Baja", plan: "✨ Jana Pelan Kerja 3-Hari", sop: "✨ Senarai Semak SOP Esok", yield: "✨ Wawasan Hasil & Pasaran", chat: "Tanya AI Cuaca", placeholder: "Cth: Bolehkah mencantas hari ini?", calc: "Kira", est: "Anggar", rec: "Dapatkan Syor", send: "Hantar", consult: "Merujuk AI...", spray: "SEMBUR", fert: "BAJA", safe: "Sesuai", risk: "Risiko", unsafe: "Elak", action: "Pelan Tindakan", shareWA: "💬 Kongsi ke WhatsApp", shareWAHeader: "🌳 {name} — Ramalan 7-Hari", shareWADay: "{date}: {temp}°C, Hujan {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Hari Ribut: {days}", shareWAFooter: "\nRamalan penuh: {url}", popupBlocked: "Pop-up disekat — buka WhatsApp Web secara manual untuk hantar", saveLoc: "+ Tambah ke senarai", savedLoc: "Disimpan ke senarai" },
-            zh: { brief: "✨ 智能农事简报", pest: "🦠 病虫害风险分析", tools: "✨ AI 策划与咨询", irrig: "💧 智能灌溉计算", harvest: "✨ 收成预估", soil: "✨ 土壤与施肥顾问", plan: "✨ 生成三天工作计划", sop: "✨ 明日 SOP 检查表", yield: "✨ 产量与市场分析", chat: "询问天气 AI", placeholder: "例如：今天适合修剪吗？", calc: "计算", est: "预估", rec: "获取建议", send: "发送", consult: "正在咨询 AI...", spray: "喷药", fert: "施肥", safe: "适宜", risk: "风险", unsafe: "不宜", action: "行动计划", shareWA: "💬 分享到 WhatsApp", shareWAHeader: "🌳 {name} — 7天天气", shareWADay: "{date}: {temp}°C, 雨{rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ 风暴日: {days}", shareWAFooter: "\n完整预报: {url}", popupBlocked: "弹窗被阻止 — 请手动打开 WhatsApp Web 发送", saveLoc: "+ 加入我的列表", savedLoc: "已加入列表" },
-            ta: { brief: "✨ விவேக விளக்கம்", pest: "🦠 பூச்சி அபாய ஆய்வு", tools: "✨ AI திட்டம் & கேள்வி", irrig: "💧 நீர்ப்பாசனக் கணக்கீடு", harvest: "✨ அறுவடை மதிப்பீடு", soil: "✨ மண் & உரம் ஆலோசகர்", plan: "✨ 3-நாள் வேலைத் திட்டம்", sop: "✨ நாளைய SOP பட்டியல்", yield: "✨ விளைச்சல் & சந்தை", chat: "வானிலை AI-யிடம் கேளுங்கள்", placeholder: "எ.கா: இன்று கத்தரிக்கலாமா?", calc: "கணக்கிடு", est: "மதிப்பிடு", rec: "பரிந்துரை பெறு", send: "அனுப்பு", consult: "AI-யை அணுகுகிறது...", spray: "தெளி", fert: "உரம்", safe: "ஏற்றது", risk: "கவனம்", unsafe: "தவிர்", action: "செயல் திட்டம்", shareWA: "💬 WhatsApp-இல் பகிர்", shareWAHeader: "🌳 {name} — 7-நாள் முன்னறிவிப்பு", shareWADay: "{date}: {temp}°C, மழை {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ புயல் நாட்கள்: {days}", shareWAFooter: "\nமுழு முன்னறிவிப்பு: {url}", popupBlocked: "பாப்-அப் தடுக்கப்பட்டது — WhatsApp Web-ஐ கைமுறையாக திறக்கவும்", saveLoc: "+ எனது பட்டியலில் சேர்", savedLoc: "பட்டியலில் சேர்க்கப்பட்டது" },
-            my: { brief: "✨ စမတ် အကျဉ်းချုပ်", pest: "🦠 ပိုးမွှားအန္တရာယ်", tools: "✨ AI မေးရန် & စီစဉ်ရန်", irrig: "💧 ရေသွင်း တွက်ချက်မှု", harvest: "✨ ရိတ်သိမ်းချိန် ခန့်မှန်း", soil: "✨ မြေဆီလွှာ အကြံပေး", plan: "✨ ၃-ရက် လုပ်ငန်းစဉ်", sop: "✨ မနက်ဖြန် SOP စာရင်း", yield: "✨ အထွက်နှုန်း & ဈေးကွက်", chat: "မိုးလေဝသ AI မေးရန်", placeholder: "ဥပမာ - ဒီနေ့ ကိုင်းဖြတ်လို့ရမလား?", calc: "တွက်ချက်ပါ", est: "ခန့်မှန်းပါ", rec: "အကြံပြုချက်ရယူပါ", send: "ပို့ပါ", consult: "AI ကို မေးမြန်းနေသည်...", spray: "ဆေးဖြန်း", fert: "မြေသြဇာ", safe: "ကောင်း", risk: "သတိ", unsafe: "ရှောင်", action: "လုပ်ဆောင်ရန်", shareWA: "💬 WhatsApp သို့ မျှဝေပါ", shareWAHeader: "🌳 {name} — ၇-ရက် ခန့်မှန်း", shareWADay: "{date}: {temp}°C, မိုး {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ မုန်တိုင်းရက်များ: {days}", shareWAFooter: "\nခန့်မှန်းအပြည့်အစုံ: {url}", popupBlocked: "Popup ပိတ်ထားသည် — WhatsApp Web ကို ကိုယ်တိုင်ဖွင့်ပါ", saveLoc: "+ စာရင်းသို့ ထည့်ပါ", savedLoc: "စာရင်းသို့ ထည့်ပြီးပါပြီ" }
+            en: { brief: "✨ Smart Briefing", pest: "🦠 Pest & Disease Risk Analysis", tools: "✨ Ask AI & Plan", irrig: "💧 Smart Irrigation Calc", harvest: "✨ Harvest Estimator", soil: "✨ Soil & Fert Advisor", plan: "✨ Generate 3-Day Work Plan", sop: "✨ Tomorrow's SOP Checklist", yield: "✨ Yield & Market Insight", chat: "Ask Weather AI", placeholder: "e.g. Can I prune today?", calc: "Calculate", est: "Estimate", rec: "Get Recommendation", send: "Send", consult: "Consulting AI...", spray: "SPRAY", fert: "FERT", safe: "Safe", risk: "Risky", unsafe: "Avoid", action: "Action Plan", shareWA: "💬 Share to WhatsApp", shareWAHeader: "🌳 {name} — 7-Day Forecast", shareWADay: "{date}: {temp}°C, Rain {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Storm Days: {days}", shareWAFooter: "\nFull forecast: {url}", popupBlocked: "Popup blocked — open WhatsApp Web manually to send", saveLoc: "+ Add to my list", savedLoc: "Added to your list", markFavourite: "★ Mark as favourite" },
+            ms: { brief: "✨ Ringkasan Pintar", pest: "🦠 Analisis Risiko Perosak & Penyakit", tools: "✨ Tanya AI & Rancang", irrig: "💧 Kalkulator Irigasi", harvest: "✨ Anggaran Tuai", soil: "✨ Penasihat Tanah & Baja", plan: "✨ Jana Pelan Kerja 3-Hari", sop: "✨ Senarai Semak SOP Esok", yield: "✨ Wawasan Hasil & Pasaran", chat: "Tanya AI Cuaca", placeholder: "Cth: Bolehkah mencantas hari ini?", calc: "Kira", est: "Anggar", rec: "Dapatkan Syor", send: "Hantar", consult: "Merujuk AI...", spray: "SEMBUR", fert: "BAJA", safe: "Sesuai", risk: "Risiko", unsafe: "Elak", action: "Pelan Tindakan", shareWA: "💬 Kongsi ke WhatsApp", shareWAHeader: "🌳 {name} — Ramalan 7-Hari", shareWADay: "{date}: {temp}°C, Hujan {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ Hari Ribut: {days}", shareWAFooter: "\nRamalan penuh: {url}", popupBlocked: "Pop-up disekat — buka WhatsApp Web secara manual untuk hantar", saveLoc: "+ Tambah ke senarai", savedLoc: "Disimpan ke senarai", markFavourite: "★ Tanda kegemaran" },
+            zh: { brief: "✨ 智能农事简报", pest: "🦠 病虫害风险分析", tools: "✨ AI 策划与咨询", irrig: "💧 智能灌溉计算", harvest: "✨ 收成预估", soil: "✨ 土壤与施肥顾问", plan: "✨ 生成三天工作计划", sop: "✨ 明日 SOP 检查表", yield: "✨ 产量与市场分析", chat: "询问天气 AI", placeholder: "例如：今天适合修剪吗？", calc: "计算", est: "预估", rec: "获取建议", send: "发送", consult: "正在咨询 AI...", spray: "喷药", fert: "施肥", safe: "适宜", risk: "风险", unsafe: "不宜", action: "行动计划", shareWA: "💬 分享到 WhatsApp", shareWAHeader: "🌳 {name} — 7天天气", shareWADay: "{date}: {temp}°C, 雨{rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ 风暴日: {days}", shareWAFooter: "\n完整预报: {url}", popupBlocked: "弹窗被阻止 — 请手动打开 WhatsApp Web 发送", saveLoc: "+ 加入我的列表", savedLoc: "已加入列表", markFavourite: "★ 标记为收藏" },
+            ta: { brief: "✨ விவேக விளக்கம்", pest: "🦠 பூச்சி அபாய ஆய்வு", tools: "✨ AI திட்டம் & கேள்வி", irrig: "💧 நீர்ப்பாசனக் கணக்கீடு", harvest: "✨ அறுவடை மதிப்பீடு", soil: "✨ மண் & உரம் ஆலோசகர்", plan: "✨ 3-நாள் வேலைத் திட்டம்", sop: "✨ நாளைய SOP பட்டியல்", yield: "✨ விளைச்சல் & சந்தை", chat: "வானிலை AI-யிடம் கேளுங்கள்", placeholder: "எ.கா: இன்று கத்தரிக்கலாமா?", calc: "கணக்கிடு", est: "மதிப்பிடு", rec: "பரிந்துரை பெறு", send: "அனுப்பு", consult: "AI-யை அணுகுகிறது...", spray: "தெளி", fert: "உரம்", safe: "ஏற்றது", risk: "கவனம்", unsafe: "தவிர்", action: "செயல் திட்டம்", shareWA: "💬 WhatsApp-இல் பகிர்", shareWAHeader: "🌳 {name} — 7-நாள் முன்னறிவிப்பு", shareWADay: "{date}: {temp}°C, மழை {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ புயல் நாட்கள்: {days}", shareWAFooter: "\nமுழு முன்னறிவிப்பு: {url}", popupBlocked: "பாப்-அப் தடுக்கப்பட்டது — WhatsApp Web-ஐ கைமுறையாக திறக்கவும்", saveLoc: "+ எனது பட்டியலில் சேர்", savedLoc: "பட்டியலில் சேர்க்கப்பட்டது", markFavourite: "★ பிடித்ததாக குறி" },
+            my: { brief: "✨ စမတ် အကျဉ်းချုပ်", pest: "🦠 ပိုးမွှားအန္တရာယ်", tools: "✨ AI မေးရန် & စီစဉ်ရန်", irrig: "💧 ရေသွင်း တွက်ချက်မှု", harvest: "✨ ရိတ်သိမ်းချိန် ခန့်မှန်း", soil: "✨ မြေဆီလွှာ အကြံပေး", plan: "✨ ၃-ရက် လုပ်ငန်းစဉ်", sop: "✨ မနက်ဖြန် SOP စာရင်း", yield: "✨ အထွက်နှုန်း & ဈေးကွက်", chat: "မိုးလေဝသ AI မေးရန်", placeholder: "ဥပမာ - ဒီနေ့ ကိုင်းဖြတ်လို့ရမလား?", calc: "တွက်ချက်ပါ", est: "ခန့်မှန်းပါ", rec: "အကြံပြုချက်ရယူပါ", send: "ပို့ပါ", consult: "AI ကို မေးမြန်းနေသည်...", spray: "ဆေးဖြန်း", fert: "မြေသြဇာ", safe: "ကောင်း", risk: "သတိ", unsafe: "ရှောင်", action: "လုပ်ဆောင်ရန်", shareWA: "💬 WhatsApp သို့ မျှဝေပါ", shareWAHeader: "🌳 {name} — ၇-ရက် ခန့်မှန်း", shareWADay: "{date}: {temp}°C, မိုး {rain}%{storm}", shareWAStormTag: " ⚡{window}", shareWAStormWarn: "\n⚠️ မုန်တိုင်းရက်များ: {days}", shareWAFooter: "\nခန့်မှန်းအပြည့်အစုံ: {url}", popupBlocked: "Popup ပိတ်ထားသည် — WhatsApp Web ကို ကိုယ်တိုင်ဖွင့်ပါ", saveLoc: "+ စာရင်းသို့ ထည့်ပါ", savedLoc: "စာရင်းသို့ ထည့်ပြီးပါပြီ", markFavourite: "★ အကြိုက်ဆုံးအဖြစ် မှတ်ပါ" }
         };
 
         const LANG_CODES = ['en', 'ms', 'zh', 'ta', 'my'];
@@ -2818,6 +2818,20 @@
                 const existing = getAllLocations().find(l => l.id === loc);
                 const isHidden = Array.isArray(hiddenIds) && hiddenIds.includes(loc);
                 if (existing && !isHidden) {
+                    // If the recipient hasn't favourited this location yet, mark it so the
+                    // report card shows a "Mark as favourite" button. This extends the
+                    // share-receiver pattern beyond just custom-location adds: stable
+                    // locations that the recipient already has (every device has them) can
+                    // still be promoted to favourites via the same shared-link flow. The
+                    // user's tap on the button calls saveSharedLocation which handles both
+                    // cases (ephemeral custom OR shareable favourite) via a unified path.
+                    // Hidden locations don't get this — they go down the ephemeral path
+                    // above which already shows the full "Add to my list" button.
+                    const alreadyFav = Array.isArray(favoriteIds) && favoriteIds.includes(loc);
+                    if (!alreadyFav) {
+                        window.shareableFavoriteIds = window.shareableFavoriteIds || new Set();
+                        window.shareableFavoriteIds.add(loc);
+                    }
                     setTimeout(() => window.openDetail(loc), 100);
                     return;
                 }
@@ -2918,29 +2932,45 @@
         // ============================================================
         window.saveSharedLocation = (id) => {
             try {
-                console.log('[saveSharedLocation] START', { id, ephemeralHas: window.ephemeralLocationIds?.has(id) });
-                if (!window.ephemeralLocationIds || !window.ephemeralLocationIds.has(id)) {
-                    console.warn('[saveSharedLocation] bailed: not in ephemeral set');
+                const isEphemeral = !!(window.ephemeralLocationIds && window.ephemeralLocationIds.has(id));
+                const isShareableFav = !!(window.shareableFavoriteIds && window.shareableFavoriteIds.has(id));
+                console.log('[saveSharedLocation] START', { id, isEphemeral, isShareableFav });
+                if (!isEphemeral && !isShareableFav) {
+                    console.warn('[saveSharedLocation] bailed: not in either share set');
                     return;
                 }
                 
-                // The location object already lives in customLocations (the deep-link
-                // receiver pushed it there). We just need to persist that to disk.
-                customLocations = Array.isArray(customLocations) ? customLocations : [];
-                const locInArray = customLocations.find(l => l.id === id);
-                console.log('[saveSharedLocation] customLocations check', {
-                    arrayLength: customLocations.length,
-                    foundLocation: locInArray ? { id: locInArray.id, en: locInArray.en, zh: locInArray.zh, lat: locInArray.lat, lng: locInArray.lng } : null,
-                    allIds: customLocations.map(l => l.id)
-                });
-                if (!locInArray) {
-                    console.warn('saveSharedLocation: id not in customLocations, aborting');
-                    return;
+                // For ephemeral (custom-location-add) mode, the location must already be
+                // in customLocations (the receiver pushed it). For shareable-favourite mode
+                // (stable location the user hasn't favourited), the location lives in
+                // STABLE_LOCATIONS and isn't expected in customLocations — getAllLocations
+                // is what we check against.
+                if (isEphemeral) {
+                    customLocations = Array.isArray(customLocations) ? customLocations : [];
+                    const locInArray = customLocations.find(l => l.id === id);
+                    console.log('[saveSharedLocation] customLocations check (ephemeral)', {
+                        arrayLength: customLocations.length,
+                        foundLocation: locInArray ? { id: locInArray.id, en: locInArray.en, zh: locInArray.zh, lat: locInArray.lat, lng: locInArray.lng } : null
+                    });
+                    if (!locInArray) {
+                        console.warn('saveSharedLocation: id not in customLocations, aborting');
+                        return;
+                    }
+                    window.ephemeralLocationIds.delete(id);
+                } else {
+                    // Shareable-favourite path: confirm the location resolves through getAllLocations.
+                    const locExists = getAllLocations().some(l => l.id === id);
+                    console.log('[saveSharedLocation] stable location check', { locExists });
+                    if (!locExists) {
+                        console.warn('saveSharedLocation: shareable-favourite id not resolvable, aborting');
+                        return;
+                    }
+                    window.shareableFavoriteIds.delete(id);
                 }
-                
-                window.ephemeralLocationIds.delete(id);
                 
                 // Re-add path: clear stale purgedIds and hiddenIds entries for this id.
+                // Same intent in both modes — the user has explicitly chosen to add/favourite
+                // this location, superseding any prior purge or soft-delete.
                 purgedIds = Array.isArray(purgedIds) ? purgedIds : [];
                 const purgeIdx = purgedIds.indexOf(id);
                 let purgedChanged = false;
@@ -2957,22 +2987,27 @@
                 }
                 console.log('[saveSharedLocation] cleanup', { purgedChanged, hiddenChanged });
                 
-                // Add to favourites so the location appears on the home list.
+                // Add to favourites — same operation in both modes.
                 favoriteIds = Array.isArray(favoriteIds) ? favoriteIds : [];
                 if (!favoriteIds.includes(id)) favoriteIds.push(id);
                 console.log('[saveSharedLocation] favoriteIds after push', { ids: favoriteIds });
                 
                 // Persist to localStorage. safeSet handles quota errors gracefully.
-                let customSaveOk = false, favSaveOk = false;
+                // CUSTOM_CACHE_KEY only written in ephemeral mode (no point writing
+                // an unchanged customLocations array for shareable-favourite mode).
+                let customSaveOk = isEphemeral ? false : true; // treat as "n/a" in fav mode
+                let favSaveOk = false;
                 try {
-                    customSaveOk = safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
+                    if (isEphemeral) {
+                        customSaveOk = safeSet(CUSTOM_CACHE_KEY, JSON.stringify(customLocations));
+                    }
                     favSaveOk = safeSet(FAV_CACHE_KEY, JSON.stringify(favoriteIds));
                     if (purgedChanged) safeSet(PURGED_CACHE_KEY, JSON.stringify(purgedIds));
                     if (hiddenChanged) safeSet(HIDDEN_CACHE_KEY, JSON.stringify(hiddenIds));
                 } catch(e) {
                     console.warn('saveSharedLocation: localStorage save failed:', e);
                 }
-                console.log('[saveSharedLocation] localStorage', { customSaveOk, favSaveOk });
+                console.log('[saveSharedLocation] localStorage', { customSaveOk, favSaveOk, mode: isEphemeral ? 'ephemeral' : 'shareable-fav' });
                 
                 // Verify by re-reading what we just wrote.
                 try {
@@ -2981,7 +3016,7 @@
                     const parsedCustom = rawCustom ? JSON.parse(rawCustom) : [];
                     const parsedFavs = rawFavs ? JSON.parse(rawFavs) : [];
                     console.log('[saveSharedLocation] disk verify', {
-                        diskHasLocation: parsedCustom.some(l => l.id === id),
+                        diskHasLocation: parsedCustom.some(l => l.id === id) || isShareableFav,
                         diskFavsHasId: parsedFavs.includes(id),
                         diskCustomLength: parsedCustom.length,
                         diskFavsLength: parsedFavs.length
@@ -2996,7 +3031,8 @@
                 
                 // Remove the Add button row from the open modal so the user sees
                 // immediate feedback. The next render of this card (e.g. on modal
-                // re-open) won't include the row because the ephemeral check fails.
+                // re-open) won't include the row because both ephemeral and
+                // shareable-favourite checks now fail.
                 const row = document.getElementById(`save-shared-row-${id}`);
                 if (row) row.remove();
                 
@@ -4046,6 +4082,9 @@
                 ${(window.ephemeralLocationIds && window.ephemeralLocationIds.has(id)) ? `
                 <div id="save-shared-row-${id}" class="mt-2 mb-1">
                     <button onclick="window.saveSharedLocation('${id}')" class="w-full text-center py-2.5 px-3 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50 text-emerald-700 font-black text-xs uppercase tracking-wider active:scale-95 transition-transform">${labels.saveLoc}</button>
+                </div>` : (window.shareableFavoriteIds && window.shareableFavoriteIds.has(id)) ? `
+                <div id="save-shared-row-${id}" class="mt-2 mb-1">
+                    <button onclick="window.saveSharedLocation('${id}')" class="w-full text-center py-2.5 px-3 rounded-lg border-2 border-dashed border-emerald-300 bg-emerald-50 text-emerald-700 font-black text-xs uppercase tracking-wider active:scale-95 transition-transform">${labels.markFavourite}</button>
                 </div>` : ''}
                 
                 <div class="mt-2 mb-2">
