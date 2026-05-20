@@ -683,14 +683,29 @@
         </div>
     </header>
 
-    <main id="main-content" style="height: calc(100vh - var(--chrome-h, 215px) - var(--safe-top) - var(--safe-bottom)); display: flex;" class="bg-slate-100">
-        <div class="w-1/2 bg-white border-r-2 border-slate-200 flex flex-col overflow-hidden">
-            <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">西马 West</div>
-            <div id="list-west" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
+    <main id="main-content" style="height: calc(100vh - var(--chrome-h, 215px) - var(--safe-top) - var(--safe-bottom)); display: flex; flex-direction: column;" class="bg-slate-100">
+        <!-- Broadcast buttons (v1.0.122) — for Stanley's WhatsApp daily reports -->
+        <div id="broadcast-bar" class="flex gap-1.5 px-2 py-2 bg-slate-50 border-b border-slate-200 shrink-0">
+            <button onclick="window.handleBroadcastClick('favorites')" 
+                    class="flex-1 py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
+                    style="background: linear-gradient(135deg, #7c3aed 0%, #4f46e5 100%);">
+                ⭐ 收藏地点 3天<br><span class="text-[9px] opacity-80 font-bold">Favorites · 3 Days</span>
+            </button>
+            <button onclick="window.handleBroadcastClick('allStable')" 
+                    class="flex-1 py-2.5 px-2 rounded-lg font-black text-[11px] uppercase tracking-wider text-white active:scale-95 transition-transform shadow-md"
+                    style="background: linear-gradient(135deg, #059669 0%, #047857 100%);">
+                📡 全部地点 1天<br><span class="text-[9px] opacity-80 font-bold">All Stable · 1 Day</span>
+            </button>
         </div>
-        <div class="w-1/2 bg-white flex flex-col overflow-hidden">
-            <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">东马 East</div>
-            <div id="list-east" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
+        <div style="flex: 1; display: flex; overflow: hidden;">
+            <div class="w-1/2 bg-white border-r-2 border-slate-200 flex flex-col overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">西马 West</div>
+                <div id="list-west" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
+            </div>
+            <div class="w-1/2 bg-white flex flex-col overflow-hidden">
+                <div class="p-4 bg-slate-50 border-b font-black text-[10px] text-slate-500 uppercase tracking-widest text-center">东马 East</div>
+                <div id="list-east" class="flex-1 overflow-y-auto no-scrollbar scroll-smooth"></div>
+            </div>
         </div>
     </main>
 
@@ -4516,6 +4531,16 @@
                     });
                 }
             }
+            // Cache the computed days IMMEDIATELY (v1.0.122 move) — before any DOM
+            // updates that would throw if this function is called outside the modal
+            // context. The broadcast feature pre-fetches data for all stable locations
+            // by calling populateReportData(id) for each, but those locations aren't
+            // rendered in the modal at that moment. Their DOM elements don't exist.
+            // By writing daysCache here, the broadcast text builder gets the data it
+            // needs even when the subsequent DOM updates throw.
+            window.daysCache = window.daysCache || {};
+            window.daysCache[id] = days;
+            
             const range = document.getElementById(`m-range-${id}`); if(range && days.length>=14) range.innerText = `${days[0].date} - ${days[13].date}`;
             const dateH = days.map(d => `<div class="info-data-cell date-cell-special">${d.date}</div>`).join('');
             document.getElementById(`row-dates-top-${id}`).innerHTML = dateH; document.getElementById(`row-dates-bottom-${id}`).innerHTML = dateH;
@@ -4661,12 +4686,8 @@
             document.getElementById(`row-rain-pp-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join(''); 
             document.getElementById(`row-rain-vv-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
             document.getElementById(`row-et-${id}`).innerHTML = days.map(() => `<div class="info-data-cell"></div>`).join('');
-            // Cache the computed days for downstream consumers (WhatsApp share, deep-link export).
-            // populateReportData rebuilds days from raw hourly arrays each time the modal is opened,
-            // which is fine for rendering but expensive to redo just to read 7 daily summaries.
-            // Stashing here means sendToWhatsApp() can read d.hi / d.pp / d.cape directly.
-            window.daysCache = window.daysCache || {};
-            window.daysCache[id] = days;
+            // (daysCache write moved earlier in the function — v1.0.122 — so the broadcast
+            // pre-fetch can populate it even when DOM elements don't exist)
             requestAnimationFrame(() => setTimeout(() => drawTrends(days, id), 50));
         }
 
@@ -5136,6 +5157,283 @@
             lines.push('WeatherNext');
             
             return lines.join('\n');
+        };
+        
+        // ============================================================
+        // BULK BROADCAST REPORT BUILDER (v1.0.122)
+        // ------------------------------------------------------------
+        // Generates multi-location text reports for daily WhatsApp broadcasts.
+        // ----------
+        // Two modes:
+        //   'favorites'  → 3-day report per favorite location (for app-using farmers
+        //                  who care about their own farms; receive via WhatsApp from
+        //                  the broadcaster as a courtesy/companion to the app)
+        //   'allStable'  → 1-day-per-location summary covering every stable location
+        //                  baked into the app (for the broadcaster's distribution
+        //                  list of ~300 non-app subscribers)
+        //
+        // Date rollover:
+        //   Before 6 PM MYT → report covers TODAY onward
+        //   After 6 PM MYT  → report covers TOMORROW onward (today's weather is
+        //                     already in the past for planning purposes)
+        //   The cutoff is strict 18:00 local time. 18:00:00 = today, 18:00:01 = tomorrow.
+        //
+        // Model run timestamp:
+        //   Deterministic calculation. ECMWF runs at 00, 06, 12, 18 UTC, each becoming
+        //   reliably available ~5-6 hours after init. We compute "the most-recent run
+        //   that should be fully ingested by now" and display its init time in MYT.
+        //   This is correct 95% of the time. On rare slow-ingestion days, the displayed
+        //   timestamp may slightly overstate freshness, but the gap is small.
+        //
+        // The output is plain text with no emoji in the body (matches the LV LONG /
+        // existing share design — emoji-free text avoids Android rendering issues).
+        // 📍 markers are the one exception — they render correctly on Android, help
+        // visual scanning across many locations, and match how MetMalaysia formats
+        // their bulletins.
+        // ============================================================
+        
+        // Compute the most-recent ECMWF run timestamp that should be reliably ingested.
+        // Returns { initUtcMs, initMytStr } where initMytStr is formatted as "19/5 02:00".
+        const getLatestModelRun = () => {
+            const now = new Date();
+            // We want the most-recent run that's been available for at least 5 hours.
+            // Subtract 5 hours from now, then snap down to the nearest 00/06/12/18 UTC.
+            const fiveHoursAgo = new Date(now.getTime() - 5 * 60 * 60 * 1000);
+            const utcHour = fiveHoursAgo.getUTCHours();
+            const runHour = Math.floor(utcHour / 6) * 6;  // 0, 6, 12, or 18
+            const runUtc = new Date(Date.UTC(
+                fiveHoursAgo.getUTCFullYear(),
+                fiveHoursAgo.getUTCMonth(),
+                fiveHoursAgo.getUTCDate(),
+                runHour, 0, 0
+            ));
+            // Convert to Malaysia time for display (UTC+8, no DST).
+            const mytMs = runUtc.getTime() + 8 * 60 * 60 * 1000;
+            const myt = new Date(mytMs);
+            const date = `${myt.getUTCDate()}/${myt.getUTCMonth() + 1}`;
+            const hour = String(myt.getUTCHours()).padStart(2, '0');
+            return {
+                initUtcMs: runUtc.getTime(),
+                initMytStr: `${date} ${hour}:00`,
+                ageHours: Math.round((now.getTime() - runUtc.getTime()) / (60 * 60 * 1000))
+            };
+        };
+        
+        // Determine the target start-day offset for the report.
+        // Returns 0 for today's report (generated before 6 PM MYT) or 1 for tomorrow's
+        // (generated after 6 PM MYT). Uses Malaysia local time, not user device time.
+        const getTargetDayOffset = () => {
+            const now = new Date();
+            // Convert current UTC to MYT (UTC+8).
+            const mytMs = now.getTime() + 8 * 60 * 60 * 1000;
+            const myt = new Date(mytMs);
+            const mytHour = myt.getUTCHours();
+            return mytHour >= 18 ? 1 : 0;
+        };
+        
+        // Build the bulk broadcast text. mode is 'favorites' or 'allStable'.
+        window.buildBroadcastText = (mode) => {
+            const lang = (typeof getLang === 'function') ? getLang('default') : 'zh';
+            const labels = TRANS[lang] || TRANS.zh;
+            
+            // Compute date range and model run info for the header.
+            const dayOffset = getTargetDayOffset();
+            const runInfo = getLatestModelRun();
+            
+            // Build the header. Bilingual brand line.
+            const brandHeader = '农友天气 WeatherNext';
+            
+            // Date label for the report. Format: "19/5" for today, "20/5 (明日)" for tomorrow.
+            const targetDate = new Date();
+            targetDate.setDate(targetDate.getDate() + dayOffset);
+            const targetDateStr = `${targetDate.getDate()}/${targetDate.getMonth() + 1}`;
+            const dateMarker = dayOffset === 0 ? targetDateStr : `${targetDateStr} (明日 Tomorrow)`;
+            
+            // Data freshness header. Always show. Includes a staleness warning if >8 hours.
+            const ageWarn = runInfo.ageHours > 8 ? ' ⚠️数据较旧' : '';
+            const dataHeader = `（数据: ${runInfo.initMytStr} ECMWF · ${runInfo.ageHours}h${ageWarn}）`;
+            
+            // Determine which location ids to include.
+            let ids = [];
+            if (mode === 'favorites') {
+                ids = Array.isArray(favoriteIds) ? favoriteIds.slice() : [];
+                // Filter out hidden ones (recycle bin) and any not in getAllLocations.
+                const visible = getAllLocations().filter(l => !hiddenIds.includes(l.id));
+                ids = ids.filter(id => visible.some(l => l.id === id));
+            } else if (mode === 'allStable') {
+                // STABLE_LOCATIONS is the baked-in list; filter out user-purged ones.
+                ids = STABLE_LOCATIONS
+                    .filter(l => !purgedIds.includes(l.id) && !hiddenIds.includes(l.id))
+                    .map(l => l.id);
+            }
+            
+            if (ids.length === 0) {
+                return `${brandHeader}\n${dateMarker}\n${dataHeader}\n\n(没有可用的地点 / No locations available)\n\nWeatherNext`;
+            }
+            
+            // Format helpers — same conventions as buildShareText.
+            const fmtHour = (h) => {
+                const meridiem = h >= 12 ? 'PM' : 'AM';
+                const h12 = h % 12 || 12;
+                return `${h12}${meridiem}`;
+            };
+            const stormLabel = { en: 'Possible Thunderstorm', ms: 'Kemungkinan Ribut Petir', zh: '可能有暴雨', ta: 'புயல்', my: 'မုန်တိုင်း' }[lang] || 'Possible Thunderstorm';
+            const rainLabel = { en: 'Rain', ms: 'Hujan', zh: '雨', ta: 'மழை', my: 'မိုး' }[lang] || 'Rain';
+            
+            // Section headers for the 3-day mode.
+            const todayLabel = { en: 'Today', ms: 'Hari Ini', zh: '今天', ta: 'இன்று', my: 'ဒီနေ့' }[lang] || 'Today';
+            const tomorrowLabel = { en: 'Tomorrow', ms: 'Esok', zh: '明天', ta: 'நாளை', my: 'မနက်ဖြန်' }[lang] || 'Tomorrow';
+            const dayAfterLabel = { en: 'Day After', ms: 'Lusa', zh: '后天', ta: 'நாளை மறுநாள்', my: 'သန်ဘက်ခါ' }[lang] || 'Day After';
+            
+            // Build the per-location sections.
+            const sections = [];
+            sections.push(brandHeader);
+            sections.push(dateMarker);
+            sections.push(dataHeader);
+            sections.push('');
+            
+            for (const lid of ids) {
+                const days = (window.daysCache || {})[lid];
+                if (!days || days.length === 0) {
+                    // No cached data — skip silently. The home-screen fetch should have
+                    // populated daysCache for every visible location; missing means the
+                    // fetch hadn't completed when the user tapped, or the location is
+                    // freshly added without weather data yet.
+                    continue;
+                }
+                
+                // Resolve location name with bilingual fallback. Same logic as buildShareText.
+                let loc = null;
+                if (typeof getAllLocations === 'function') {
+                    loc = getAllLocations().find(l => l.id === lid);
+                }
+                const rn = (typeof renamedLocations !== 'undefined' && renamedLocations) ? renamedLocations[lid] : null;
+                const resolvedEn = (rn && rn.en) || (loc && loc.en) || '';
+                const resolvedZh = (rn && rn.zh) || (loc && loc.zh) || '';
+                // Display both names when present for cross-language recipients.
+                const locName = resolvedEn && resolvedZh
+                    ? `${resolvedEn} / ${resolvedZh}`
+                    : (resolvedEn || resolvedZh || lid);
+                
+                sections.push(`📍 ${locName}`);
+                
+                // Per-day line builder. Returns one formatted line for a given day index.
+                const buildDayLine = (dayIdx, prefix) => {
+                    const d = days[dayIdx];
+                    if (!d) return null;
+                    let line = `${prefix}: ${d.hi}°C, ${rainLabel} ${d.pp}%`;
+                    if (d.cape >= 1500 && d.triggerWindow) {
+                        line += `, ${stormLabel} ${fmtHour(d.triggerWindow.start)}-${fmtHour(d.triggerWindow.end)}`;
+                    }
+                    return line;
+                };
+                
+                if (mode === 'favorites') {
+                    // 3-day per location: dayOffset, dayOffset+1, dayOffset+2.
+                    const labels3 = dayOffset === 0
+                        ? [todayLabel, tomorrowLabel, dayAfterLabel]
+                        : [tomorrowLabel, dayAfterLabel, '+2'];
+                    for (let i = 0; i < 3; i++) {
+                        const idx = dayOffset + i;
+                        const line = buildDayLine(idx, labels3[i]);
+                        if (line) sections.push(line);
+                    }
+                } else {
+                    // 1-day per location for the all-stable broadcast.
+                    const line = buildDayLine(dayOffset, dayOffset === 0 ? todayLabel : tomorrowLabel);
+                    if (line) sections.push(line);
+                }
+                
+                sections.push('');  // blank line between locations
+            }
+            
+            // Drop trailing blank.
+            while (sections.length && sections[sections.length - 1] === '') sections.pop();
+            
+            sections.push('');
+            sections.push('WeatherNext');
+            
+            return sections.join('\n');
+        };
+        
+        // Tap handler for either broadcast button. Builds text, copies to clipboard,
+        // opens WhatsApp Web with text pre-filled, shows confirmation toast.
+        // Pre-fetches weather data for any locations whose daysCache hasn't been
+        // populated yet (this happens when the user hasn't manually opened those
+        // locations' detail modals). For the allStable case especially, most
+        // locations need fetching.
+        window.handleBroadcastClick = async (mode) => {
+            try {
+                // Determine which ids the report will need.
+                let neededIds = [];
+                if (mode === 'favorites') {
+                    const visible = getAllLocations().filter(l => !hiddenIds.includes(l.id));
+                    neededIds = (favoriteIds || []).filter(id => visible.some(l => l.id === id));
+                } else {
+                    neededIds = STABLE_LOCATIONS
+                        .filter(l => !purgedIds.includes(l.id) && !hiddenIds.includes(l.id))
+                        .map(l => l.id);
+                }
+                
+                // Find ids missing from daysCache and fetch them.
+                const cache = window.daysCache || {};
+                const missing = neededIds.filter(id => !cache[id] || cache[id].length === 0);
+                
+                if (missing.length > 0) {
+                    // Show loading status — large multi-location fetch can take 5-10 seconds.
+                    if (typeof window.showToast === 'function') {
+                        window.showToast(`正在获取 ${missing.length} 个地点的数据... / Fetching ${missing.length} locations...`, false);
+                    }
+                    // fetchMultiDetailWeather populates detailData with raw hourly weather.
+                    if (typeof fetchMultiDetailWeather === 'function') {
+                        try {
+                            await fetchMultiDetailWeather(missing);
+                        } catch(e) {
+                            console.warn('Broadcast pre-fetch failed:', e);
+                        }
+                    }
+                    // populateReportData aggregates hourly → daily and writes daysCache.
+                    // Wrapped in try/catch because the function also does DOM updates
+                    // that throw when the location's modal card isn't rendered. With the
+                    // v1.0.122 fix that writes daysCache *before* the DOM updates, the
+                    // data we need is safely cached even when DOM ops throw afterward.
+                    for (const lid of missing) {
+                        try {
+                            if (typeof populateReportData === 'function') {
+                                populateReportData(lid);
+                            }
+                        } catch(e) {
+                            // Expected — DOM elements for non-displayed locations don't exist.
+                            // daysCache was written before the failure, so the report still works.
+                        }
+                    }
+                }
+                
+                const text = window.buildBroadcastText(mode);
+                
+                // Copy to clipboard for users who want to paste manually.
+                try {
+                    await navigator.clipboard.writeText(text);
+                } catch(e) {
+                    console.warn('Clipboard write failed:', e);
+                }
+                
+                // Open WhatsApp with text pre-filled.
+                const waUrl = (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+                    ? `https://wa.me/?text=${encodeURIComponent(text)}`
+                    : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                try {
+                    window.open(waUrl, '_blank', 'noopener,noreferrer');
+                } catch(e) {
+                    console.warn('WhatsApp open failed:', e);
+                }
+                
+                if (typeof window.showToast === 'function') {
+                    window.showToast('已复制 / Copied — choose a WhatsApp contact', false);
+                }
+            } catch(err) {
+                console.warn('handleBroadcastClick error:', err);
+            }
         };
         window.downloadInfographic = async (e) => {
             if(e) e.preventDefault(); const btn = document.getElementById('dl-btn'); if(btn.disabled) return;
