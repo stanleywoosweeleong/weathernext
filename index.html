@@ -728,23 +728,22 @@
                 <!-- Content generated dynamically -->
             </div>
         </div>
-        <div class="bg-slate-50 border-t shrink-0 z-[1001] shadow-xl">
-            <div class="p-5 flex items-center justify-between px-8">
-                <button onclick="window.closeModal()" class="back-btn shadow-md border border-slate-200">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M6 12h12"/></svg>
-                </button>
-                <button id="dl-btn" onclick="window.downloadInfographic(event)" class="back-btn shadow-md border border-slate-200 !bg-transparent active:scale-95 transition-transform">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
-                </button>
-            </div>
-            <!-- CC-BY-4.0 attribution (v1.0.131; v1.0.134 repositioned).
-                 Dedicated thin row below the buttons. Right-aligned, single line, font-semibold
-                 for readable weight without dominating. Sits clear of the back/download buttons
-                 so neither competes for space. Bottom-padding includes safe-area inset for
-                 iOS home-indicator clearance. -->
-            <div class="px-5 pb-1 text-right text-[10px] text-slate-400 font-semibold" style="padding-bottom: calc(var(--safe-bottom) + 4px);">
-                Data: <a href="https://www.ecmwf.int" target="_blank" rel="noopener" class="underline">ECMWF</a> · <a href="https://open-meteo.com" target="_blank" rel="noopener" class="underline">open-meteo.com</a>
-            </div>
+        <div class="p-5 bg-slate-50 border-t flex items-center justify-between px-8 shrink-0 z-[1001] shadow-xl">
+            <button onclick="window.closeModal()" class="back-btn shadow-md border border-slate-200">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m11 17-5-5 5-5M6 12h12"/></svg>
+            </button>
+            <button id="dl-btn" onclick="window.downloadInfographic(event)" class="back-btn shadow-md border border-slate-200 !bg-transparent active:scale-95 transition-transform">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            </button>
+            <div style="height: var(--safe-bottom);"></div>
+        </div>
+        <!-- CC-BY-4.0 attribution (v1.0.131; v1.0.135 restored proper button alignment).
+             Separate row OUTSIDE the button row entirely — single line, right-aligned,
+             slate-50 background to match the button row above. Both names tappable per
+             the "provide a link" requirement. Sits flush against the screen bottom with
+             safe-area inset for iOS home-indicator clearance. -->
+        <div class="bg-slate-50 px-5 pb-1 text-right text-[10px] text-slate-400 font-semibold shrink-0 z-[1001]" style="padding-bottom: calc(var(--safe-bottom) + 4px); padding-top: 2px;">
+            Data: <a href="https://www.ecmwf.int" target="_blank" rel="noopener" class="underline">ECMWF</a> · <a href="https://open-meteo.com" target="_blank" rel="noopener" class="underline">open-meteo.com</a>
         </div>
     </div>
 
