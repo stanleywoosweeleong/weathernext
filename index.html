@@ -5709,18 +5709,40 @@
                     
                     // Determine the hour range to scan.
                     // Hourly arrays from Open-Meteo start at hour 0 of TODAY local time.
+                    // ----------
+                    // Three-tier time window (v1.0.143) per Stanley's broadcaster workflow:
+                    //   Before 12 PM MYT: today only, from CURRENT in-progress hour through 23:00
+                    //   12 PM - 6 PM MYT: today's remaining hours + tomorrow 00:00-03:00
+                    //     (covers overnight period for farmers planning evening/early-morning work)
+                    //   After 6 PM MYT:    all 24 hours of tomorrow (00:00-23:00)
+                    //
+                    // The "CURRENT hour" inclusion is intentional. At 5:30 AM broadcast time,
+                    // the 5 AM hour is in progress; if rain is forecast for it, recipients see
+                    // "5am Light Rain" which corresponds to rain happening right now. Better
+                    // than starting from 6 AM and leaving recipients to wonder about now.
+                    //
+                    // Date rollover convention: hours past midnight just appear as "1am 2am 3am"
+                    // following the "...9pm 10pm 11pm" sequence. Recipients infer the rollover
+                    // from the time sequence — Stanley's audience is trained on this convention
+                    // from his 4 years of manual broadcasts.
                     const now = new Date();
+                    const mytHour = now.getHours();
                     let startHour, endHour;
-                    if (dayOffset === 0) {
-                        // Today — start from the next hour (round up).
-                        startHour = now.getHours() + 1;
-                        if (startHour < 0) startHour = 0;
-                        endHour = 24;  // up to end-of-today
-                    } else {
-                        // Tomorrow — full day (indices 24-47 in the hourly array).
+                    if (dayOffset === 1) {
+                        // After 6 PM — full tomorrow (indices 24-47).
                         startHour = 24;
                         endHour = 48;
+                    } else if (mytHour >= 12) {
+                        // 12 PM - 6 PM — today from current hour through tomorrow 3 AM.
+                        // Indices: current hour through hour 27 (24 + 3 = end of 3 AM hour).
+                        startHour = mytHour;
+                        endHour = 28;  // exclusive: includes hour 27 (which represents 3-4 AM rainfall)
+                    } else {
+                        // Before 12 PM — today from current hour through 23:00.
+                        startHour = mytHour;
+                        endHour = 24;
                     }
+                    if (startHour < 0) startHour = 0;
                     
                     // Format an hour as "1pm" / "11am" / "12am" / "12pm".
                     const fmtClockHour = (h24) => {
