@@ -5549,6 +5549,7 @@
                     today: 'Today',
                     tomorrow: 'Tomorrow',
                     dayAfter: 'Day After',
+                    dayAfterNext: 'Day After Next',
                     rainfall: (mm) => {
                         if (mm < 10) return null;
                         if (mm < 25) return 'Moderate Rainfall';
@@ -5563,6 +5564,7 @@
                     today: '今天',
                     tomorrow: '明天',
                     dayAfter: '后天',
+                    dayAfterNext: '大后天',
                     rainfall: (mm) => {
                         // Non-colliding vocabulary — avoids 暴雨 (which means "thunderstorm
                         // hedge" in the storm clause already in this report).
@@ -5579,6 +5581,7 @@
                     today: 'Hari Ini',
                     tomorrow: 'Esok',
                     dayAfter: 'Lusa',
+                    dayAfterNext: 'Tulat',
                     rainfall: (mm) => {
                         if (mm < 10) return null;
                         if (mm < 25) return 'Hujan Sederhana';
@@ -5702,10 +5705,12 @@
                     // 3-day per location: dayOffset, dayOffset+1, dayOffset+2.
                     // Day labels come from the location's own vocab — so an English-override
                     // location shows "Today / Tomorrow / Day After" even when the broadcast
-                    // is otherwise in Chinese.
+                    // is otherwise in Chinese. v1.0.152: third day in after-6PM mode now uses
+                    // proper terminology (大后天 / Day After Next / Tulat) instead of '+2'
+                    // placeholder.
                     const labels3 = dayOffset === 0
                         ? [V.today, V.tomorrow, V.dayAfter]
-                        : [V.tomorrow, V.dayAfter, '+2'];
+                        : [V.tomorrow, V.dayAfter, V.dayAfterNext];
                     for (let i = 0; i < 3; i++) {
                         const idx = dayOffset + i;
                         const line = buildDayLine(idx, labels3[i]);
