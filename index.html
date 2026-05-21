@@ -6110,20 +6110,53 @@
                 const text = window.buildBroadcastText(mode);
                 
                 // Copy to clipboard for users who want to paste manually.
+                // ============================================================
+                // SHARE the generated text (v1.0.148 — Web Share API for mobile).
+                // ------------------------------------------------------------
+                // The Web Share API was added here to fix the "tap twice on mobile"
+                // bug. Root cause: window.open() requires fresh user activation,
+                // which expires after ~5 seconds. The bulk broadcast handler awaits
+                // 5-10 seconds of fetching before reaching the share call, by which
+                // time activation has expired and window.open silently fails.
+                //
+                // navigator.share() handles this case correctly — the browser tracks
+                // the await chain from the original click and preserves activation
+                // through async work, as long as the chain is unbroken.
+                //
+                // Fallback: desktop browsers (which don't typically support
+                // navigator.share with text-only payloads) get window.open. Desktop
+                // user-activation handling is more permissive, so this works.
+                // ============================================================
                 try {
                     await navigator.clipboard.writeText(text);
                 } catch(e) {
                     console.warn('Clipboard write failed:', e);
                 }
                 
-                // Open WhatsApp with text pre-filled.
-                const waUrl = (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
-                    ? `https://wa.me/?text=${encodeURIComponent(text)}`
-                    : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
-                try {
-                    window.open(waUrl, '_blank', 'noopener,noreferrer');
-                } catch(e) {
-                    console.warn('WhatsApp open failed:', e);
+                let shared = false;
+                if (navigator.share && navigator.canShare && navigator.canShare({ text })) {
+                    try {
+                        await navigator.share({ title: 'WeatherNext', text });
+                        shared = true;
+                    } catch (err) {
+                        // AbortError = user dismissed the share sheet. They've made an
+                        // explicit choice, so treat as handled (don't fall back to
+                        // opening WhatsApp on top of their dismissal).
+                        if (err.name === 'AbortError') shared = true;
+                        else console.warn('Native share failed, falling back:', err);
+                    }
+                }
+                
+                if (!shared) {
+                    // Desktop or older mobile — use direct WhatsApp deep link.
+                    const waUrl = (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent))
+                        ? `https://wa.me/?text=${encodeURIComponent(text)}`
+                        : `https://web.whatsapp.com/send?text=${encodeURIComponent(text)}`;
+                    try {
+                        window.open(waUrl, '_blank', 'noopener,noreferrer');
+                    } catch(e) {
+                        console.warn('WhatsApp open failed:', e);
+                    }
                 }
                 
                 if (typeof window.showToast === 'function') {
