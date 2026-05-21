@@ -6177,8 +6177,16 @@
                     }
                 }
                 
-                // Final success toast — but only if we didn't already surface an error toast above.
-                if (shared && typeof window.showToast === 'function') {
+                // Final toast only for the FALLBACK path. When navigator.share()
+                // succeeds, the user has already picked their destination from the
+                // system share sheet and is looking at the pre-filled message in
+                // their target app — they don't need a confirmation toast saying
+                // "now choose a WhatsApp contact" because they've just done that.
+                // (v1.0.151: previously this fired unconditionally and made it look
+                // like there was a pending step after the share sheet completed —
+                // Stanley described it as "double tap" but it was just the misleading
+                // toast appearing after successful share.)
+                if (!shared && typeof window.showToast === 'function') {
                     window.showToast('已复制 / Copied — choose a WhatsApp contact', false);
                 }
                 log('HANDLER COMPLETE total=' + Math.round(performance.now() - t0) + 'ms');
