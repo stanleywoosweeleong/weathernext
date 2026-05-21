@@ -5432,11 +5432,46 @@
             const lunarStr = getLunarStr(targetDate);
             
             // Build the combined header. Format:
-            //   农友天气 WeatherNext 20/5 四月初三                 (today)
-            //   农友天气 WeatherNext 21/5 (明日 Tomorrow) 四月初四  (after 6 PM, tomorrow)
-            // The brand at the top doubles as the message's identity for all subsequent
-            // attribution chains (translated forwards to foreign workers etc).
-            let headerLine = '农友天气 WeatherNext ' + targetDateStr;
+            //   早上好 @ 农友天气 WeatherNext 20/5 四月初三                       (today, Chinese device)
+            //   Good Morning @ WeatherNext 21/5 (Tomorrow) 四月初四                (after 6 PM, English device)
+            //
+            // Time greeting (v1.0.147): prepended to the header with @ separator,
+            // matching Stanley's pre-existing manual broadcast format. The greeting
+            // language follows the broadcaster's device language (the 'lang' variable
+            // computed at the top of buildBroadcastText). For plain-text WhatsApp
+            // broadcasts this is the only feasible approach — once pasted, every
+            // recipient sees the same text regardless of their device locale.
+            //
+            // Hour boundaries (Malaysian convention):
+            //   5-11 hrs   早上 / Morning / Pagi
+            //   12-17 hrs  下午 / Afternoon / Petang
+            //   18-21 hrs  晚上 / Evening / Malam
+            //   22-4 hrs   深夜 / Late Night / Larut Malam
+            const getTimeGreeting = (currentHour, language) => {
+                let zh, en, ms;
+                if (currentHour >= 5 && currentHour < 12) {
+                    zh = '早上好'; en = 'Good Morning'; ms = 'Selamat Pagi';
+                } else if (currentHour >= 12 && currentHour < 18) {
+                    zh = '下午好'; en = 'Good Afternoon'; ms = 'Selamat Petang';
+                } else if (currentHour >= 18 && currentHour < 22) {
+                    zh = '晚上好'; en = 'Good Evening'; ms = 'Selamat Malam';
+                } else {
+                    zh = '晚安'; en = 'Good Night'; ms = 'Selamat Malam';
+                }
+                if (language === 'zh') return zh;
+                if (language === 'ms') return ms;
+                return en;
+            };
+            const broadcasterHour = (function() {
+                // Use MYT regardless of device timezone — broadcasts are generated
+                // from Malaysia and the greeting reflects local time.
+                const utc = new Date();
+                const mytMs = utc.getTime() + 8 * 60 * 60 * 1000;
+                return new Date(mytMs).getUTCHours();
+            })();
+            const timeGreeting = getTimeGreeting(broadcasterHour, lang);
+            
+            let headerLine = timeGreeting + ' @ 农友天气 WeatherNext ' + targetDateStr;
             if (dayOffset === 1) headerLine += ' (明日 Tomorrow)';
             if (lunarStr) headerLine += ' ' + lunarStr;
             
