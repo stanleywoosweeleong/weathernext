@@ -115,6 +115,5 @@ Without the version bump, users' cached service workers will keep serving the ol
 
 Personal/agricultural use. Not for redistribution without permission.
 
----
 
-Built for LV LONG SDN. BHD. agricultural workflows.
+
