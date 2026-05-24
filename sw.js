@@ -3,7 +3,7 @@
 // Version 1.0.0 — bump CACHE_VERSION on each release
 // ============================================================
 
-const CACHE_VERSION = 'wnext-v1.0.152';
+const CACHE_VERSION = 'wnext-v1.0.153';
 const SHELL_CACHE = `${CACHE_VERSION}-shell`;
 const RUNTIME_CACHE = `${CACHE_VERSION}-runtime`;
 const WEATHER_CACHE = `${CACHE_VERSION}-weather`;
@@ -80,22 +80,23 @@ self.addEventListener('fetch', (event) => {
   // Only handle GET requests
   if (request.method !== 'GET') return;
 
-  // 1. Firebase, Gemini, Google APIs — NEVER cache (auth + real-time)
+  // 1. Firebase, Gemini, Google APIs — do NOT intercept (auth + real-time).
+  // These requests are left to the browser's native fetch. This is deliberate:
+  // the block previously called event.respondWith and, on a failed fetch,
+  // returned a JSON-bodied 503 Response. That fallback is harmless for data
+  // API calls, but this same rule also matches the Firebase SDK module scripts
+  // (gstatic.com/firebasejs/...). When a module request failed, the browser
+  // received JSON and tried to execute it as an ES module — a syntax error that
+  // killed the whole type="module" script and left a permanently blank screen
+  // on every subsequent load. Letting the browser handle these natively means a
+  // network failure is just an ordinary rejected fetch / module-load error,
+  // which the app's existing error handling already deals with.
   if (
     url.hostname.includes('firebaseio.com') ||
     url.hostname.includes('googleapis.com') ||
     url.hostname.includes('firebase') ||
-    url.hostname.includes('gstatic.com') && url.pathname.includes('firebasejs')
+    (url.hostname.includes('gstatic.com') && url.pathname.includes('firebasejs'))
   ) {
-    // Network-only, but allow graceful failure
-    event.respondWith(
-      fetch(request).catch(() => {
-        return new Response(
-          JSON.stringify({ error: 'offline', message: 'Network unavailable' }),
-          { status: 503, headers: { 'Content-Type': 'application/json' } }
-        );
-      })
-    );
     return;
   }
 
